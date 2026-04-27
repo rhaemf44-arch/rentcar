@@ -22,18 +22,16 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@600;800;900&display=swap" rel="stylesheet">
 
 <style>
-/* ═══════════════════════════════════════════
-   기본 변수 & 리셋
-═══════════════════════════════════════════ */
+
 :root {
-  /* 핵심 색상 — 차분한 미드나잇 + 골드 액센트 */
-  --bg:        #f5f5f0;          /* 따뜻한 오프화이트 */
+  
+  --bg:        #f5f5f0;          
   --bg2:       #ebebe4;
   --card:      #ffffff;
-  --sidebar:   #0a0e1a;          /* 거의 검정 */
+  --sidebar:   #0a0e1a;          
   --sidebar2:  #131829;
   --sidebar3:  #1c2238;
-  --gold:      #d4a843;          /* 골드 */
+  --gold:      #d4a843;          
   --gold2:     #e8c468;
   --gold-soft: #faf4e0;
   --blue:      #2563eb;
@@ -45,7 +43,7 @@
   --purple:    #8b5cf6;
   --teal:      #06b6d4;
 
-  --text:      #0f172a;          /* 진한 잉크 */
+  --text:      #0f172a;          
   --text2:     #334155;
   --muted:     #64748b;
   --muted2:    #94a3b8;
@@ -56,7 +54,7 @@
   --radius-lg: 16px;
   --radius-sm: 8px;
 
-  /* 고급스러운 폰트 스택 */
+  
   --font:      'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', sans-serif;
   --display:   'Inter', 'Pretendard Variable', sans-serif;
   --mono:      'JetBrains Mono', 'SF Mono', Menlo, monospace;
@@ -64,7 +62,7 @@
   --sidebar-w: 240px;
   --topbar-h:  60px;
 
-  /* 정교한 그림자 */
+  
   --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
   --shadow-sm: 0 2px 4px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
   --shadow:    0 4px 8px -2px rgba(15,23,42,.08), 0 2px 4px -1px rgba(15,23,42,.04);
@@ -72,7 +70,7 @@
   --shadow-lg: 0 20px 40px -8px rgba(15,23,42,.15), 0 8px 16px -4px rgba(15,23,42,.08);
   --shadow-gold: 0 4px 14px rgba(212,168,67,.35);
 
-  /* 트랜지션 */
+  
   --ease:      cubic-bezier(.4, 0, .2, 1);
   --ease-out:  cubic-bezier(.16, 1, .3, 1);
   --duration:  .2s;
@@ -102,9 +100,6 @@ body::before{
 }
 .main-wrap, .sidebar { position:relative; z-index:1; }
 
-/* ═══════════════════════════════════════════
-   레이아웃
-═══════════════════════════════════════════ */
 .sidebar{
   position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;
   background:var(--sidebar);display:flex;flex-direction:column;z-index:100;
@@ -202,15 +197,9 @@ body::before{
 }
 .content{padding:24px; flex:1}
 
-/* ═══════════════════════════════════════════
-   페이지 전환
-═══════════════════════════════════════════ */
 .page{display:none}
 .page.active{display:block}
 
-/* ═══════════════════════════════════════════
-   카드
-═══════════════════════════════════════════ */
 .card{
   background:var(--card);
   border:1px solid var(--border);
@@ -240,9 +229,6 @@ body::before{
 }
 .card-body{padding:16px}
 
-/* ═══════════════════════════════════════════
-   요약 카드
-═══════════════════════════════════════════ */
 .summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
 .s-card{
   background:var(--card);
@@ -318,9 +304,6 @@ body::before{
   filter:grayscale(.3);
 }
 
-/* ═══════════════════════════════════════════
-   버튼
-═══════════════════════════════════════════ */
 .btn{
   display:inline-flex; align-items:center; gap:6px;
   padding:9px 18px;
@@ -385,9 +368,6 @@ body::before{
 .btn-xs{padding:4px 9px; font-size:11px; border-radius:6px}
 .btn-block{width:100%; justify-content:center}
 
-/* ═══════════════════════════════════════════
-   폼
-═══════════════════════════════════════════ */
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
 .form-row.cols3{grid-template-columns:1fr 1fr 1fr}
 .form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
@@ -404,9 +384,6 @@ body::before{
 .form-textarea{resize:vertical;line-height:1.6}
 .form-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 
-/* ═══════════════════════════════════════════
-   붙여넣기 파싱
-═══════════════════════════════════════════ */
 .paste-box{
   width:100%;min-height:110px;padding:10px;
   border:2px dashed #cbd5e1;border-radius:7px;
@@ -424,9 +401,6 @@ body::before{
 .conf-LOW{color:var(--red);font-weight:700}
 .conf-bar{display:none;align-items:center;gap:10px;padding:9px 14px;border-radius:7px;border:1px solid var(--border);background:#f8fafc;margin-top:10px;font-size:12px}
 
-/* ═══════════════════════════════════════════
-   테이블
-═══════════════════════════════════════════ */
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{padding:9px 10px;text-align:left;background:#f8fafc;color:var(--muted);font-weight:600;font-size:11px;border-bottom:1px solid var(--border);white-space:nowrap}
@@ -434,9 +408,6 @@ tbody td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:m
 tbody tr{cursor:pointer;transition:background .1s}
 tbody tr:hover{background:#f8fafc}
 
-/* ═══════════════════════════════════════════
-   배지 / 상태
-═══════════════════════════════════════════ */
 .badge{
   display:inline-flex; align-items:center; gap:4px;
   padding:3px 10px;
@@ -470,9 +441,6 @@ tbody tr:hover{background:#f8fafc}
 .ss-취소{background:#fee2e2;color:#7f1d1d;border-color:#fca5a5}
 .ss-완료{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd}
 
-/* ═══════════════════════════════════════════
-   예약 상세 모달
-═══════════════════════════════════════════ */
 .modal-overlay{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   z-index:500;align-items:flex-start;justify-content:center;
@@ -504,9 +472,6 @@ tbody tr:hover{background:#f8fafc}
   line-height:1.7;background:#fafafa;resize:vertical;
 }
 
-/* ═══════════════════════════════════════════
-   필터바
-═══════════════════════════════════════════ */
 .filter-bar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;align-items:flex-end}
 .filter-group{display:flex;flex-direction:column;gap:3px;min-width:110px}
 .filter-label{font-size:11px;font-weight:600;color:var(--muted)}
@@ -516,25 +481,16 @@ tbody tr:hover{background:#f8fafc}
 .list-count{font-size:13px;color:var(--muted)}
 .list-btns{display:flex;gap:6px;flex-wrap:wrap}
 
-/* ═══════════════════════════════════════════
-   통계
-═══════════════════════════════════════════ */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .chart-wrap{padding:14px;height:230px}
 .chart-wrap-sm{height:180px}
 
-/* ═══════════════════════════════════════════
-   메시지 발송이력
-═══════════════════════════════════════════ */
 .log-item{padding:9px 12px;border:1px solid var(--border);border-radius:7px;margin-bottom:7px;background:#fafafa;font-size:12px}
 .log-meta{display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
 .log-ch{background:#e0f2fe;color:#0369a1;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600}
 .log-preview{color:var(--muted);cursor:pointer;line-height:1.5}
 .log-full{display:none;white-space:pre-wrap;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:5px;line-height:1.7}
 
-/* ═══════════════════════════════════════════
-   토스트
-═══════════════════════════════════════════ */
 #toast{
   position:fixed;bottom:24px;right:24px;
   background:#1e293b;color:#f1f5f9;padding:10px 18px;
@@ -544,9 +500,6 @@ tbody tr:hover{background:#f8fafc}
 }
 #toast.show{opacity:1;transform:translateY(0)}
 
-/* ═══════════════════════════════════════════
-   유틸
-═══════════════════════════════════════════ */
 .mono{font-family:var(--mono)}
 .text-sm{font-size:12px}
 .text-muted{color:var(--muted)}
@@ -555,17 +508,11 @@ tbody tr:hover{background:#f8fafc}
 .empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
 hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 
-/* ═══════════════════════════════════════════
-   모바일 하단 네비
-═══════════════════════════════════════════ */
 .bottom-nav{display:none}
 .fab{display:none}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
 .sidebar-overlay.show{display:block}
 
-/* ═══════════════════════════════════════════
-   반응형
-═══════════════════════════════════════════ */
 @media(max-width:860px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -602,7 +549,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .btn-sm{min-height:36px}
   #toast{bottom:70px;right:10px;left:10px;text-align:center}
 
-  /* 테이블 → 카드형 */
+  
   .tbl-wrap table{display:none}
   .mob-cards{display:flex;flex-direction:column;gap:8px;padding:8px}
   .mob-card{
@@ -625,7 +572,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .mc-date{font-family:var(--mono);font-size:11px;color:var(--muted)}
   .mc-amount{font-family:var(--mono);font-weight:700;font-size:13px}
 
-  /* 하단 네비 */
+  
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;height:56px;
     background:#fff;border-top:1px solid var(--border);
@@ -640,7 +587,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .bnav-item.active{color:var(--blue)}
   .bnav-icon{font-size:20px;line-height:1}
 
-  /* FAB */
+  
   .fab{
     display:flex;position:fixed;bottom:66px;right:14px;
     width:50px;height:50px;background:var(--blue);color:#fff;
@@ -651,15 +598,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .fab:active{transform:scale(.93)}
 }
 
-/* ═══════════════════════════════════════════
-   목록 페이지 — 필터 + 내보내기
-═══════════════════════════════════════════ */
 .lf-card { overflow: visible !important; }
 .lf-top { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; }
 .lf-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .lf-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 4px; border-top: 1px solid var(--border); }
 
-/* 요약 바 */
 .lf-summary {
   display: flex; gap: 6px; flex-wrap: wrap;
   padding: 8px 14px; border-top: 1px solid var(--border);
@@ -680,7 +623,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .lf-sum-total  { border-color: #e2e8f0; color: var(--text); margin-left: auto; }
 .lf-sum-rev    { border-color: #6ee7b7; color: #065f46; }
 
-/* 내보내기 드롭다운 */
 .export-wrap { position: relative; }
 .export-menu {
   display: none; position: absolute; top: calc(100% + 4px); right: 0;
@@ -699,9 +641,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .export-menu button:last-child { border-bottom: none; }
 .export-menu button:hover { background: #f8fafc; }
 
-/* ═══════════════════════════════════════════
-   그룹 헤더 (주별/월별)
-═══════════════════════════════════════════ */
 .group-block { margin-bottom: 14px; }
 .group-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -728,9 +667,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .group-body { overflow: hidden; }
 .group-body.collapsed { display: none; }
 
-/* ═══════════════════════════════════════════
-   목록 테이블 — 개선
-═══════════════════════════════════════════ */
 .list-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .list-tbl thead th {
   padding: 8px 10px; text-align: left;
@@ -747,35 +683,27 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .list-tbl tbody tr:hover { background: #f0f7ff; }
 .list-tbl tbody tr:last-child td { border-bottom: none; }
 
-/* 배차/반납 시각 강조 */
 .dt-box { display: flex; flex-direction: column; gap: 1px; }
 .dt-date { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text); }
 .dt-time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .dt-arrow { font-size: 10px; color: var(--muted); padding: 0 3px; }
 
-/* 차량 셀 */
 .car-box { display: flex; flex-direction: column; gap: 2px; }
 .car-name { font-weight: 600; font-size: 13px; }
 .car-sub  { font-size: 11px; color: var(--muted); }
 
-/* 금액 */
 .amt { font-family: var(--mono); font-weight: 700; font-size: 13px; }
 
-/* 위치 셀 */
 .loc-box { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
 .loc-row { display: flex; gap: 4px; align-items: flex-start; }
 .loc-icon { color: var(--muted); flex-shrink: 0; }
 .loc-text { color: var(--text); line-height: 1.3; }
 
-/* 행 상태 색상 */
 .list-tbl tbody tr.row-확인필요 { background: #fff7ed; }
 .list-tbl tbody tr.row-취소 td { color: var(--muted); text-decoration-color: var(--muted); }
 .list-tbl tbody tr.row-취소 .car-name,
 .list-tbl tbody tr.row-취소 .dt-date { text-decoration: line-through; color: var(--muted); }
 
-/* ═══════════════════════════════════════════
-   인쇄 스타일
-═══════════════════════════════════════════ */
 @media print {
   .sidebar, .topbar, .bottom-nav, .fab, .lf-actions,
   .lf-filters, .export-wrap, .modal-overlay { display: none !important; }
@@ -788,9 +716,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .page:not(#page-list) { display: none !important; }
 }
 
-/* ═══════════════════════════════════════════════
-   캘린더 / 주별 간트 — 컨트롤 바
-═══════════════════════════════════════════════ */
 .cal-ctrl {
   display:flex; align-items:center; gap:10px; padding:10px 14px;
   flex-wrap:wrap; margin-bottom:8px;
@@ -808,9 +733,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .view-tab:hover { background:#f1f5f9; color:var(--text); }
 .view-tab.active { background:var(--blue); color:#fff; }
 
-/* ═══════════════════════════════════════════════
-   월별 캘린더
-═══════════════════════════════════════════════ */
 .month-cal { background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
 .month-dow-row {
   display:grid; grid-template-columns:repeat(7,1fr);
@@ -846,16 +768,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .mc-event:hover { opacity:.8; }
 .mc-event:active { opacity:.6; }
 .mc-more { font-size:10px; color:var(--blue); cursor:pointer; padding:1px 3px; font-weight:600; }
-/* 상태별 이벤트 색 */
+
 .ev-접수    { background:#fef3c7; color:#92400e; border-left:3px solid #f59e0b; }
 .ev-확인필요 { background:#ffedd5; color:#9a3412; border-left:3px solid #f97316; }
 .ev-확정    { background:#dcfce7; color:#14532d; border-left:3px solid #22c55e; }
 .ev-취소    { background:#f3f4f6; color:#9ca3af; border-left:3px solid #d1d5db; text-decoration:line-through; }
 .ev-완료    { background:#dbeafe; color:#1e3a8a; border-left:3px solid #3b82f6; }
 
-/* ═══════════════════════════════════════════════
-   주별 간트 뷰
-═══════════════════════════════════════════════ */
 .gantt-wrap { background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
 .gantt-header {
   display:flex; position:sticky; top:0; z-index:10;
@@ -921,15 +840,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .bar-취소    { background:#d1d5db; color:#6b7280; }
 .bar-완료    { background:#60a5fa; color:#1e3a8a; }
 
-/* 오늘 세로선 */
 .gantt-today-line {
   position:absolute; top:0; bottom:0; width:2px;
   background:rgba(239,68,68,.5); pointer-events:none; z-index:5;
 }
 
-/* ═══════════════════════════════════════════════
-   목록 테이블 뷰 (개선)
-═══════════════════════════════════════════════ */
 .list-tbl { width:100%; border-collapse:collapse; font-size:13px; }
 .list-tbl thead th {
   padding:8px 10px; text-align:left; background:#f1f5f9;
@@ -954,9 +869,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .loc-row { display:flex; gap:4px; }
 .loc-icon { color:var(--muted); flex-shrink:0; }
 
-/* ═══════════════════════════════════════════════
-   주별 주 네비
-═══════════════════════════════════════════════ */
 .week-nav {
   display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px;
 }
@@ -968,9 +880,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .week-nav-btn:hover  { background:#f1f5f9; color:var(--text); }
 .week-nav-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
 
-/* ═══════════════════════════════════════════════
-   인쇄
-═══════════════════════════════════════════════ */
 @media print {
   .sidebar,.topbar,.bottom-nav,.fab,.cal-ctrl,.export-wrap,
   .modal-overlay,.week-nav { display:none !important; }
@@ -982,9 +891,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .list-tbl thead th { background:#e2e8f0 !important; }
 }
 
-/* ═══════════════════════════════════════════════
-   내보내기 드롭다운
-═══════════════════════════════════════════════ */
 .lf-card { overflow:visible !important; }
 .lf-summary {
   display:flex; gap:6px; flex-wrap:wrap; padding:7px 14px;
@@ -1034,13 +940,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .month-cal .mc-day { font-size:12px; }
 }
 
-
-/* ═══════════════════════════════════════════════════
-   일별 뷰 CSS
-═══════════════════════════════════════════════════ */
 .day-view { display:flex; flex-direction:column; gap:12px; }
 
-/* 날짜 네비 */
 .day-nav {
   display:flex; gap:4px; flex-wrap:wrap; margin-bottom:2px;
 }
@@ -1053,7 +954,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .day-nav-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); font-weight:700; }
 .day-nav-btn.today-btn { border-color:var(--blue); color:var(--blue); }
 
-/* 날짜 헤더 */
 .day-header-bar {
   display:flex; align-items:center; justify-content:space-between;
   padding:14px 18px; background:#fff; border:1px solid var(--border);
@@ -1083,7 +983,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .ongoing-chip { background:#fef3c7; color:#92400e; border-color:#fde68a; }
 .amt-chip     { background:#f0fdf4; color:#065f46; border-color:#6ee7b7; }
 
-/* 섹션 */
 .day-section { background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
 .day-section-header {
   display:flex; align-items:center; justify-content:space-between;
@@ -1096,7 +995,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   padding:2px 10px; border-radius:10px; font-size:11px; font-weight:700;
 }
 
-/* 유형 배지 */
 .type-badge {
   display:inline-block; padding:2px 7px; border-radius:4px;
   font-size:10px; font-weight:700; margin-top:3px;
@@ -1105,7 +1003,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .type-badge.ret     { background:#dbeafe; color:#1e3a8a; }
 .type-badge.ongoing { background:#fef3c7; color:#92400e; }
 
-/* 일별 테이블 */
 .day-tbl { width:100%; border-collapse:collapse; font-size:13px; }
 .day-tbl thead th {
   padding:8px 10px; text-align:left; background:#f8fafc;
@@ -1117,7 +1014,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .day-row:last-child { border-bottom:none; }
 .day-row td { padding:10px 10px; vertical-align:middle; }
 
-/* 상태별 행 색상 */
 .day-row.ev-접수    { background:#fffdf0; }
 .day-row.ev-확인필요 { background:#fff8f2; }
 .day-row.ev-확정    { background:#f0fff4; }
@@ -1136,13 +1032,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .day-loc   { font-size:12px; max-width:160px; }
 .day-period { white-space:nowrap; }
 
-/* 빈 날 */
 .day-empty {
   padding:60px 20px; text-align:center;
   background:#fff; border:1px solid var(--border); border-radius:10px;
 }
 
-/* 메모 박스 */
 .day-memo-box {
   background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden;
 }
@@ -1154,13 +1048,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 .day-memo-input:focus { outline:none; background:#fff; }
 
-/* 인쇄 */
 @media print {
   .day-nav, .day-header-right .btn { display:none !important; }
   .day-row.ev-취소 { display:none !important; }
 }
 
-/* 모바일 일별 */
 @media(max-width:480px) {
   .day-big-date { font-size:18px; }
   .day-tbl thead th:nth-child(4),
@@ -1171,10 +1063,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .day-nav-btn { padding:4px 8px; font-size:11px; }
 }
 
-
-/* ═══════════════════════════════════════════════════
-   목록 인라인 메시지 패널
-═══════════════════════════════════════════════════ */
 .msg-quick-btn {
   background:none; border:1px solid #93c5fd; border-radius:6px;
   padding:4px 8px; cursor:pointer; font-size:14px;
@@ -1210,7 +1098,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 .mip-textarea:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 
-/* 모바일 메시지 버튼 */
 .mc-msg-row { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 .msg-quick-btn-mob {
   width:100%; padding:8px; border:1px solid #93c5fd; border-radius:7px;
@@ -1220,8 +1107,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .msg-quick-btn-mob:hover { background:#dbeafe; }
 .mob-msg-panel { margin-top:8px; }
 
-
-/* 차량 주의사항 */
 .car-note-item {
   border-bottom: 1px solid var(--border);
   overflow: hidden;
@@ -1238,10 +1123,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   max-height: 160px; overflow-y: auto; background: #fafafa;
 }
 
-
-/* ═══════════════════════════════════════════════════
-   IMS form 스타일 대시보드
-═══════════════════════════════════════════════════ */
 .summary-grid {
   display:grid;
   grid-template-columns:repeat(6,1fr);
@@ -1249,7 +1130,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   margin-bottom:18px;
 }
 
-/* 대시보드 매거진 스타일 헤더 */
 .dash-month-header {
   display:flex; align-items:flex-end; justify-content:space-between;
   margin-bottom:24px;
@@ -1287,7 +1167,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 .dash-quick-btns { display:flex; gap:8px; align-items:center;}
 
-/* 폼 스타일 개선 */
 .form-input, .form-select, .form-textarea {
   border-radius:9px;
   border:1.5px solid var(--border);
@@ -1304,7 +1183,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   color:var(--muted2);
 }
 
-/* 테이블 헤더 */
 table thead th {
   background:var(--bg) !important;
   font-family:var(--display);
@@ -1335,7 +1213,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 .ss-취소{background:#fef2f2; color:#b91c1c; border-color:#fecaca;}
 .ss-완료{background:#eff6ff; color:#1e40af; border-color:#bfdbfe;}
 
-/* 반응형 */
 @media(max-width:1200px) {
   .summary-grid { grid-template-columns:repeat(3,1fr); }
 }
@@ -1348,24 +1225,18 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .s-card { padding:14px 14px !important; }
 }
 
-
-/* 로고 이미지 — 검정 로고를 흰색으로 반전 */
 .logo-img {
   width: 150px;
   max-width: 100%;
   height: auto;
   object-fit: contain;
   display: block;
-  /* 검정 픽셀 → 흰색으로 변환 */
+  
   filter: brightness(0) invert(1);
   opacity: 0.92;
 }
 .logo { display:flex; align-items:center; gap:11px; }
 
-
-/* ═══════════════════════════════════════════════════
-   발송 버튼
-═══════════════════════════════════════════════════ */
 .btn-kakao {
   background:#FEE500; color:#191919;
   border:none; border-radius:7px;
@@ -1403,10 +1274,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 .send-result-badge.kakao { background:#fff9c4; color:#7d6608; border:1px solid #FEE500; }
 .send-result-badge.sms   { background:#d4efdf; color:#1a6632; border:1px solid #2ecc71; }
 
-
-/* ═══════════════════════════════════════════════════
-   차량 관리 페이지
-═══════════════════════════════════════════════════ */
 .vehicle-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1474,11 +1341,9 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   display: flex; gap: 6px; background: #f8fafc;
 }
 
-/* 보험 만기 경고 */
 .ins-warn { color: #e03131; font-size: 11px; font-weight: 700; }
 .ins-ok   { color: #16a34a; font-size: 11px; }
 
-/* 차량 빈 상태 */
 .vehicle-empty {
   grid-column: 1/-1;
   padding: 60px 20px; text-align: center;
@@ -1492,14 +1357,10 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .vehicle-grid { grid-template-columns: 1fr; }
 }
 
-
-/* ═══════════════════════════════════════════════════
-   차량 관리 — 테이블 뷰 개선
-═══════════════════════════════════════════════════ */
 .vtbl {
   width: 100%; border-collapse: collapse; font-size: 13px;
 }
-/* 차량 테이블 컨테이너 스크롤 */
+
 #vehicleTable .tbl-wrap {
   max-height: calc(100vh - 320px);
   overflow-y: auto;
@@ -1507,7 +1368,7 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 #vehicleTable .tbl-wrap::-webkit-scrollbar { width: 6px; }
 #vehicleTable .tbl-wrap::-webkit-scrollbar-track { background: #f1f5f9; }
 #vehicleTable .tbl-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-/* 테이블 헤더 — 컨테이너 내부에서 sticky */
+
 #vehicleTable .vtbl thead th {
   position: sticky; top: 0; z-index: 5;
 }
@@ -1525,13 +1386,11 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 .vtbl-row:hover { background: #f4f7ff !important; }
 .vtbl-row:last-child { border-bottom: none; }
 
-/* 차량 요약 그리드 — 4열 고정 */
 #vehicleSummary {
   grid-template-columns: repeat(4, 1fr) !important;
   margin-bottom: 12px;
 }
 
-/* 검색/필터 바 */
 .v-ctrl-bar {
   display: flex; flex-wrap: wrap; gap: 8px;
   padding: 12px 14px; align-items: center;
@@ -1553,10 +1412,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .vtbl-row td:nth-child(7) { display: none; }
 }
 
-
-/* ═══════════════════════════════════════════════
-   스크롤바 정교화
-═══════════════════════════════════════════════ */
 ::-webkit-scrollbar{width:10px; height:10px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{
@@ -1565,22 +1420,13 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   border:2px solid var(--bg);
 }
 ::-webkit-scrollbar-thumb:hover{background:var(--text2);}
-/* 사이드바 스크롤 */
+
 .sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1); border:none;}
 .sidebar ::-webkit-scrollbar-thumb:hover{background:rgba(212,168,67,.3);}
 
-/* ═══════════════════════════════════════════════
-   선택 효과
-═══════════════════════════════════════════════ */
 ::selection{background:var(--gold); color:#0a0e1a;}
 ::-moz-selection{background:var(--gold); color:#0a0e1a;}
 
-
-/* ═══════════════════════════════════════════════
-   추가 디테일 — 캘린더, 간트, 미니 요소
-═══════════════════════════════════════════════ */
-
-/* 월별 캘린더 */
 .month-cal {
   border-radius:14px;
   box-shadow:var(--shadow-sm);
@@ -1606,7 +1452,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   box-shadow:var(--shadow-gold);
 }
 
-/* 간트 차트 */
 .gantt-wrap {
   border-radius:14px;
   box-shadow:var(--shadow-sm);
@@ -1640,7 +1485,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   box-shadow:0 6px 16px rgba(0,0,0,.25);
 }
 
-/* 일별 뷰 */
 .day-header-bar {
   border-radius:14px;
   border:1px solid var(--border);
@@ -1662,7 +1506,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   font-weight:800;
 }
 
-/* 차량 카드 그리드 — 살짝 그라데이션 */
 .vehicle-card {
   background:linear-gradient(180deg, #fff 0%, #fafafa 100%);
   border-radius:14px;
@@ -1683,7 +1526,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   background-clip:text;
 }
 
-/* 요약바 */
 .lf-summary {
   background:linear-gradient(180deg, #fff, #f8fafc);
   border-radius:0 0 14px 14px !important;
@@ -1700,7 +1542,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   letter-spacing:-.025em;
 }
 
-/* 메시지 발송 패널 */
 .msg-inline-panel {
   background:linear-gradient(135deg, #f8fafc, #f0f7ff);
   border-radius:0;
@@ -1713,7 +1554,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   letter-spacing:-.02em;
 }
 
-/* 폼 라벨 */
 .form-label {
   font-family:var(--display);
   font-weight:700;
@@ -1729,19 +1569,16 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   color:var(--red);
 }
 
-/* 모노 숫자 정렬 */
 .mono, .amt {
   font-feature-settings:'tnum' 1;
   font-variant-numeric:tabular-nums;
   letter-spacing:-.01em;
 }
 
-/* 차량 헤더 카드 그라데이션 */
 .vehicle-grid .vehicle-card .vc-header {
   background:linear-gradient(180deg, #fff, #fafafa);
 }
 
-/* 페이지 진입 애니메이션 */
 .page.active {
   animation:pageIn .4s var(--ease-out);
 }
@@ -1750,7 +1587,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   to   { opacity:1; transform:translateY(0); }
 }
 
-/* 반응형 모바일 폰트 사이즈 조정 */
 @media(max-width:480px) {
   .dash-month-title { font-size:24px !important; }
   .s-val { font-size:24px !important; }
@@ -1760,8 +1596,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .topbar-title { font-size:15px; }
 }
 
-
-/* 미세 노이즈 텍스처 — 고급스러운 종이 질감 */
 body::after{
   content:''; position:fixed; inset:0;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .15 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -1771,10 +1605,6 @@ body::after{
   z-index:0;
 }
 
-
-/* ═══════════════════════════════════════════
-   일정표 스타일
-═══════════════════════════════════════════ */
 .sched-tbl {
   width:100%; border-collapse:collapse; font-size:13px;
   min-width:700px;
@@ -2446,9 +2276,6 @@ firebase.initializeApp({
 });
 const fbDb = firebase.database();
 
-/* ═══════════════════════════════════════════════════
-   저장소 (localStorage)
-═══════════════════════════════════════════════════ */
 const STORE_KEY   = 'rentcar_reservations';
 const TMPL_KEY    = 'rentcar_templates';
 const LOG_KEY     = 'rentcar_logs';
@@ -2514,8 +2341,6 @@ function deleteOne(id) {
   fbDb.ref('reservations/' + id).remove();
 }
 
-
-
 function loadConfig()  { try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {company:'대구렌트카',phone:'053-000-0000'}; } catch(e){ return {company:'대구렌트카',phone:'053-000-0000'}; } }
 
 function getDefaultTemplates() {
@@ -2532,9 +2357,6 @@ function initId() {
 }
 initId();
 
-/* ═══════════════════════════════════════════════════
-   파싱 엔진
-═══════════════════════════════════════════════════ */
 function parseText(raw) {
   const text = raw;
   const r = {
@@ -3072,14 +2894,6 @@ function fmtAmtHtml(amount, size='normal') {
   return `<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">💰 금액 차후</span>`;
 }
 
-
-
-
-
-
-/* ═══════════════════════════════════════════════════
-   중복·충돌 감지
-═══════════════════════════════════════════════════ */
 function checkDuplicate(data, r, excludeId){
   if(!r.customer_name||!r.phone) return false;
   return data.some(x=> x.id!==excludeId && x.customer_name===r.customer_name && x.phone===r.phone && x.start_datetime===r.start_datetime && x.reservation_status!=='취소');
@@ -3089,9 +2903,6 @@ function checkConflict(data, r, excludeId){
   return data.some(x=> x.id!==excludeId && x.car_name===r.car_name && !['취소','완료'].includes(x.reservation_status) && x.start_datetime<r.end_datetime && x.end_datetime>r.start_datetime);
 }
 
-/* ═══════════════════════════════════════════════════
-   페이지 전환
-═══════════════════════════════════════════════════ */
 const PAGE_TITLES = { dashboard:'대시보드', new:'예약 등록', list:'예약 목록', vehicles:'차량 관리', stats:'통계', templates:'메시지 템플릿', schedule:'일정표' };
 
 function goPage(page) {
@@ -3116,13 +2927,6 @@ function goPage(page) {
   window.scrollTo(0,0);
 }
 
-/* ═══════════════════════════════════════════════════
-   파싱 버튼
-═══════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════
-   계약금 / 잔금 자동 계산
-═══════════════════════════════════════════════════ */
 function calcBalance() {
   const total   = parseInt(document.getElementById('f_amount')?.value  || 0) || 0;
   const deposit = parseInt(document.getElementById('f_deposit')?.value || 0) || 0;
@@ -3210,9 +3014,6 @@ function clearForm() {
   document.getElementById('deleteBtn').style.display='none';
 }
 
-/* ═══════════════════════════════════════════════════
-   예약 저장
-═══════════════════════════════════════════════════ */
 function saveReservation(e) {
   e.preventDefault();
   const g=(id)=>{ const el=document.getElementById(id); return el?el.value.trim():''; };
@@ -3269,10 +3070,6 @@ function saveReservation(e) {
   goPage('list');
 }
 
-
-/* ═══════════════════════════════════════════════════
-   예약 ↔ 차량 상태 자동 연동
-═══════════════════════════════════════════════════ */
 function syncVehicleStatus() {
   const reservations = loadData();
   const vehicles     = loadVehicles();
@@ -3345,9 +3142,6 @@ function syncAndRefresh() {
 
 function now8(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
 
-/* ═══════════════════════════════════════════════════
-   예약 목록
-═══════════════════════════════════════════════════ */
 function getFiltered() {
   let data = loadData();
   const st=document.getElementById('fStatus')?.value||'';
@@ -3365,9 +3159,6 @@ function getFiltered() {
   return data.sort((a,b)=>b.id-a.id);
 }
 
-/* ═══════════════════════════════════════════════════
-   캘린더 / 간트 / 목록 — 상태 관리
-═══════════════════════════════════════════════════ */
 let calDate    = new Date();   // 기준 날짜
 let calView    = 'month';      // 'month' | 'week' | 'tlist'
 let ganttWeekOffset = 0;       // 주별: 0=이번주, -1=지난주 ...
@@ -3402,9 +3193,6 @@ function calToday() {
   renderList();
 }
 
-/* ═══════════════════════════════════════════════════
-   메인 renderList
-═══════════════════════════════════════════════════ */
 function renderList() {
   const allData = getFiltered();
 
@@ -3465,9 +3253,6 @@ function renderList() {
   else                        renderTList(allData);
 }
 
-/* ═══════════════════════════════════════════════════
-   월별 캘린더
-═══════════════════════════════════════════════════ */
 function renderMonthCal(allData) {
   const y = calDate.getFullYear(), m = calDate.getMonth();
   const today = new Date();
@@ -3554,9 +3339,6 @@ function showDayDetail(y, m, d) {
   jumpToDayView(`${y}-${pad(m)}-${pad(d)}`);
 }
 
-/* ═══════════════════════════════════════════════════
-   주별 간트 뷰
-═══════════════════════════════════════════════════ */
 function getWeekRange(base) {
   const d = new Date(base);
   const dow = d.getDay();
@@ -3692,13 +3474,6 @@ function jumpToDay(dateStr) {
   showToast(`${dateStr} 예약 ${evs.length}건`);
 }
 
-/* ═══════════════════════════════════════════════════
-   목록 테이블 뷰
-═══════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════
-   일별 뷰 — 하루 전체 예약 한눈에
-═══════════════════════════════════════════════════ */
 function renderDayView(allData) {
   const y  = calDate.getFullYear();
   const m  = calDate.getMonth()+1;
@@ -3863,7 +3638,6 @@ function renderDayView(allData) {
   document.getElementById('calBody').innerHTML = html2;
 }
 
-
 function todayDayView() {
   calDate = new Date();
   calView = 'day';
@@ -3906,9 +3680,6 @@ function renderTList(allData) {
     </div>`;
 }
 
-/* ═══════════════════════════════════════════════════
-   공통 테이블 / 카드 빌더
-═══════════════════════════════════════════════════ */
 function buildTable(data) {
   if(!data.length) return '<div class="empty">데이터 없음</div>';
   return `<table class="list-tbl">
@@ -4025,10 +3796,6 @@ function buildMobCards(data) {
     </div>`).join('');
 }
 
-
-/* ═══════════════════════════════════════════════════
-   목록 인라인 메시지 패널 함수
-═══════════════════════════════════════════════════ */
 function _fillTmplSelect(selId) {
   const sel = document.getElementById(selId);
   if(!sel) return;
@@ -4167,11 +3934,6 @@ function _buildMsg(r, tmplContent) {
   return msg;
 }
 
-
-/* ═══════════════════════════════════════════════════
-   카카오톡 / 문자 발송
-═══════════════════════════════════════════════════ */
-
 // 카카오톡 앱으로 메시지 전달 (카카오링크 방식)
 // 앱이 설치되어 있으면 카카오톡으로, 없으면 웹으로 안내
 function sendKakao(phone, message) {
@@ -4303,9 +4065,6 @@ function _copyText(text) {
     });
 }
 
-/* ═══════════════════════════════════════════════════
-   상태 변경 / 필터 / 오늘
-═══════════════════════════════════════════════════ */
 function quickStatus(id, sel) {
   const status = sel.value;
   const data = loadData();
@@ -4348,9 +4107,6 @@ function filterToday(type) {
   goPage('list');
 }
 
-/* ═══════════════════════════════════════════════════
-   내보내기
-═══════════════════════════════════════════════════ */
 function exportRows() {
   return getFiltered().map(r=>[
     r.id,r.customer_name,r.phone,r.start_datetime,r.end_datetime,
@@ -4408,10 +4164,6 @@ function exportGoogleSheet() {
 }
 function exportPrint() { window.print(); }
 
-
-/* ═══════════════════════════════════════════════════
-   캘린더 보조 함수
-═══════════════════════════════════════════════════ */
 function findNearestReservation(data, baseDate) {
   // baseDate 기준으로 가장 가까운 미래(또는 과거) 예약 반환
   if(!data.length) return null;
@@ -4432,10 +4184,6 @@ function jumpToReservationDate(dtStr) {
   renderList();
 }
 
-
-/* ═══════════════════════════════════════════════════
-   메시지 템플릿 관리
-═══════════════════════════════════════════════════ */
 function renderTemplates() {
   const tmpls = loadTmpls();
   document.getElementById('tmplCount').textContent = `템플릿 ${tmpls.length}개`;
@@ -4504,9 +4252,6 @@ function copyToken(el) {
   navigator.clipboard.writeText(el.textContent).then(()=>showToast('복사됨: '+el.textContent));
 }
 
-/* ═══════════════════════════════════════════════════
-   차량별 주의사항 관리
-═══════════════════════════════════════════════════ */
 const CARNOTE_KEY = 'rentcar_car_notes';
 
 function loadCarNotes() {
@@ -4612,10 +4357,6 @@ function deleteCarNote(id) {
   showToast('삭제되었습니다.');
 }
 
-
-/* ═══════════════════════════════════════════════════
-   차량 관리 — 저장소
-═══════════════════════════════════════════════════ */
 const VEHICLE_KEY = 'rentcar_vehicles';
 
 function loadVehicles() {
@@ -4629,8 +4370,6 @@ function loadVehicles() {
     return saved;
   } catch(e) { return []; }
 }
-
-
 
 function manualSync() {
   const changed = syncVehicleStatus();
@@ -4649,7 +4388,6 @@ function saveVehicles(arr) {
   localStorage.setItem(VEHICLE_KEY, JSON.stringify(arr));
 }
 
-/* ── 렌더링 ── */
 function renderVehicles() {
   const vehicles = loadVehicles();
   const filterStatus = document.getElementById('vFilterStatus')?.value || '';
@@ -4793,8 +4531,6 @@ function renderVehicles() {
   }).join('');
 }
 
-/* ── 상태 즉시 변경 ── */
-
 function buildVehicleTable(filtered) {
   const today2 = new Date();
   const todayStr2 = today2.getFullYear()+'-'+pad(today2.getMonth()+1)+'-'+pad(today2.getDate());
@@ -4909,7 +4645,6 @@ function changeVehicleStatus(id, status, sel) {
   showToast(`${v?.name||''} → ${status}`);
 }
 
-/* ── 차량 일정 보기 ── */
 function viewVehicleSchedule(id) {
   const vehicles = loadVehicles();
   const v = vehicles.find(x=>x.id===id);
@@ -4921,7 +4656,6 @@ function viewVehicleSchedule(id) {
   showToast(`${v.name} 예약 일정을 표시합니다`);
 }
 
-/* ── 차량 등록/수정 폼 ── */
 let _editVehicleId = null;
 
 function openVehicleForm(id) {
@@ -5009,10 +4743,6 @@ document.addEventListener('click', e => {
   if(menu && !e.target.closest('.export-wrap')) menu.classList.remove('open');
 });
 
-
-/* ═══════════════════════════════════════════════════
-   사이드바 / 토스트
-═══════════════════════════════════════════════════ */
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('show');
@@ -5022,10 +4752,6 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay').classList.remove('show');
 }
 
-
-/* ═══════════════════════════════════════════════════
-   예약 상세 모달
-═══════════════════════════════════════════════════ */
 function openDetail(id) {
   const data = loadData();
   const r = data.find(x=>x.id===id);
@@ -5176,7 +4902,6 @@ function saveDetailEdit(id) {
   openDetail(id); // 저장 후 다시 상세 뷰로
 }
 
-
 function modalQuickStatus(id, sel) {
   quickStatus(id, sel);
 }
@@ -5255,10 +4980,6 @@ function toggleLog(el) {
   el.style.display = 'none';
 }
 
-
-/* ═══════════════════════════════════════════════════
-   대시보드
-═══════════════════════════════════════════════════ */
 function renderDashboard() {
   const data = loadData();
   const today = new Date();
@@ -5440,9 +5161,6 @@ function renderDashboard() {
     </div>`;
 }
 
-/* ═══════════════════════════════════════════════════
-   통계
-═══════════════════════════════════════════════════ */
 let chartInstances = {};
 
 function initStatsFilters() {
@@ -5529,9 +5247,6 @@ function showToast(msg, ms=2500) {
   _toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
 }
 
-/* ═══════════════════════════════════════════════════
-   초기화
-═══════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   // 오늘 날짜 표시
   const d = new Date();
@@ -5583,7 +5298,6 @@ function schedPrint() {
     showScheduleTab(idx, activeBtn);
   }, 500);
 }
-
 
 </script>
 </body>
