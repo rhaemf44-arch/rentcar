@@ -7615,7 +7615,7 @@ function renderWeekend() {
   const reservations = loadData();
 
   // 보유 차량 (실제 소유)
-  // ★ FLEET을 차량 DB에서 동적으로 생성 (등록된 모든 차량 자동 반영)
+  // ★ FLEET을 차량 DB에서 동적으로 생성 (등록된 차량만 반영)
   //    번호판 끝 4자리만 추출
   const allVehicles = (typeof loadVehicles === 'function') ? loadVehicles() : [];
   const FLEET = { '쏠라티': [], '스타리아': [], '카니발': [] };
@@ -7624,18 +7624,6 @@ function renderWeekend() {
     if (!cat || !FLEET[cat]) return;
     const plate4 = (v.plate||'').match(/(\d{4})$/);
     if (plate4 && !FLEET[cat].includes(plate4[1])) FLEET[cat].push(plate4[1]);
-  });
-  // 예약에 나타난 plate 중 차량 DB에 없는 것도 자동 추가
-  const allRes = (typeof loadData === 'function') ? loadData() : [];
-  allRes.forEach(r => {
-    const cat = getWeekendCategoryFromName(r.car_name);
-    if (!cat || !FLEET[cat]) return;
-    const plate = extractPlate(r.notes, r.car_name) || r.plate || '';
-    // 4자리 번호 모두 추출 (택1 형식 "3369/4415" 도 분리)
-    const plates4 = plate.match(/\d{4}/g) || [];
-    plates4.forEach(p4 => {
-      if (!FLEET[cat].includes(p4)) FLEET[cat].push(p4);
-    });
   });
   // 정렬 (보기 편하게)
   Object.keys(FLEET).forEach(k => FLEET[k].sort());
