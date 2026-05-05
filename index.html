@@ -11,7 +11,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<!-- ★ Firebase SDK (compat) — init 코드는 메인 스크립트 맨 앞에 있음 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +23,119 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@600;800;900&display=swap" rel="stylesheet">
 
 <style>
+/* ═══ ERP 기본: 사이드바/레이아웃 ═══ */
+:root {
+  --bg:        #f0f2f5;
+  --bg2:       #e4e7ec;
+  --card:      #ffffff;
+  --sidebar:   #1a1d23;
+  --sidebar2:  #22262e;
+  --sidebar3:  #2a2f3a;
+  --gold:      #2d6cdf;
+  --gold2:     #4a85f0;
+  --gold-soft: #eef3fd;
+  --blue:      #2d6cdf;
+  --blue2:     #4a85f0;
+  --green:     #2e7d32;
+  --orange:    #e65100;
+  --red:       #c62828;
+  --yellow:    #f9a825;
+  --purple:    #6a1b9a;
+  --teal:      #00838f;
+  --text:      #1a1d23;
+  --text2:     #3d4350;
+  --muted:     #6b7280;
+  --border:    #d1d5db;
+  --border2:   #e5e7eb;
+  --radius:    2px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08);
+  --font:      'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif;
+  --transition: 0.15s ease;
+  --shadow2: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow3: 0 4px 16px rgba(0,0,0,0.12);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  display: flex;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 사이드바 */
+.sidebar {
+  width: 180px; min-width: 180px;
+  background: var(--sidebar);
+  color: #c8cdd6;
+  display: flex; flex-direction: column;
+  position: fixed; top:0; left:0; bottom:0;
+  z-index: 200; overflow-y: auto;
+}
+.sidebar-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2f3542;
+}
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 16px; }
+.logo-text { font-size: 11.5px; font-weight: 700; color: #fff; line-height: 1.3; }
+.nav-menu { list-style: none; padding: 6px 0; }
+.nav-menu .nav-item { display: block; }
+.nav-menu .nav-item button {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px; font-size: 12.5px; color: #9aa3b2;
+  cursor: pointer; border: none; background: none;
+  border-left: 3px solid transparent; text-align: left;
+  font-family: var(--font); white-space: nowrap; transition: all 0.15s;
+}
+.nav-menu .nav-item button:hover { background: var(--sidebar2); color: #d1d5db; }
+.nav-menu .nav-item.active button {
+  background: var(--sidebar2); color: #fff;
+  border-left-color: var(--blue); font-weight: 600;
+}
+.nav-icon { font-size: 13px; width: 16px; text-align: center; }
+.sidebar-bottom-menu { border-top: 1px solid #2f3542; padding: 6px 0; }
+.sidebar-bottom-menu .nav-item button { font-size: 11.5px; padding: 6px 16px; }
+.sidebar-quick-items { padding: 4px 0; }
+.sq-item {
+  padding: 5px 16px; font-size: 11px; color: #6b7a99;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.sq-item:hover { background: var(--sidebar2); color: #d1d5db; }
+.sq-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* 메인 */
+.main-wrap { margin-left: 180px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar {
+  height: 44px; background: #fff; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.topbar-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.today-badge {
+  font-size: 11.5px; color: var(--muted); background: var(--bg);
+  padding: 3px 8px; border-radius: 2px; border: 1px solid var(--border);
+}
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 4px; padding: 9px 18px; font-size: 13px;
+  font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 150; display: flex; align-items: center; gap: 6px;
+}
+
+/* 하단 탭 */
+.bottom-nav { display: none; }
+.mob-card { display: none; }
+
+
 /* ═══════════════════════════════════════════
    기본 변수 & 리셋
 ═══════════════════════════════════════════ */
@@ -159,6 +276,7 @@ body::before{
   margin-left:var(--sidebar-w);
   flex:1; display:flex; flex-direction:column;
   min-height:100vh;
+  overflow-x:hidden;
 }
 .topbar{
   position:sticky; top:0; z-index:90;
@@ -197,7 +315,7 @@ body::before{
   letter-spacing:.02em;
   box-shadow:var(--shadow-xs);
 }
-.content{padding:24px; flex:1}
+.content{padding:24px; padding-bottom:80px; flex:1; min-height:0;}
 
 /* ═══════════════════════════════════════════
    페이지 전환
@@ -652,6 +770,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
    목록 페이지 — 필터 + 내보내기
 ═══════════════════════════════════════════ */
 .lf-card { overflow: visible !important; }
+/* 캘린더 카드 — 마지막 행 잘림 방지 */
+#page-list .card { overflow: visible !important; }
+.month-cal { overflow: visible !important; }
 .lf-top { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; }
 .lf-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .lf-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 4px; border-top: 1px solid var(--border); }
@@ -808,7 +929,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 /* ═══════════════════════════════════════════════
    월별 캘린더
 ═══════════════════════════════════════════════ */
-.month-cal { background:#fff; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.month-cal { background:#fff; border:1px solid var(--border); border-radius:10px; }
 .month-dow-row {
   display:grid; grid-template-columns:repeat(7,1fr);
   background:#f8fafc; border-bottom:1px solid var(--border);
@@ -819,9 +940,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 .month-dow.sun { color:#ef4444; }
 .month-dow.sat { color:#3b82f6; }
-.month-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+.month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(80px,auto); }
 .month-cell {
-  min-height:96px; border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+  min-height:80px; height:auto; border-right:1px solid var(--border); border-bottom:1px solid var(--border);
   padding:4px; position:relative; background:#fff; transition:background .1s;
 }
 .month-cell:nth-child(7n){ border-right:none; }
@@ -1777,11 +1898,14 @@ body::after{
   min-width:700px;
 }
 .sched-tbl th {
-  background:linear-gradient(180deg,#1e293b,#0f172a);
-  color:#f1f5f9; font-weight:700; font-size:12px;
-  padding:10px 12px; text-align:left; white-space:nowrap;
-  position:sticky; top:0; z-index:2;
-  border-bottom:2px solid var(--gold);
+  background: #e8edf2;
+  color: #1a1d23;
+  font-weight: 700;
+  padding: 7px 10px;
+  border: 1px solid #c8cdd6;
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: left;
 }
 .sched-tbl td {
   padding:9px 12px; border-bottom:1px solid var(--border);
@@ -1806,7 +1930,51 @@ body::after{
   .sidebar,.topbar,.fab,.bottom-nav,.btn,.export-wrap { display:none!important; }
   .main-wrap { margin-left:0!important; }
   .sched-sheet { display:block!important; page-break-after:always; }
-  .sched-tbl th { background:#1e293b!important; color:#fff!important; -webkit-print-color-adjust:exact; }
+  .sched-tbl th { background:#e8edf2!important; color:#1a1d23!important; -webkit-print-color-adjust:exact; }
+}
+
+
+/* 일정표 편집 가능 셀 */
+#schedTblAll td.num-cell:hover,
+#schedTblAll td.name-cell:hover,
+#schedTblAll td.phone-cell:hover,
+.sched-tbl td.num-cell:hover,
+.sched-tbl td.name-cell:hover,
+.sched-tbl td.phone-cell:hover {
+  background: #eef3fd !important;
+  outline: 1px dashed #2d6cdf;
+  cursor: text;
+}
+.sched-tbl td.num-cell::after,
+.sched-tbl td.name-cell::after,
+.sched-tbl td.phone-cell::after,
+#schedTblAll td.num-cell::after,
+#schedTblAll td.name-cell::after,
+#schedTblAll td.phone-cell::after {
+  content: ' ✎';
+  font-size: 10px;
+  color: #9ca3af;
+  opacity: 0;
+}
+.sched-tbl td.num-cell:hover::after,
+.sched-tbl td.name-cell:hover::after,
+.sched-tbl td.phone-cell:hover::after,
+#schedTblAll td.num-cell:hover::after,
+#schedTblAll td.name-cell:hover::after,
+#schedTblAll td.phone-cell:hover::after {
+  opacity: 1;
+}
+
+/* 일정표 헤더 통일 */
+#schedTblAll th, #schedTblDone th, .sched-tbl th {
+  background: #e8edf2 !important;
+  color: #1a1d23 !important;
+  font-weight: 700 !important;
+  padding: 7px 10px !important;
+  border: 1px solid #c8cdd6 !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  text-align: left !important;
 }
 </style>
 </head>
@@ -1847,6 +2015,11 @@ body::after{
 <div class="topbar-title" id="topbarTitle">대시보드</div>
     <div class="topbar-right">
       <span class="today-badge" id="todayBadge"></span>
+      <!-- Firebase 연결 상태 -->
+      <span id="fbStatusBadge" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--bg);padding:3px 10px;border-radius:100px;border:1px solid var(--border)">
+        <span id="fbStatusDot" style="width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;transition:background .3s;"></span>
+        <span id="fbStatusText">연결 중...</span>
+      </span>
       <button class="btn btn-primary btn-sm" onclick="goPage('new')">+ 예약등록</button>
     </div>
   </header>
@@ -2197,13 +2370,23 @@ body::after{
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span style="font-size:15px;font-weight:800;color:var(--text)">📋 일정표</span>
           <div style="display:flex;gap:6px;flex-wrap:wrap" id="schedTabBar">
-            <button class="view-tab active" onclick="showScheduleTab(0,this)">🚐 쏠라티</button>
+            <button class="view-tab active" onclick="showScheduleTab(-1,this)">📋 전체</button>
+            <button class="view-tab" onclick="showScheduleTab(0,this)">🚐 쏠라티</button>
             <button class="view-tab" onclick="showScheduleTab(1,this)">🚐 스타리아</button>
             <button class="view-tab" onclick="showScheduleTab(2,this)">🚐 카니발</button>
             <button class="view-tab" onclick="showScheduleTab(3,this)">🚙 승용</button>
+            <button class="view-tab" onclick="showScheduleTab(99,this)" style="color:#c62828;border-color:#fecaca">🏁 대여종료 <span id="doneCountBadge" style="font-size:10px;background:#fecaca;color:#c62828;padding:1px 6px;border-radius:10px;margin-left:3px"></span></button>
           </div>
         </div>
         <button class="btn btn-outline btn-sm" onclick="schedPrint()">🖨️ 인쇄</button>
+      </div>
+
+      <div class="sched-sheet" id="schedSheetAll">
+        <div class="card"><div class="card-header"><span class="card-title">📋 전체 일정표</span></div>
+        <div style="overflow-x:auto"><table class="sched-tbl" id="schedTblAll">
+          <thead><tr><th>대여일시</th><th>반납일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>연락처</th><th>배차·메모</th></tr></thead>
+          <tbody></tbody>
+        </table></div></div>
       </div>
 
       <div class="sched-sheet" id="schedSheet0">
@@ -2239,6 +2422,19 @@ body::after{
       </div>
 
       
+
+      <div class="sched-sheet" id="schedSheetDone" style="display:none">
+        <div class="card">
+          <div class="card-header" style="background:#fef2f2">
+            <span class="card-title" style="color:#c62828">🏁 대여종료 — 반납 완료된 예약</span>
+            <span id="doneCount" style="margin-left:8px;font-size:11px;color:#888"></span>
+          </div>
+          <div style="overflow-x:auto"><table class="sched-tbl" id="schedTblDone">
+            <thead><tr><th>대여일시</th><th>반납일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>연락처</th><th>배차·메모</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+      </div>
     </div>
 
     <div class="page" id="page-templates">
@@ -2459,25 +2655,150 @@ body::after{
 
 <script>
 /* ═══════════════════════════════════════════════════
-   저장소 (localStorage)
+   Firebase 전역 변수 & 함수 선언
+   (메인 스크립트 맨 앞 — SDK CDN 로드 후 실행됨)
 ═══════════════════════════════════════════════════ */
-const STORE_KEY   = 'rentcar_reservations';
+var db;           // Firebase DB 인스턴스 (DOMContentLoaded에서 초기화)
+var FB_RES  = 'reservations';
+var FB_VEH  = 'vehicles';
+var FB_TMPL = 'templates';
+var FB_LOG  = 'logs';
+var FB_CFG  = 'config';
+
+// 인메모리 캐시 — 실시간 리스너가 항상 최신으로 유지
+var _cache = {
+  reservations: [],
+  vehicles:     [],
+  templates:    [],
+  logs:         [],
+  config:       { company:'대구렌트카', phone:'053-000-0000' }
+};
+var _fbReady = false;
+
+function _setFbStatus(online) {
+  var el = document.getElementById('fbStatusDot');
+  var tx = document.getElementById('fbStatusText');
+  if (!el) return;
+  el.style.background = online ? '#22c55e' : '#f59e0b';
+  tx.textContent = online ? 'Firebase 연결됨' : '오프라인 (로컬 캐시)';
+}
+
+function _toObj(arr) {
+  var o = {};
+  arr.forEach(function(r) { if (r && r.id != null) o[r.id] = r; });
+  return o;
+}
+function _toArr(snapshot) {
+  var arr = [];
+  snapshot.forEach(function(child) { arr.push(child.val()); });
+  return arr;
+}
+function _refreshCurrentPage() {
+  var active = document.querySelector('.page.active');
+  if (!active) return;
+  var id = active.id;
+  if (id === 'page-dashboard') { if(typeof renderDashboard==='function') renderDashboard(); }
+  else if (id === 'page-list') { if(typeof renderList==='function') renderList(); }
+  else if (id === 'page-schedule') { if(typeof renderScheduleTables==='function') renderScheduleTables(); }
+  else if (id === 'page-stats') { if(typeof renderStats==='function') renderStats(); }
+  else if (id === 'page-weekend') { if(typeof renderWeekend==='function') renderWeekend(); }
+  else if (id === 'page-vehicles') { if(typeof renderVehicles==='function') renderVehicles(); }
+}
+function _initFirebaseListeners() {
+  db.ref(FB_RES).on('value', function(snap) {
+    _cache.reservations = _toArr(snap);
+    _fbReady = true;
+    _refreshCurrentPage();
+  });
+  db.ref(FB_VEH).on('value', function(snap) {
+    var arr = _toArr(snap);
+    if (arr.length) _cache.vehicles = arr;
+  });
+  db.ref(FB_TMPL).on('value', function(snap) {
+    var arr = _toArr(snap);
+    if (arr.length) _cache.templates = arr;
+  });
+  db.ref('.info/connected').on('value', function(snap) {
+    _setFbStatus(!!snap.val());
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   저장소 — Firebase Realtime DB + localStorage 캐시
+   ※ loadData()는 인메모리 캐시(_cache)에서 즉시 반환
+     saveData()는 Firebase에 비동기 저장 (낙관적 업데이트)
+═══════════════════════════════════════════════════ */
+const STORE_KEY   = 'rentcar_reservations';   // fallback용만 유지
 const TMPL_KEY    = 'rentcar_templates';
 const LOG_KEY     = 'rentcar_logs';
 const CONFIG_KEY  = 'rentcar_config';
 
-function loadData()    { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch(e){ return []; } }
-function saveData(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
-function loadTmpls()   { 
-  let t = [];
-  try { t = JSON.parse(localStorage.getItem(TMPL_KEY)) || []; } catch(e){}
-  if(!t.length) t = getDefaultTemplates();
-  return t;
+// ── 예약 데이터 ─────────────────────────────────
+function loadData() {
+  // Firebase 리스너가 캐시를 항상 최신으로 유지
+  return _cache.reservations.slice();
 }
-function saveTmpls(arr){ localStorage.setItem(TMPL_KEY, JSON.stringify(arr)); }
-function loadLogs()    { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; } catch(e){ return []; } }
-function saveLogs(arr) { localStorage.setItem(LOG_KEY, JSON.stringify(arr)); }
-function loadConfig()  { try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {company:'대구렌트카',phone:'053-000-0000'}; } catch(e){ return {company:'대구렌트카',phone:'053-000-0000'}; } }
+
+function saveData(arr) {
+  // 낙관적 업데이트: 캐시 즉시 반영
+  _cache.reservations = arr.slice();
+  // Firebase에 비동기 저장
+  const obj = _toObj(arr);
+  db.ref(FB_RES).set(obj).catch(err => {
+    console.error('[Firebase] saveData 실패:', err);
+    showToast('⚠️ 저장 실패 — 네트워크를 확인하세요');
+    // fallback: localStorage 백업
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch(e){}
+  });
+}
+
+// 단건 업데이트 (더 효율적 — 전체 덮어쓰기 없음)
+function saveOneRecord(rec) {
+  _cache.reservations = _cache.reservations.map(r => r.id === rec.id ? rec : r);
+  if (!_cache.reservations.find(r => r.id === rec.id)) _cache.reservations.push(rec);
+  db.ref(`${FB_RES}/${rec.id}`).set(rec).catch(err => {
+    console.error('[Firebase] saveOneRecord 실패:', err);
+    showToast('⚠️ 저장 실패 — 네트워크를 확인하세요');
+  });
+}
+
+// 단건 삭제
+function deleteOneRecord(id) {
+  _cache.reservations = _cache.reservations.filter(r => r.id !== id);
+  db.ref(`${FB_RES}/${id}`).remove().catch(err => {
+    console.error('[Firebase] deleteOneRecord 실패:', err);
+    showToast('⚠️ 삭제 실패 — 네트워크를 확인하세요');
+  });
+}
+
+// ── 템플릿 ─────────────────────────────────────
+function loadTmpls() {
+  const t = _cache.templates;
+  if (!t || !t.length) return getDefaultTemplates();
+  return t.slice();
+}
+function saveTmpls(arr) {
+  _cache.templates = arr.slice();
+  db.ref(FB_TMPL).set(_toObj(arr)).catch(err => console.error('[Firebase] saveTmpls:', err));
+  try { localStorage.setItem(TMPL_KEY, JSON.stringify(arr)); } catch(e){}
+}
+
+// ── 로그 ────────────────────────────────────────
+function loadLogs() { return _cache.logs.slice(); }
+function saveLogs(arr) {
+  _cache.logs = arr.slice();
+  // 로그는 마지막 200건만 Firebase 유지
+  const trimmed = arr.slice(-200);
+  db.ref(FB_LOG).set(_toObj(trimmed)).catch(err => console.error('[Firebase] saveLogs:', err));
+}
+
+// ── 설정 ────────────────────────────────────────
+function loadConfig() { return Object.assign({company:'대구렌트카',phone:'053-000-0000'}, _cache.config); }
+function saveConfig(cfg) {
+  _cache.config = cfg;
+  db.ref(FB_CFG).set(cfg).catch(err => console.error('[Firebase] saveConfig:', err));
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); } catch(e){}
+}
 
 function getDefaultTemplates() {
   return [
@@ -2618,10 +2939,41 @@ function parseText(raw) {
   // 순수 한글 2~5자 단독 줄 (전화번호 줄, [이름] 줄 제외)
   if (!r.customer_name) {
     for (const l of lines) {
-      if (/^\[이름\]/.test(l)) continue;      // [이름] 태그 줄 제외
-      if (/01[0-9]/.test(l)) continue;          // 전화번호 줄 제외
+      if (/^\[이름\]/.test(l)) continue;
+      if (/01[0-9]/.test(l)) continue;
       if (/^[가-힣]{2,5}$/.test(l)) { r.customer_name = l; break; }
     }
+  }
+
+  // ★ "이름(만N세)" 또는 "이름(만N세이상)" 패턴 — 이름+나이 분리
+  if (!r.customer_name) {
+    const nameAgeM = text.match(/([가-힣]{2,5})\s*[\(（]\s*만\s*(\d+)\s*세/);
+    if (nameAgeM) {
+      r.customer_name = nameAgeM[1];
+      r.notes.push(`운전자 나이: 만${nameAgeM[2]}세`);
+    }
+  }
+  // 이미 이름이 있어도 "(만N세)" 나이 정보는 메모에 추가
+  if (r.customer_name) {
+    const ageM = text.match(/[\(（]\s*만\s*(\d+)\s*세(?:이상)?[\)）]?/);
+    if (ageM && !r.notes.some(n => typeof n==='string' && n.includes('나이'))) {
+      r.notes.push(`운전자 나이: 만${ageM[1]}세`);
+    }
+  }
+
+  // ★ 차급 파싱: 경형/소형/준중형/중형/준대형/대형/SUV/승합 + "급"
+  const carGradeM = text.match(/(경형|소형|준중형|중형|준대형|대형|SUV|승합|미니밴|경차)\s*급?/);
+  if (carGradeM) {
+    r.notes.push(`차급: ${carGradeM[1]}`);
+    // 차명이 없으면 차급을 임시 차명으로
+    if (!r.car_name) r.car_name = carGradeM[1] + '급';
+  }
+
+  // ★ 일일요금 파싱: "1일 7만원", "하루 7만", "일 7만"
+  const dailyRateM = text.match(/(?:1일|하루|일)\s*(\d+)\s*만\s*원?/);
+  if (dailyRateM) {
+    const dailyAmt = parseInt(dailyRateM[1]) * 10000;
+    r.notes.push(`일일요금: ${parseInt(dailyRateM[1])}만원 (${dailyAmt.toLocaleString()}원)`);
   }
 
   // ══════════════════════════════════════════════
@@ -2675,10 +3027,48 @@ function parseText(raw) {
   if (!sd) {
     m = text.match(/(\d{1,2})월\s*(\d{1,2})\s*[-~～]\s*(\d{1,2})일/);
     if (m) {
-      sd = mkDT(yr, +m[1], +m[2], 8, 0);   // 기본 배차 08:00
-      ed = mkDT(yr, +m[1], +m[3], 20, 0);  // 기본 반납 20:00
+      sd = mkDT(yr, +m[1], +m[2], 8, 0);
+      ed = mkDT(yr, +m[1], +m[3], 20, 0);
       r.notes.push('배차시간 기본값 08:00 / 반납시간 기본값 20:00 적용 — 확인 후 수정하세요');
     }
+  }
+
+  // ★ 패턴D-N일사용: "5월20일 2일 사용" / "5월20일 3일사용" → N일 후 20:00 반납
+  if (!sd) {
+    m = text.match(/(\d{1,2})월\s*(\d{1,2})일\s*[,\s]*(\d+)\s*일\s*(?:사용|대여|이용)/);
+    if (m) {
+      const days = parseInt(m[3]);
+      sd = mkDT(yr, +m[1], +m[2], 8, 0);
+      ed = mkDT(yr, +m[1], +m[2] + days - 1, 20, 0);
+      r.notes.push(`배차: ${m[1]}월${m[2]}일 08:00 / 반납: ${+m[2]+days-1}일 20:00 (${days}일 사용)`);
+    }
+  }
+  // 이미 시작일 파싱됐는데 "N일 사용/대여" 만 있는 경우 → 종료일 계산
+  if (sd && !ed) {
+    const dayUseM = text.match(/(\d+)\s*일\s*(?:사용|대여|이용)/);
+    if (dayUseM) {
+      const days = parseInt(dayUseM[1]);
+      ed = new Date(sd);
+      ed.setDate(ed.getDate() + days - 1);
+      ed.setHours(20, 0, 0, 0);
+    }
+  }
+
+  // ★ 패턴D-당일: "5월12일08시당일" → 당일 20:00 반납
+  // "당일" 키워드가 있으면 같은 날 20:00로 종료
+  if (!sd) {
+    // "5월12일08시당일" 또는 "5월12일 08시 당일"
+    m = text.match(/(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시)\s*당일/);
+    if (m) {
+      const sh = to24(+m[4], m[3]);
+      const sm2 = m[5] ? +m[5] : 0;
+      sd = mkDT(yr, +m[1], +m[2], sh, sm2);
+      ed = mkDT(yr, +m[1], +m[2], 20, 0);  // 당일 = 같은 날 20:00
+    }
+  }
+  // 이미 시작일시가 파싱됐는데 "당일" 키워드만 있는 경우 → 종료일시 보정
+  if (sd && !ed && /당일/.test(text)) {
+    ed = mkDT(sd.getFullYear(), sd.getMonth()+1, sd.getDate(), 20, 0);
   }
   // 패턴D-1: 4월25일-26일, 4월25일~26일 (일 두 번)
   if (!sd) {
@@ -2814,8 +3204,57 @@ function parseText(raw) {
   for (const [k,v] of Object.entries(insMap2)) {
     if ((insRaw || text).includes(k)) { r.insurance_type = v; break; }
   }
-  const rawIns = text.match(/\d+자포/);
-  if (rawIns) r.notes.push('보험원문: ' + rawIns[0]);
+
+  // ★ "30자포", "자포30", "자포 30", "15자포", "자포 15" → 보험: 자차포함 + 금액: N만원
+  // 패턴1: 숫자+자포 (예: 30자포, 15자포)
+  // 패턴2: 자포+숫자 (예: 자포30, 자포 15)
+  const zapoM = text.match(/(\d+)\s*자포/) || text.match(/자포\s*(\d+)/);
+  if (zapoM) {
+    r.insurance_type = r.insurance_type || '자차포함';
+    const zapAmt = parseInt(zapoM[1]) * 10000;
+    r._zapoAmt = zapAmt;
+    r.notes.push(`자포금액: ${parseInt(zapoM[1])}만원 (${zapAmt.toLocaleString()}원)`);
+  }
+
+  // ★ 차량번호 패턴: "3369-4415" (4자리-4자리) → 택1 차량번호로 메모 저장
+  // 날짜/전화번호와 구분: 4자리-4자리 순수 숫자
+  const dualPlateM = text.match(/\b(\d{4})-(\d{4})\b/);
+  if (dualPlateM) {
+    const before = text.substring(0, dualPlateM.index).slice(-3);
+    if (!/01[0-9]$/.test(before) && !/\d월/.test(before)) {
+      const p1 = dualPlateM[1], p2 = dualPlateM[2];
+      r.notes.push(`차량번호(택1): ${p1} 또는 ${p2}`);
+      // ★ 차량 DB에서 번호판 끝 4자리로 매칭 → 차량명/인승 자동 채움
+      const vList = loadVehicles();
+      const matched =
+        vList.find(v => (v.plate||'').endsWith(p1)) ||
+        vList.find(v => (v.plate||'').endsWith(p2));
+      if (matched) {
+        if (!r.car_name) r.car_name = matched.name;
+        if (!r.seating)  r.seating  = matched.seat || '5인승';
+        r.notes.push(`차량 자동매칭: ${matched.plate} ${matched.name} ${matched.seat||'5인승'}`);
+      }
+    }
+  }
+  // 단일 차량번호 4자리 (3369 등) — 차량 DB 매칭
+  if (!dualPlateM) {
+    // 텍스트에서 4자리 숫자 후보 수집 (날짜/전화 제외)
+    const plateMatches = [...text.matchAll(/\b(\d{4})\b/g)];
+    for (const pm of plateMatches) {
+      const before3 = text.substring(0, pm.index).slice(-3);
+      if (/01[0-9]$/.test(before3) || /\d월/.test(before3)) continue;
+      const vList = loadVehicles();
+      const matched = vList.find(v => (v.plate||'').endsWith(pm[1]));
+      if (matched) {
+        if (!r.car_name) r.car_name = matched.name;
+        if (!r.seating)  r.seating  = matched.seat || '5인승';
+        if (!r.notes.some(n => typeof n==='string' && n.includes('차량번호')))
+          r.notes.push(`차량번호: ${pm[1]}`);
+        r.notes.push(`차량 자동매칭: ${matched.plate} ${matched.name} ${matched.seat||'5인승'}`);
+        break;
+      }
+    }
+  }
 
   // 자차면책금 / 자차한도 / 휴차료
   for (const f of ['자차면책금','자차한도','휴차료','면책금']) {
@@ -2823,18 +3262,32 @@ function parseText(raw) {
   }
 
   // ══════════════════════════════════════════════
-  // 7단계: 금액 — "20만원", "20만", "200,000원", "200000" 전부 처리
+  // 7단계: 금액 — "20만원", "20만", "200,000원", "N자포"
+  //  우선순위: kvMap명시 > 총XX만원 > 자포금액 > 전체텍스트
   // ══════════════════════════════════════════════
   const amtRaw = kvMap['총합계'] || kvMap['요금'] || kvMap['금액'] || kvMap['결제금액'] || kvMap['합계'] || '';
   if (amtRaw) {
     r.amount = parseAmount(amtRaw);
   }
-  // "총XX만원", "총XX원" → 최종 금액 우선
+  // "총XX만원", "총XX원" → 명시 금액 우선
   if (!r.amount) {
     const totalM = text.match(/총\s*([\d,]+만?\s*[\d]*\s*원)/);
     if (totalM) r.amount = parseAmount(totalM[1]);
   }
-  if (!r.amount) r.amount = parseAmount(text);
+  // ★ 자포금액이 있으면 전체 텍스트 파싱보다 우선 적용
+  if (!r.amount && r._zapoAmt) {
+    r.amount = r._zapoAmt;
+  }
+  // 마지막 fallback: 전체 텍스트에서 추출 (단, 차량번호 4자리는 미리 제거)
+  if (!r.amount) {
+    // 차량번호 패턴(4자리-4자리, 또는 "호"가 앞에 붙은 번호판)을 제거한 텍스트로 파싱
+    const textNoPlate = text
+      .replace(/\d{4}-\d{4}/g, '')           // 3369-4415 형태
+      .replace(/\d+호\d{4}/g, '')             // 702호3369 형태
+      .replace(/\d{2}[가-힣]\d{4}/g, '');    // 33하0785 형태
+    r.amount = parseAmount(textNoPlate);
+  }
+  delete r._zapoAmt;
 
   // ══════════════════════════════════════════════
   // 8단계: 주소 / 배차 / 회차
@@ -2851,15 +3304,30 @@ function parseText(raw) {
     }
   }
 
+  // ★ 전화번호와 주소가 같은 줄에 붙어있는 경우 분리
+  //   예: "01098419861동구카포53카정비정석암" → 전화 + 주소 분리
+  const phoneAddrLines = [];
+  for (const l of lines) {
+    const phoneInLine = l.match(/^(01[0-9]\d{7,8})(.+)$/);
+    if (phoneInLine && phoneInLine[2].trim().length > 2) {
+      phoneAddrLines.push(phoneInLine[2].trim());
+    }
+  }
+
   // ── 장소명 후보 추출 함수 ──────────────────────────────────────────
   // 장소명 패턴: "XX공원", "XX역", "XX아파트", "XX단지", "XX동", "XX점" 등
   // 주소 패턴:   "XX로 123", "XX동 123", "XX구 XX로" 등
-  const PLACE_PAT = /([가-힣0-9A-Za-z]+(?:공원|체육관|경기장|마트|병원|학교|역|터미널|공항|호텔|모텔|휴게소|주유소|아파트|빌라|빌딩|타워|센터|플라자|몰|점|지점|영업소|주차장|광장|사거리|삼거리|입구|출구|앞|근처|옆))/g;
+  const PLACE_PAT = /([가-힣0-9A-Za-z]+(?:공원|체육관|경기장|마트|병원|학교|역|터미널|공항|호텔|모텔|휴게소|주유소|아파트|빌라|빌딩|타워|센터|플라자|몰|점|지점|영업소|주차장|광장|사거리|삼거리|입구|출구|앞|근처|옆|카포|카센터|정비|공장|세차))/g;
   const ADDR_PAT  = /[가-힣]+(구|동|로|길|읍|면|리|층|호)\s*[\d가-힣]*/;
 
   // 1) 구조화 키가 없을 때: 전체 텍스트(태그 줄 포함)에서 장소명 후보 수집
   if (!r.pickup_location) {
     const allPlaces = [];
+
+    // ★ 전화번호+주소 같은 줄에서 분리된 주소 먼저 추가
+    phoneAddrLines.forEach(al => {
+      if (!allPlaces.includes(al)) allPlaces.push(al);
+    });
 
     // [이름] 태그 줄 끝부분 공백 뒤 장소명 추출
     for (const l of lines) {
@@ -2883,7 +3351,7 @@ function parseText(raw) {
       const isRelLine   = /^(친구|지인|동생|형|누나|언니|오빠|선배|후배|동료)/.test(l);
       if (isTagLine || isDateLine || isCarLine || isPhoneLine || isNameLine || isRelLine) continue;
 
-      // 장소명 패턴
+      // 장소명 패턴 (기존 + 카정비/카센터/주차/공장 류 추가)
       const pm = [...l.matchAll(PLACE_PAT)];
       pm.forEach(m => { if (!allPlaces.includes(m[1])) allPlaces.push(m[1]); });
 
@@ -2891,12 +3359,35 @@ function parseText(raw) {
       if (ADDR_PAT.test(l) && l.length > 4 && !l.includes(':')) {
         if (!allPlaces.includes(l.trim())) allPlaces.push(l.trim());
       }
+
+      // ★ "아침 8시에 렌트..." 같은 메모 줄도 배차위치 후보로 수집
+      // 전화번호 바로 다음 줄의 텍스트 (주소/장소 설명)
+      const phoneLineIdx = lines.findIndex(ll => /01[0-9]/.test(ll));
+      if (phoneLineIdx >= 0) {
+        const afterPhoneLines = lines.slice(phoneLineIdx + 1);
+        for (const al of afterPhoneLines) {
+          if (al.length > 3 && !/당일|자포|인승|보험/.test(al)) {
+            if (!allPlaces.includes(al.trim())) allPlaces.push(al.trim());
+          }
+        }
+      }
     }
 
     // 수집된 장소 배분: 첫 번째 → 배차, 두 번째 → 회차 (같으면 둘 다 동일)
-    if (allPlaces.length >= 1) r.pickup_location = allPlaces[0];
-    if (allPlaces.length >= 2) r.return_location  = allPlaces[1];
-    if (allPlaces.length === 1) r.return_location  = allPlaces[0]; // 한 곳이면 배/반 동일
+    // ★ 이름+(나이) 패턴은 장소 후보에서 제거
+    const isNameLike = (s) => {
+      if (!s) return false;
+      // "오혜리(만26세 이상)" 같은 패턴
+      if (/[가-힣]{2,5}[\(（]만\d+세/.test(s)) return true;
+      // 순수 고객명이 들어간 경우
+      if (r.customer_name && s.includes(r.customer_name) && s.length < 15) return true;
+      return false;
+    };
+    const filteredPlaces = allPlaces.filter(p => !isNameLike(p));
+
+    if (filteredPlaces.length >= 1) r.pickup_location = filteredPlaces[0];
+    if (filteredPlaces.length >= 2) r.return_location  = filteredPlaces[1];
+    if (filteredPlaces.length === 1) r.return_location  = filteredPlaces[0];
 
     // 장소 없으면 기존 address 방식으로 fallback
     if (!r.pickup_location) {
@@ -2913,6 +3404,10 @@ function parseText(raw) {
         }
       }
     }
+
+    // ★ 배차/회차 위치가 끝까지 없으면 → "사무실" 기본값
+    if (!r.pickup_location) r.pickup_location = '사무실';
+    if (!r.return_location)  r.return_location  = '사무실';
   }
 
   // 이용기간 → notes (날짜범위가 아닌 경우)
@@ -3067,7 +3562,7 @@ function goPage(page) {
   if(page==='vehicles')  { syncVehicleStatus(); renderVehicles(); }
   if(page==='stats')     { initStatsFilters(); renderStats(); }
   if(page==='templates') renderTemplates();
-  if(page==='schedule') { renderScheduleTables(); showScheduleTab(0,null); }
+  if(page==='schedule') { renderScheduleTables(); showScheduleTab(-1,null); }
   if(page==='weekend')  renderWeekend();
     if(page==='new') {
     document.getElementById('f_editId').value='';
@@ -3220,8 +3715,8 @@ function saveReservation(e) {
   } else {
     data.push(rec);
   }
-  saveData(data);
-  syncAndRefresh(); // 차량 상태 자동 연동
+  saveOneRecord(rec);   // ★ 단건 저장 (전체 덮어쓰기 대신)
+  syncAndRefresh();
   showToast(editId ? '예약이 수정되었습니다.' : '예약이 저장되었습니다.');
   // 저장 후 새 예약 날짜로 캘린더 이동
   if(rec.start_datetime) {
@@ -5106,7 +5601,7 @@ function renderVehicles() {
     <div class="vehicle-card" onclick="openVehicleForm('${v.id}')">
       <div class="vc-header">
         <div>
-          <div class="vc-name">${v.name} <span style="font-size:12px;color:var(--muted);font-weight:500">${v.gen||''} ${v.seat||''}</span></div>
+          <div class="vc-name">${v.name} <span style="font-size:12px;color:var(--muted);font-weight:500">${v.gen||''} ${v.seat||'5인승'}</span></div>
           <div style="margin-top:4px;display:flex;gap:6px;align-items:center">
             ${v.plate?`<span class="vc-plate">${v.plate}</span>`:''}
             ${v.year?`<span style="font-size:11px;color:var(--muted)">${v.year}년식</span>`:''}
@@ -5249,9 +5744,9 @@ function buildVehicleTable(filtered) {
           statusOpts + '</select></td>' +
         '<td style="padding:8px 10px"><span style="font-family:var(--mono);font-size:12px;font-weight:800;background:#1a2236;color:#e2e8f0;padding:3px 8px;border-radius:5px;white-space:nowrap">' + (v.plate||'-') + '</span></td>' +
         '<td style="padding:8px 10px"><strong style="font-size:13px">' + (v.name||'-') + '</strong>' +
-          (v.seat ? '<br><span style="font-size:10px;color:var(--muted)">' + v.seat + '</span>' : '') + '</td>' +
+          '<br><span style="font-size:10px;color:var(--muted)">' + (v.seat||'5인승') + '</span></td>' +
         '<td style="padding:8px 10px;font-size:12px;color:var(--muted)">' + (v.gen||'-') + '</td>' +
-        '<td style="padding:8px 10px;font-size:12px;text-align:center">' + (v.seat||'-') + '</td>' +
+        '<td style="padding:8px 10px;font-size:12px;text-align:center;font-weight:600">' + (v.seat||'5인승') + '</td>' +
         '<td style="padding:8px 10px">' + todayHtml + '</td>' +
         '<td style="padding:8px 10px">' + insHtml + '</td>' +
         '<td style="padding:8px 10px" onclick="event.stopPropagation()">' +
@@ -5603,9 +6098,7 @@ function editReservation(id) {
 
 function deleteReservation(id) {
   if(!confirm('정말 삭제하시겠습니까?')) return;
-  let data = loadData();
-  data = data.filter(x=>x.id!==id);
-  saveData(data);
+  deleteOneRecord(id);  // ★ Firebase 단건 삭제
   closeModal();
   syncAndRefresh();
   renderList();
@@ -5616,7 +6109,7 @@ function deleteCurrentReservation() {
   const id = parseInt(document.getElementById('f_editId').value);
   if(!id) return;
   if(!confirm('정말 삭제하시겠습니까?')) return;
-  let data = loadData(); data = data.filter(x=>x.id!==id); saveData(data);
+  deleteOneRecord(id);   // ★ Firebase 단건 삭제
   clearForm(); goPage('list'); showToast('삭제되었습니다.');
 }
 
@@ -5908,33 +6401,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = new Date();
   document.getElementById('todayBadge').textContent = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
 
-  // 기존 2025년 샘플데이터 자동 마이그레이션 (한 번만)
-  if(!localStorage.getItem('rentcar_migrated_2026')) {
-    const existing = loadData();
-    if(existing.length && existing.every(r=>(r.start_datetime||'').startsWith('2025'))) {
-      const migrated = existing.map(r=>({
-        ...r,
-        start_datetime: r.start_datetime ? r.start_datetime.replace('2025-','2026-') : r.start_datetime,
-        end_datetime:   r.end_datetime   ? r.end_datetime.replace('2025-','2026-')   : r.end_datetime,
-        created_at:     r.created_at     ? r.created_at.replace('2025-','2026-')     : r.created_at,
-      }));
-      saveData(migrated);
-    }
-    localStorage.setItem('rentcar_migrated_2026', '1');
-  }
+  // ★ Firebase 앱 초기화 (여기서 최초 1회 실행)
+  var firebaseConfig = {
+    apiKey: "AIzaSyAAtLEtPFAcHDB0sSzKd6QJWg_BxOsK84k",
+    authDomain: "rentcar-f9e58.firebaseapp.com",
+    databaseURL: "https://rentcar-f9e58-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "rentcar-f9e58",
+    storageBucket: "rentcar-f9e58.firebasestorage.app",
+    messagingSenderId: "414633216380",
+    appId: "1:414633216380:web:b2916b780cf48890687cf9"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
 
-  // 샘플 데이터 (최초 1회)
-  // HWP 데이터로 강제 초기화 (이전 샘플 데이터 제거)
-  // HWP 데이터 강제 교체: 기존 키 삭제 후 새 데이터 삽입
-  // 일정표 데이터 최신화 (26.4.28 이미지 기준 전체 58건)
-  const SCHEDULE_KEY = 'rentcar_schedule_loaded_v2';
-  if(!localStorage.getItem(SCHEDULE_KEY)) {
-    localStorage.removeItem('rentcar_reservations');
-    const sample = [{"id":1,"customer_name":"이상혁","phone":"","start_datetime":"2026-04-28 20:00","end_datetime":"2026-04-29 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"미리샘빌89","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":2,"customer_name":"홍수진고객","phone":"","start_datetime":"2026-04-29 08:00","end_datetime":"2026-05-06 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"대구고등학교 1일12만원/일수만큼계산","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3477","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":3,"customer_name":"양달찌손부장","phone":"010-9496-1337","start_datetime":"2026-04-29 14:00","end_datetime":"2026-04-29 20:00","car_name":"쏠라티 운행","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"김해→대구 쏠라티 운대리 운행","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 16시마도착","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":4,"customer_name":"정준희(탑빌)","phone":"010-7143-3114","start_datetime":"2026-04-29 20:00","end_datetime":"2026-05-01 20:00","car_name":"스타렉스","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"20자포 훌물/ 배차 세전","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3926","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":5,"customer_name":"","phone":"010-2110-3079","start_datetime":"2026-04-30 17:00","end_datetime":"2026-05-03 15:00","car_name":"4세대카니발9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"홍대구지점 배/찬차 슈퍼자차 환급 61","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":6,"customer_name":"","phone":"010-4505-8645","start_datetime":"2026-04-30 20:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"영대병원사무일/픽업/ 완전자차 18만","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":7,"customer_name":"이승민","phone":"010-3345-6864","start_datetime":"2026-04-30 20:00","end_datetime":"2026-05-03 20:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"범어동 93-87 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":8,"customer_name":"8명탑승","phone":"010-381-98444","start_datetime":"2026-05-01 07:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"15자포/ 수성로35길50 106동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":9,"customer_name":"박병주고객","phone":"","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":700000,"deposit":null,"balance":null,"address":"","pickup_location":"수성구민운동장앞주차장 / 70만원","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1304지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":10,"customer_name":"이석주","phone":"010-9022-3535","start_datetime":"2026-05-01 07:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":500000,"deposit":100000,"balance":400000,"address":"","pickup_location":"50자포/잔금40/ 김아론스회관","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":11,"customer_name":"","phone":"010-8659-3009","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 18:00","car_name":"카니발4.5 7인승","car_generation":"","seating":"","insurance_type":"","amount":460000,"deposit":null,"balance":null,"address":"","pickup_location":"부가세 비율로 64일 66-11 잔금460,000","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1868","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":12,"customer_name":"최상일","phone":"010-4560-5619","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9 HEV","car_generation":"","seating":"","insurance_type":"","amount":135000,"deposit":5000,"balance":130000,"address":"","pickup_location":"안심로 55일 20 잔금130,000 계약금 5","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4415","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":13,"customer_name":"강현석","phone":"010-3993-9572","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 13:00","car_name":"GV70","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"배차 죽전역프라임/ 반 사무실 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1516","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":14,"customer_name":"","phone":"010-3515-9079","start_datetime":"2026-05-01 09:00","end_datetime":"2026-05-22 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"성당레미안 2단지 20층 / 25자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1099","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":15,"customer_name":"백병준고객","phone":"010-2534-8848","start_datetime":"2026-05-01 09:00","end_datetime":"2026-05-22 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"노원동로41","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":16,"customer_name":"윤문석","phone":"010-4915-8744","start_datetime":"2026-05-01 09:30","end_datetime":"2026-05-22 20:30","car_name":"4세대카니발9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"태전동 1185 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 신차","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":17,"customer_name":"박문수","phone":"010-5605-4844","start_datetime":"2026-05-01 09:30","end_datetime":"2026-05-03 16:00","car_name":"카니발4.5 HEV 9","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"동구 금촌건행로3길 9 율하현인아이 15단지","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":18,"customer_name":"김현회","phone":"010-491-37630","start_datetime":"2026-05-01 22:00","end_datetime":"2026-05-03 20:00","car_name":"카니발4세7-9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"홍대구지점 / 계약금10/ 잔금20","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369통화","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":19,"customer_name":"배기원소장","phone":"010-9100-9094","start_datetime":"2026-05-02 07:00","end_datetime":"2026-05-02 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":100000,"balance":200000,"address":"","pickup_location":"사무실 /계약금10(박정옥)/ 잔금20자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":20,"customer_name":"","phone":"010-5266-8267","start_datetime":"2026-05-02 08:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":500000,"deposit":null,"balance":null,"address":"","pickup_location":"대성유니드쏠라티50/경비포도 기사30/박영일기사010-8869-4233","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3478","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":21,"customer_name":"김환식","phone":"010-5021-7611","start_datetime":"2026-05-02 10:00","end_datetime":"2026-05-03 08:00","car_name":"쏘렌토6인승","car_generation":"","seating":"","insurance_type":"","amount":70000,"deposit":null,"balance":null,"address":"","pickup_location":"송현로8길27 301호 / 일반자차 70,000","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4592","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":22,"customer_name":"큰두나친구","phone":"010-5348-5348","start_datetime":"2026-05-02 20:00","end_datetime":"2026-05-05 21:00","car_name":"구카니발7","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":null,"balance":null,"address":"","pickup_location":"사장님큰두나친구 30만원 / 범어동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 0785/8168","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":23,"customer_name":"유화할고객","phone":"010-5669-6993","start_datetime":"2026-05-03 03:00","end_datetime":"2026-05-04 01:00","car_name":"카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"달구벌대로344길68후 섬멋주차장/사무실/20자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 신차","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":24,"customer_name":"경산m렌트처리","phone":"","start_datetime":"2026-05-03 08:00","end_datetime":"2026-05-04 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경산m렌트/반차 경산M렌트 자포27","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":25,"customer_name":"박재현","phone":"010-4098-0983","start_datetime":"2026-05-03 08:00","end_datetime":"2026-05-04 21:30","car_name":"CN7","car_generation":"","seating":"","insurance_type":"","amount":144000,"deposit":null,"balance":null,"address":"","pickup_location":"이목홍 1220-15 미소티로 1층 144,000 일반면책","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 유종함인필요","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":26,"customer_name":"","phone":"010-7200-6577","start_datetime":"2026-05-03 10:00","end_datetime":"2026-05-04 10:00","car_name":"투싼","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"사무실 카드13 / 카시트 2개","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1528","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":27,"customer_name":"업부장고객","phone":"010-2161-9325","start_datetime":"2026-05-05 08:00","end_datetime":"2026-05-05 20:00","car_name":"카니발4.5세대9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"지산중학교 / 자포15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":28,"customer_name":"남덕초","phone":"010-3193-4023","start_datetime":"2026-05-08 10:00","end_datetime":"2026-05-10 20:00","car_name":"카니발7인승","car_generation":"","seating":"","insurance_type":"","amount":450000,"deposit":100000,"balance":350000,"address":"","pickup_location":"계약금10 (이영원입환) / 45자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":29,"customer_name":"김성열(71년)","phone":"010-2650-7274","start_datetime":"2026-05-08 17:30","end_datetime":"2026-05-09 17:30","car_name":"디엣지(25년형)","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"범어동 을지맨션 101동 / 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":30,"customer_name":"조성기","phone":"010-5730-9177","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":50000,"balance":250000,"address":"","pickup_location":"대명호4.24-10 계약금5 잔금25","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265 차정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":31,"customer_name":"오토정사장고객","phone":"","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경산","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":32,"customer_name":"배환수","phone":"010-7508-2515","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"","car_generation":"","seating":"","insurance_type":"","amount":195000,"deposit":null,"balance":null,"address":"","pickup_location":"성달로39길76 / 195,000(카드)","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":33,"customer_name":"","phone":"","start_datetime":"2026-05-09 12:00","end_datetime":"2026-05-10 19:00","car_name":"카니발4.5 9인승","car_generation":"","seating":"","insurance_type":"","amount":318000,"deposit":null,"balance":null,"address":"","pickup_location":"홍대푸르지오브리/렌트/318,000(카드)","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":34,"customer_name":"","phone":"010-4501-2002","start_datetime":"2026-05-11 09:00","end_datetime":"2026-05-11 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"삼덕네거리 조양주유소 13자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":35,"customer_name":"","phone":"010-3201-3808","start_datetime":"2026-05-11 10:00","end_datetime":"2026-05-27 20:00","car_name":"카니발4.5 9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경주 보문마돌5길12 / 호불","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":36,"customer_name":"","phone":"","start_datetime":"2026-05-11 08:00","end_datetime":"2026-05-15 20:00","car_name":"스타렉스/뉴카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"전국장애인체육회 / 김해공항 – 일정확인","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확인필요","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":37,"customer_name":"","phone":"010-3533-9410","start_datetime":"2026-05-12 09:00","end_datetime":"2026-05-12 20:00","car_name":"뉴카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"화망로57 202동 / 10","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":38,"customer_name":"이장희","phone":"010-2540-4865","start_datetime":"2026-05-13 08:00","end_datetime":"2026-05-13 20:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"이목공원로 83 105동일/ 월목렌트최준혁처리","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":39,"customer_name":"박향호","phone":"010-3631-6458","start_datetime":"2026-05-14 09:00","end_datetime":"2026-05-16 18:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":700000,"deposit":null,"balance":null,"address":"","pickup_location":"70자포/ 학정로106일 15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":40,"customer_name":"","phone":"010-6669-1837","start_datetime":"2026-05-14 20:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"수성자이르내 103동 / 완전자차36","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":41,"customer_name":"24년식","phone":"010-6669-1837","start_datetime":"2026-05-15 08:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":360000,"deposit":null,"balance":null,"address":"","pickup_location":"수성로295 103동/게5 31전 / 36만전자차","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3477","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":42,"customer_name":"","phone":"010-8337-5617","start_datetime":"2026-05-15 09:00","end_datetime":"2026-05-29 20:00","car_name":"쏘렌토","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"1일12 후불180만원/ 일산보성자 207동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":43,"customer_name":"","phone":"","start_datetime":"2026-05-15 15:00","end_datetime":"2026-05-15 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":null,"balance":null,"address":"","pickup_location":"30만+기사비도","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":44,"customer_name":"업부장","phone":"","start_datetime":"2026-05-15 20:00","end_datetime":"2026-05-17 20:00","car_name":"카니발7인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"업부장 부모님 이용","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":45,"customer_name":"","phone":"010-3505-3652","start_datetime":"2026-05-17 08:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"팡장 삼정그린빌 자포15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":46,"customer_name":"1304가등","phone":"","start_datetime":"2026-05-18 08:00","end_datetime":"2026-06-04 20:00","car_name":"점정신형쏠라티","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"인천선거차량","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3478지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":47,"customer_name":"3926가등","phone":"","start_datetime":"2026-05-18 08:00","end_datetime":"2026-06-04 20:00","car_name":"스타리아","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"선거 – 속초","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643/1099","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":48,"customer_name":"6명탑승","phone":"010-7510-6097","start_datetime":"2026-05-23 08:00","end_datetime":"2026-05-25 20:00","car_name":"카니방","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"다사 / 40자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":49,"customer_name":"허은미","phone":"010-6677-0421","start_datetime":"2026-05-23 09:00","end_datetime":"2026-05-25 20:00","car_name":"카니발 4세대","car_generation":"","seating":"","insurance_type":"","amount":400000,"deposit":100000,"balance":300000,"address":"","pickup_location":"울배로68안길37-10 계10/잔30/5명탑승","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":50,"customer_name":"이홍순","phone":"010-3519-7823","start_datetime":"2026-05-23 09:00","end_datetime":"2026-05-25 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":750000,"deposit":null,"balance":null,"address":"","pickup_location":"사무실 자포75","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1304","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":51,"customer_name":"","phone":"010-3586-2202","start_datetime":"2026-06-06 09:00","end_datetime":"2026-06-07 21:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"대살역동아아이위사 완전면책36","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":52,"customer_name":"","phone":"010-4775-1141","start_datetime":"2026-06-13 07:00","end_datetime":"2026-06-14 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":550000,"deposit":null,"balance":null,"address":"","pickup_location":"자포55","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":53,"customer_name":"박의목","phone":"010-7445-0462","start_datetime":"2026-06-13 08:00","end_datetime":"2026-06-14 21:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":600000,"deposit":null,"balance":null,"address":"","pickup_location":"성서홈플맞은편주차장/60자포/소주한박스사비스","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 사장님선배","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":54,"customer_name":"전진아제주","phone":"","start_datetime":"2026-06-19 08:00","end_datetime":"2026-06-21 20:00","car_name":"승용5승합12","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경남체육대회/승합1일20만/승용중형준중형10만","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 차량확정X","raw_text":"","reservation_status":"확인필요","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":55,"customer_name":"","phone":"010-4822-4607","start_datetime":"2026-06-26 08:00","end_datetime":"2026-06-27 20:00","car_name":"카니발4.5 9~7","car_generation":"","seating":"","insurance_type":"","amount":280000,"deposit":null,"balance":null,"address":"","pickup_location":"상원로 42 한방건강원 자포28현금","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1448~1868","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":56,"customer_name":"박소영","phone":"010-7183-3148","start_datetime":"2026-07-13 11:30","end_datetime":"2026-07-14 21:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":390000,"deposit":50000,"balance":340000,"address":"","pickup_location":"한실로 117 302동 1705호 계약금5 잔금34","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":57,"customer_name":"8명탑승","phone":"010-2513-3071","start_datetime":"2026-07-17 07:00","end_datetime":"2026-07-17 20:00","car_name":"스타리아","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"15자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":58,"customer_name":"엄서정","phone":"010-7243-7472","start_datetime":"2026-08-18 09:00","end_datetime":"2026-08-20 20:00","car_name":"카니발4세대","car_generation":"","seating":"","insurance_type":"","amount":467000,"deposit":50000,"balance":417000,"address":"","pickup_location":"대구역힐스센트럴 467,000/계약금50,000받음","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"}];
-    saveData(sample);
-    nextId = 59;
-    localStorage.setItem(SCHEDULE_KEY, '1');
-  }
+  // ★ Firebase 실시간 리스너 등록
+  _initFirebaseListeners();
+
+  // ★ Firebase 첫 로드 후 초기화 (최초 1회 시드 데이터 업로드)
+  db.ref(FB_RES).once('value', snap => {
+    const existing = _toArr(snap);
+    if (existing.length === 0) {
+      // Firebase가 비어있으면 내장 58건 시드 데이터 업로드
+      fetch('').then(() => {}).catch(() => {});
+      const SEED_KEY = 'rentcar_seed_uploaded_v9';
+      if (!localStorage.getItem(SEED_KEY)) {
+        const lsData = (() => { try { return JSON.parse(localStorage.getItem('rentcar_reservations')) || []; } catch(e) { return []; } })();
+        if (lsData.length > 0) {
+          // localStorage에 기존 데이터가 있으면 Firebase로 마이그레이션
+          const obj = {};
+          lsData.forEach(r => { obj[r.id] = r; });
+          db.ref(FB_RES).set(obj).then(() => {
+            showToast(`✅ 기존 데이터 ${lsData.length}건을 Firebase에 마이그레이션 완료!`, 4000);
+            nextId = Math.max(...lsData.map(r => r.id || 0)) + 1;
+          });
+        } else {
+          // localStorage도 비어있으면 내장 58건 시드 삽입
+          _uploadBuiltinSeed();
+        }
+        localStorage.setItem(SEED_KEY, '1');
+      }
+    } else {
+      // 기존 Firebase 데이터가 있으면 nextId 재계산
+      const maxId = Math.max(...existing.map(r => r.id || 0));
+      if (maxId >= nextId) nextId = maxId + 1;
+    }
+  });
+
   initId();
 
   renderDashboard();
@@ -5949,6 +6461,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // 초기 차량 주의사항 로드 (쏠라티 기본값 삽입)
   loadCarNotes();
 });
+
+// 내장 시드 데이터 업로드 함수 (Firebase가 완전히 비어있을 때)
+function _uploadBuiltinSeed() {
+  const SEED=[{"id":1,"customer_name":"이상혁","phone":"","start_datetime":"2026-04-28 20:00","end_datetime":"2026-04-29 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"미리샘빌89","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":2,"customer_name":"홍수진고객","phone":"","start_datetime":"2026-04-29 08:00","end_datetime":"2026-05-06 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"대구고등학교 1일12만원/일수만큼계산","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3477","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":3,"customer_name":"양달찌손부장","phone":"010-9496-1337","start_datetime":"2026-04-29 14:00","end_datetime":"2026-04-29 20:00","car_name":"쏠라티 운행","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"김해→대구 쏠라티 운대리 운행","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 16시마도착","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":4,"customer_name":"정준희(탑빌)","phone":"010-7143-3114","start_datetime":"2026-04-29 20:00","end_datetime":"2026-05-01 20:00","car_name":"스타렉스","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"20자포 훌물/ 배차 세전","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3926","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":5,"customer_name":"","phone":"010-2110-3079","start_datetime":"2026-04-30 17:00","end_datetime":"2026-05-03 15:00","car_name":"4세대카니발9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"홍대구지점 배/찬차 슈퍼자차 환급 61","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":6,"customer_name":"","phone":"010-4505-8645","start_datetime":"2026-04-30 20:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"영대병원사무일/픽업/ 완전자차 18만","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":7,"customer_name":"이승민","phone":"010-3345-6864","start_datetime":"2026-04-30 20:00","end_datetime":"2026-05-03 20:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"범어동 93-87 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":8,"customer_name":"8명탑승","phone":"010-381-98444","start_datetime":"2026-05-01 07:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"15자포/ 수성로35길50 106동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":9,"customer_name":"박병주고객","phone":"","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":700000,"deposit":null,"balance":null,"address":"","pickup_location":"수성구민운동장앞주차장 / 70만원","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1304지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":10,"customer_name":"이석주","phone":"010-9022-3535","start_datetime":"2026-05-01 07:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":500000,"deposit":100000,"balance":400000,"address":"","pickup_location":"50자포/잔금40/ 김아론스회관","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":11,"customer_name":"","phone":"010-8659-3009","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 18:00","car_name":"카니발4.5 7인승","car_generation":"","seating":"","insurance_type":"","amount":460000,"deposit":null,"balance":null,"address":"","pickup_location":"부가세 비율로 64일 66-11 잔금460,000","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1868","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":12,"customer_name":"최상일","phone":"010-4560-5619","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-01 20:00","car_name":"스타리아9 HEV","car_generation":"","seating":"","insurance_type":"","amount":135000,"deposit":5000,"balance":130000,"address":"","pickup_location":"안심로 55일 20 잔금130,000 계약금 5","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4415","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":13,"customer_name":"강현석","phone":"010-3993-9572","start_datetime":"2026-05-01 08:00","end_datetime":"2026-05-03 13:00","car_name":"GV70","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"배차 죽전역프라임/ 반 사무실 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1516","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":14,"customer_name":"","phone":"010-3515-9079","start_datetime":"2026-05-01 09:00","end_datetime":"2026-05-22 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"성당레미안 2단지 20층 / 25자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1099","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":15,"customer_name":"백병준고객","phone":"010-2534-8848","start_datetime":"2026-05-01 09:00","end_datetime":"2026-05-22 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"노원동로41","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":16,"customer_name":"윤문석","phone":"010-4915-8744","start_datetime":"2026-05-01 09:30","end_datetime":"2026-05-22 20:30","car_name":"4세대카니발9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"태전동 1185 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 신차","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":17,"customer_name":"박문수","phone":"010-5605-4844","start_datetime":"2026-05-01 09:30","end_datetime":"2026-05-03 16:00","car_name":"카니발4.5 HEV 9","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"동구 금촌건행로3길 9 율하현인아이 15단지","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":18,"customer_name":"김현회","phone":"010-491-37630","start_datetime":"2026-05-01 22:00","end_datetime":"2026-05-03 20:00","car_name":"카니발4세7-9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"홍대구지점 / 계약금10/ 잔금20","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369통화","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":19,"customer_name":"배기원소장","phone":"010-9100-9094","start_datetime":"2026-05-02 07:00","end_datetime":"2026-05-02 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":100000,"balance":200000,"address":"","pickup_location":"사무실 /계약금10(박정옥)/ 잔금20자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":20,"customer_name":"","phone":"010-5266-8267","start_datetime":"2026-05-02 08:00","end_datetime":"2026-05-03 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":500000,"deposit":null,"balance":null,"address":"","pickup_location":"대성유니드쏠라티50/경비포도 기사30/박영일기사010-8869-4233","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3478","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":21,"customer_name":"김환식","phone":"010-5021-7611","start_datetime":"2026-05-02 10:00","end_datetime":"2026-05-03 08:00","car_name":"쏘렌토6인승","car_generation":"","seating":"","insurance_type":"","amount":70000,"deposit":null,"balance":null,"address":"","pickup_location":"송현로8길27 301호 / 일반자차 70,000","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4592","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":22,"customer_name":"큰두나친구","phone":"010-5348-5348","start_datetime":"2026-05-02 20:00","end_datetime":"2026-05-05 21:00","car_name":"구카니발7","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":null,"balance":null,"address":"","pickup_location":"사장님큰두나친구 30만원 / 범어동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 0785/8168","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":23,"customer_name":"유화할고객","phone":"010-5669-6993","start_datetime":"2026-05-03 03:00","end_datetime":"2026-05-04 01:00","car_name":"카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"달구벌대로344길68후 섬멋주차장/사무실/20자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 신차","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":24,"customer_name":"경산m렌트처리","phone":"","start_datetime":"2026-05-03 08:00","end_datetime":"2026-05-04 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경산m렌트/반차 경산M렌트 자포27","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":25,"customer_name":"박재현","phone":"010-4098-0983","start_datetime":"2026-05-03 08:00","end_datetime":"2026-05-04 21:30","car_name":"CN7","car_generation":"","seating":"","insurance_type":"","amount":144000,"deposit":null,"balance":null,"address":"","pickup_location":"이목홍 1220-15 미소티로 1층 144,000 일반면책","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 유종함인필요","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":26,"customer_name":"","phone":"010-7200-6577","start_datetime":"2026-05-03 10:00","end_datetime":"2026-05-04 10:00","car_name":"투싼","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"사무실 카드13 / 카시트 2개","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1528","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":27,"customer_name":"업부장고객","phone":"010-2161-9325","start_datetime":"2026-05-05 08:00","end_datetime":"2026-05-05 20:00","car_name":"카니발4.5세대9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"지산중학교 / 자포15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":28,"customer_name":"남덕초","phone":"010-3193-4023","start_datetime":"2026-05-08 10:00","end_datetime":"2026-05-10 20:00","car_name":"카니발7인승","car_generation":"","seating":"","insurance_type":"","amount":450000,"deposit":100000,"balance":350000,"address":"","pickup_location":"계약금10 (이영원입환) / 45자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":29,"customer_name":"김성열(71년)","phone":"010-2650-7274","start_datetime":"2026-05-08 17:30","end_datetime":"2026-05-09 17:30","car_name":"디엣지(25년형)","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"범어동 을지맨션 101동 / 카모아","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":30,"customer_name":"조성기","phone":"010-5730-9177","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":50000,"balance":250000,"address":"","pickup_location":"대명호4.24-10 계약금5 잔금25","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1265 차정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":31,"customer_name":"오토정사장고객","phone":"","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경산","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":32,"customer_name":"배환수","phone":"010-7508-2515","start_datetime":"2026-05-09 08:00","end_datetime":"2026-05-09 20:00","car_name":"","car_generation":"","seating":"","insurance_type":"","amount":195000,"deposit":null,"balance":null,"address":"","pickup_location":"성달로39길76 / 195,000(카드)","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":33,"customer_name":"","phone":"","start_datetime":"2026-05-09 12:00","end_datetime":"2026-05-10 19:00","car_name":"카니발4.5 9인승","car_generation":"","seating":"","insurance_type":"","amount":318000,"deposit":null,"balance":null,"address":"","pickup_location":"홍대푸르지오브리/렌트/318,000(카드)","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":34,"customer_name":"","phone":"010-4501-2002","start_datetime":"2026-05-11 09:00","end_datetime":"2026-05-11 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"삼덕네거리 조양주유소 13자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":35,"customer_name":"","phone":"010-3201-3808","start_datetime":"2026-05-11 10:00","end_datetime":"2026-05-27 20:00","car_name":"카니발4.5 9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경주 보문마돌5길12 / 호불","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":36,"customer_name":"","phone":"","start_datetime":"2026-05-11 08:00","end_datetime":"2026-05-15 20:00","car_name":"스타렉스/뉴카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"전국장애인체육회 / 김해공항 – 일정확인","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확인필요","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":37,"customer_name":"","phone":"010-3533-9410","start_datetime":"2026-05-12 09:00","end_datetime":"2026-05-12 20:00","car_name":"뉴카니발","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"화망로57 202동 / 10","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":38,"customer_name":"이장희","phone":"010-2540-4865","start_datetime":"2026-05-13 08:00","end_datetime":"2026-05-13 20:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"이목공원로 83 105동일/ 월목렌트최준혁처리","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":39,"customer_name":"박향호","phone":"010-3631-6458","start_datetime":"2026-05-14 09:00","end_datetime":"2026-05-16 18:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":700000,"deposit":null,"balance":null,"address":"","pickup_location":"70자포/ 학정로106일 15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":40,"customer_name":"","phone":"010-6669-1837","start_datetime":"2026-05-14 20:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"수성자이르내 103동 / 완전자차36","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1190","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":41,"customer_name":"24년식","phone":"010-6669-1837","start_datetime":"2026-05-15 08:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":360000,"deposit":null,"balance":null,"address":"","pickup_location":"수성로295 103동/게5 31전 / 36만전자차","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3477","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":42,"customer_name":"","phone":"010-8337-5617","start_datetime":"2026-05-15 09:00","end_datetime":"2026-05-29 20:00","car_name":"쏘렌토","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"1일12 후불180만원/ 일산보성자 207동","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":43,"customer_name":"","phone":"","start_datetime":"2026-05-15 15:00","end_datetime":"2026-05-15 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":300000,"deposit":null,"balance":null,"address":"","pickup_location":"30만+기사비도","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":44,"customer_name":"업부장","phone":"","start_datetime":"2026-05-15 20:00","end_datetime":"2026-05-17 20:00","car_name":"카니발7인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"업부장 부모님 이용","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2904","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":45,"customer_name":"","phone":"010-3505-3652","start_datetime":"2026-05-17 08:00","end_datetime":"2026-05-17 20:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"팡장 삼정그린빌 자포15","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":46,"customer_name":"1304가등","phone":"","start_datetime":"2026-05-18 08:00","end_datetime":"2026-06-04 20:00","car_name":"점정신형쏠라티","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"인천선거차량","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3478지정","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":47,"customer_name":"3926가등","phone":"","start_datetime":"2026-05-18 08:00","end_datetime":"2026-06-04 20:00","car_name":"스타리아","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"선거 – 속초","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1643/1099","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":48,"customer_name":"6명탑승","phone":"010-7510-6097","start_datetime":"2026-05-23 08:00","end_datetime":"2026-05-25 20:00","car_name":"카니방","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"다사 / 40자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":49,"customer_name":"허은미","phone":"010-6677-0421","start_datetime":"2026-05-23 09:00","end_datetime":"2026-05-25 20:00","car_name":"카니발 4세대","car_generation":"","seating":"","insurance_type":"","amount":400000,"deposit":100000,"balance":300000,"address":"","pickup_location":"울배로68안길37-10 계10/잔30/5명탑승","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":50,"customer_name":"이홍순","phone":"010-3519-7823","start_datetime":"2026-05-23 09:00","end_datetime":"2026-05-25 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":750000,"deposit":null,"balance":null,"address":"","pickup_location":"사무실 자포75","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1304","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":51,"customer_name":"","phone":"010-3586-2202","start_datetime":"2026-06-06 09:00","end_datetime":"2026-06-07 21:00","car_name":"스타리아9인승","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"대살역동아아이위사 완전면책36","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 3369","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":52,"customer_name":"","phone":"010-4775-1141","start_datetime":"2026-06-13 07:00","end_datetime":"2026-06-14 20:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":550000,"deposit":null,"balance":null,"address":"","pickup_location":"자포55","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":53,"customer_name":"박의목","phone":"010-7445-0462","start_datetime":"2026-06-13 08:00","end_datetime":"2026-06-14 21:00","car_name":"쏠라티","car_generation":"","seating":"","insurance_type":"","amount":600000,"deposit":null,"balance":null,"address":"","pickup_location":"성서홈플맞은편주차장/60자포/소주한박스사비스","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 사장님선배","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":54,"customer_name":"전진아제주","phone":"","start_datetime":"2026-06-19 08:00","end_datetime":"2026-06-21 20:00","car_name":"승용5승합12","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"경남체육대회/승합1일20만/승용중형준중형10만","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 차량확정X","raw_text":"","reservation_status":"확인필요","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":55,"customer_name":"","phone":"010-4822-4607","start_datetime":"2026-06-26 08:00","end_datetime":"2026-06-27 20:00","car_name":"카니발4.5 9~7","car_generation":"","seating":"","insurance_type":"","amount":280000,"deposit":null,"balance":null,"address":"","pickup_location":"상원로 42 한방건강원 자포28현금","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 1448~1868","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":56,"customer_name":"박소영","phone":"010-7183-3148","start_datetime":"2026-07-13 11:30","end_datetime":"2026-07-14 21:00","car_name":"카니발4.5 HEV","car_generation":"","seating":"","insurance_type":"","amount":390000,"deposit":50000,"balance":340000,"address":"","pickup_location":"한실로 117 302동 1705호 계약금5 잔금34","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 4407","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":57,"customer_name":"8명탑승","phone":"010-2513-3071","start_datetime":"2026-07-17 07:00","end_datetime":"2026-07-17 20:00","car_name":"스타리아","car_generation":"","seating":"","insurance_type":"","amount":null,"deposit":null,"balance":null,"address":"","pickup_location":"15자포","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"},{"id":58,"customer_name":"엄서정","phone":"010-7243-7472","start_datetime":"2026-08-18 09:00","end_datetime":"2026-08-20 20:00","car_name":"카니발4세대","car_generation":"","seating":"","insurance_type":"","amount":467000,"deposit":50000,"balance":417000,"address":"","pickup_location":"대구역힐스센트럴 467,000/계약금50,000받음","return_location":"","pickup_type":"방문수령","return_type":"방문반납","notes":"차량번호: 2543","raw_text":"","reservation_status":"확정","duplicate_flag":0,"schedule_conflict":0,"parsing_confidence":"HIGH","created_at":"2026-04-28 00:00:00","updated_at":"2026-04-28 00:00:00"}];
+  const obj={};
+  SEED.forEach(r=>{obj[r.id]=r;});
+  db.ref(FB_RES).set(obj).then(()=>{
+    showToast('✅ Firebase에 58건 초기 데이터 업로드 완료!',4000);
+    nextId=59;
+  });
+}
+
 
 
 /* ═══════════════════════════════════════════
@@ -6242,39 +6766,174 @@ function getReservedListInRange(reservations, category, rangeStart, rangeEnd) {
 }
 
 function renderScheduleTables() {
-  for (let t = 0; t < 4; t++) {
-    const tbody = document.querySelector(`#schedTbl${t} tbody`);
-    if (!tbody) continue;
+  const all = loadData();
+  const todayStr = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
+
+  function getTab(carName) {
+    const cn = (carName||'').replace(/\s/g,'').toLowerCase();
+    if (cn.includes('쏠라티')||cn.includes('솔라티')||cn.includes('쏠라')||cn.includes('점정신형')) return 0;
+    if (cn.includes('스타리아')||cn.includes('스타렉스')) return 1;
+    if (cn.includes('카니발')||cn.includes('카니방')||cn.includes('뉴카니발')||cn.includes('구카니발')) return 2;
+    return 3;
+  }
+
+  // 오늘 이전 반납 완료 → 대여종료 / 나머지 → 현재 일정
+  const doneList = [];
+  const activeList = [];
+
+  [...all]
+    .sort((a,b)=>(a.start_datetime||'')>(b.start_datetime||'')?1:-1)
+    .forEach(r => {
+      const endDt = r.end_datetime ? r.end_datetime.slice(0,10) : '';
+      const startDt = r.start_datetime ? r.start_datetime.slice(0,10) : '';
+      // 반납일이 오늘보다 이전이거나 상태가 완료/취소면 대여종료
+      const isDone = (endDt && endDt < todayStr) || r.reservation_status === '완료' || r.reservation_status === '취소';
+      if (isDone) doneList.push(r);
+      else activeList.push(r);
+    });
+
+  const tabData = {0:[],1:[],2:[],3:[]};
+  activeList.forEach(r => tabData[getTab(r.car_name)].push(r));
+
+  function buildRows(tbody, rows, showBadge=true) {
     tbody.innerHTML = '';
-    const rows = SCHEDULE_DATA[t] || [];
-    rows.forEach(cells => {
-      const isEmpty = cells.every(c => !c.trim());
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">예약 없음</td></tr>';
+      return;
+    }
+    rows.forEach(r => {
       const tr = document.createElement('tr');
-      if (isEmpty) tr.className = 'empty-row';
-      cells.forEach((cell, ci) => {
-        const td = document.createElement('td');
-        td.textContent = cell;
-        const cls = ['date-cell','date-cell','car-cell','num-cell','name-cell','phone-cell','memo-cell'][ci] || '';
-        if (cls) td.className = cls;
-        tr.appendChild(td);
-      });
+      tr.id = 'srow-' + r.id;
+      tr.style.cursor = 'pointer';
+
+      const rowBg = {'완료':'#f0fdf4','취소':'#fef2f2','접수':'#fffbeb','확인필요':'#faf5ff'};
+      if (rowBg[r.reservation_status]) tr.style.background = rowBg[r.reservation_status];
+
+      const amt = r.amount ? r.amount.toLocaleString()+'원' : '-';
+      const bal = r.balance;
+      const balHtml = bal===0 ? '<span style="color:#16a34a;font-weight:700;font-size:11px">완납</span>'
+                    : bal>0  ? `<span style="color:#dc2626;font-weight:700;font-size:11px">잔${bal.toLocaleString()}원</span>`
+                    : '';
+      const status = r.reservation_status||'접수';
+      const statusHtml = showBadge ? `<span class="badge ss-${status}" style="font-size:10px;padding:1px 5px">${status}</span>` : '';
+      const fmtDt = dt => dt ? dt.replace('2026-','').replace(/-/g,'.') : '-';
+
+      tr.innerHTML = `
+        <td class="date-cell">${fmtDt(r.start_datetime)}</td>
+        <td class="date-cell">${fmtDt(r.end_datetime)}</td>
+        <td class="car-cell">${r.car_name||'-'}${r.seating?' '+r.seating:''}</td>
+        <td class="num-cell" id="sn-${r.id}" onclick="schedEditCell(event,${r.id},'notes')" title="클릭하여 수정">${r.notes||'-'}</td>
+        <td class="name-cell" id="sc-${r.id}" onclick="schedEditCell(event,${r.id},'customer_name')" title="클릭하여 수정">${r.customer_name||'-'}</td>
+        <td class="phone-cell" id="sp-${r.id}" onclick="schedEditCell(event,${r.id},'phone')" title="클릭하여 수정">${r.phone||'-'}</td>
+        <td class="memo-cell" onclick="openDetail(${r.id})">${(r.pickup_location||r.address||'-').substring(0,25)} <span style="color:#888;font-size:11px">${amt} ${balHtml}</span> ${statusHtml}</td>
+      `;
       tbody.appendChild(tr);
     });
   }
+
+  // 전체 탭 (현재 일정만)
+  const allTbody = document.querySelector('#schedTblAll tbody');
+  if (allTbody) buildRows(allTbody, activeList);
+
+  // 개별 탭
+  for (let t = 0; t < 4; t++) {
+    const tbody = document.querySelector(`#schedTbl${t} tbody`);
+    if (tbody) buildRows(tbody, tabData[t]);
+  }
+
+  // 대여종료 탭 (날짜 역순 - 최근 종료가 위로)
+  const doneTbody = document.querySelector('#schedTblDone tbody');
+  if (doneTbody) buildRows(doneTbody, [...doneList].reverse(), true);
+
+  // 대여종료 건수 표시
+  const doneCountEl = document.getElementById('doneCount');
+  if (doneCountEl) doneCountEl.textContent = `총 ${doneList.length}건`;
+  const doneBadgeEl = document.getElementById('doneCountBadge');
+  if (doneBadgeEl) doneBadgeEl.textContent = doneList.length || '';
+}
+
+// 일정표 셀 인라인 편집
+function schedEditCell(e, id, field) {
+  e.stopPropagation();
+  const cell = e.currentTarget;
+  const data = loadData();
+  const r = data.find(x=>x.id===id);
+  if (!r) return;
+
+  const cur = r[field] || '';
+  const fieldLabels = {notes:'차량번호', customer_name:'고객명', phone:'연락처'};
+
+  // 이미 편집 중이면 무시
+  if (cell.querySelector('input')) return;
+
+  const orig = cell.innerHTML;
+  cell.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:4px;align-items:center;min-width:100px';
+
+  const input = document.createElement('input');
+  input.value = cur;
+  input.placeholder = fieldLabels[field]||field;
+  input.style.cssText = 'padding:2px 5px;border:1px solid #2d6cdf;border-radius:2px;font-size:12px;width:100%;font-family:inherit;outline:none';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = '✓';
+  saveBtn.style.cssText = 'padding:2px 6px;background:#2d6cdf;color:#fff;border:none;border-radius:2px;cursor:pointer;font-size:12px;flex-shrink:0';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '✕';
+  cancelBtn.style.cssText = 'padding:2px 6px;background:#e5e7eb;color:#374151;border:none;border-radius:2px;cursor:pointer;font-size:12px;flex-shrink:0';
+
+  function doSave() {
+    const newVal = input.value.trim();
+    const d = loadData();
+    const ri = d.findIndex(x=>x.id===id);
+    if (ri !== -1) {
+      d[ri][field] = newVal;
+      d[ri].updated_at = new Date().toISOString().slice(0,19).replace('T',' ');
+      saveOneRecord(d[ri]);   // ★ 단건 저장
+    }
+    renderScheduleTables();
+    showToast(`${fieldLabels[field]||field} 저장됨 ✅`);
+  }
+
+  saveBtn.onclick = (ev) => { ev.stopPropagation(); doSave(); };
+  cancelBtn.onclick = (ev) => { ev.stopPropagation(); cell.innerHTML = orig; };
+  input.onkeydown = (ev) => {
+    if (ev.key === 'Enter') doSave();
+    if (ev.key === 'Escape') { cell.innerHTML = orig; }
+    ev.stopPropagation();
+  };
+
+  wrap.appendChild(input);
+  wrap.appendChild(saveBtn);
+  wrap.appendChild(cancelBtn);
+  cell.appendChild(wrap);
+  input.focus();
+  input.select();
 }
 
 function showScheduleTab(idx, btn) {
+  const allSheet  = document.getElementById('schedSheetAll');
+  const doneSheet = document.getElementById('schedSheetDone');
+  if (allSheet)  allSheet.style.display  = (idx === -1) ? '' : 'none';
+  if (doneSheet) doneSheet.style.display = (idx === 99) ? '' : 'none';
   for (let i = 0; i < 4; i++) {
     const sh = document.getElementById('schedSheet' + i);
-    if (sh) sh.style.display = (i === idx) ? '' : 'none';
+    if (sh) sh.style.display = (idx === -1 || i === idx) ? '' : 'none';
   }
   document.querySelectorAll('#schedTabBar .view-tab').forEach((b, i) => {
-    b.classList.toggle('active', i === idx);
+    if (idx === -1) b.classList.toggle('active', i === 0);
+    else if (idx === 99) b.classList.toggle('active', i === 5);
+    else b.classList.toggle('active', i === idx + 1);
   });
 }
 
 function schedPrint() {
   // 인쇄 전 모든 시트 표시
+  const allSh = document.getElementById('schedSheetAll');
+  if (allSh) allSh.style.display = '';
   for (let i = 0; i < 4; i++) {
     const sh = document.getElementById('schedSheet' + i);
     if (sh) sh.style.display = '';
