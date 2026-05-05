@@ -2569,6 +2569,7 @@ body::after{
           <!-- 일정표 엑셀 가져오기 -->
           <button class="btn btn-sm btn-outline" id="undoBtn" disabled style="opacity:0.4" onclick="_popUndo()" title="되돌릴 내용 없음">↩️ 되돌리기</button>
           <button class="btn btn-sm" style="background:#fef2f2;color:#c62828;border:1px solid #fecaca;font-weight:600" onclick="deleteAllReservations()">🗑️ 전체삭제</button>
+          <button class="btn btn-sm btn-outline" onclick="recalcAllFlags()" title="중복/충돌 플래그 재계산">🔄 플래그 재계산</button>
           <button class="btn btn-sm" onclick="document.getElementById('scheduleImportInput').click()"
             style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-weight:600"
             title="일정표_정리 엑셀 파일을 불러와 예약 데이터로 연동합니다">
@@ -4099,7 +4100,48 @@ function checkDuplicate(data, r, excludeId){
 }
 function checkConflict(data, r, excludeId){
   if(!r.car_name||!r.start_datetime||!r.end_datetime) return false;
-  return data.some(x=> x.id!==excludeId && x.car_name===r.car_name && !['취소','완료'].includes(x.reservation_status) && x.start_datetime<r.end_datetime && x.end_datetime>r.start_datetime);
+  return data.some(x => {
+    if (x.id === excludeId) return false;
+    if (['취소','완료'].includes(x.reservation_status)) return false;
+    if (!x.start_datetime || !x.end_datetime) return false;
+    // ★ 차량번호(plate)가 둘 다 있으면 plate로 비교 (더 정확)
+    if (r.plate && x.plate) {
+      // plate가 다르면 충돌 아님
+      const rPlates = r.plate.split('/');
+      const xPlates = x.plate.split('/');
+      const overlap = rPlates.some(rp => xPlates.some(xp => rp === xp));
+      if (!overlap) return false;
+    } else {
+      // plate 없으면 차량명 앞 6자만 비교 (너무 엄격한 완전일치 방지)
+      const rCar = (r.car_name||'').substring(0,6);
+      const xCar = (x.car_name||'').substring(0,6);
+      if (rCar !== xCar) return false;
+    }
+    // 시간 겹침 체크
+    return x.start_datetime < r.end_datetime && x.end_datetime > r.start_datetime;
+  });
+}
+
+
+// 중복/충돌 플래그 전체 재계산
+function recalcAllFlags() {
+  const data = loadData();
+  let changed = 0;
+  data.forEach(r => {
+    const newDup = checkDuplicate(data, r, r.id) ? 1 : 0;
+    const newConf = checkConflict(data, r, r.id) ? 1 : 0;
+    if (r.duplicate_flag !== newDup || r.schedule_conflict !== newConf) {
+      r.duplicate_flag = newDup;
+      r.schedule_conflict = newConf;
+      changed++;
+    }
+  });
+  if (changed > 0) {
+    saveData(data);
+    showToast('✅ 플래그 재계산 완료 (' + changed + '건 업데이트)');
+  } else {
+    showToast('✅ 모두 정상입니다');
+  }
 }
 
 // 상단 예약등록 버튼 — 예약 등록 페이지면 저장, 아니면 페이지 이동
