@@ -2484,7 +2484,7 @@ body::after{
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">총 요금 (원)</label>
-                    <input type="number" id="f_amount" class="form-input" placeholder="0"
+                    <input type="text" inputmode="numeric" id="f_amount" class="form-input" placeholder="0"
                       oninput="calcBalance()">
                   </div>
                   <div class="form-group">
@@ -2497,12 +2497,12 @@ body::after{
                 <div class="form-row" style="margin-top:6px">
                   <div class="form-group">
                     <label class="form-label">계약금 (원)</label>
-                    <input type="number" id="f_deposit" class="form-input" placeholder="0"
+                    <input type="text" inputmode="numeric" id="f_deposit" class="form-input" placeholder="0"
                       oninput="calcBalance()">
                   </div>
                   <div class="form-group">
                     <label class="form-label">잔금 (원)</label>
-                    <input type="number" id="f_balance" class="form-input" placeholder="자동계산"
+                    <input type="text" inputmode="numeric" id="f_balance" class="form-input" placeholder="자동계산"
                       style="background:#f8fafc" readonly>
                   </div>
                 </div>
@@ -3010,7 +3010,7 @@ var _cache = {
   vehicles:     [],
   templates:    [],
   logs:         [],
-  config:       { company:'대구렌트카', phone:'053-000-0000' }
+  config:       { company:'대구 경일렌트카', phone:'053-000-0000' }
 };
 var _fbReady = false;
 
@@ -3084,7 +3084,8 @@ function _initFirebaseListeners() {
     var arr = _toArr(snap);
     if (arr.length) {
       _cache.vehicles = arr;
-      // ★ 모든 페이지 갱신 (차량 정보가 대시보드/일정표/통계에도 반영)
+      // localStorage에도 동기화 (오프라인 fallback)
+      try { localStorage.setItem(VEHICLE_KEY, JSON.stringify(arr)); } catch(e) {}
       if (typeof _refreshCurrentPage === 'function') _refreshCurrentPage();
     }
   });
@@ -3175,7 +3176,7 @@ function saveLogs(arr) {
 }
 
 // ── 설정 ────────────────────────────────────────
-function loadConfig() { return Object.assign({company:'대구렌트카',phone:'010-4164-2820'}, _cache.config); }
+function loadConfig() { return Object.assign({company:'대구 경일렌트카',phone:'010-4164-2820'}, _cache.config); }
 function saveConfig(cfg) {
   _cache.config = cfg;
   db.ref(FB_CFG).set(cfg).catch(err => console.error('[Firebase] saveConfig:', err));
@@ -3656,6 +3657,7 @@ function parseText(raw) {
     '완전면책':'완전면책','완전자차':'완전자차','완자':'완전자차',
     '일반면책':'일반면책','일반자차':'일반자차','고급자차':'고급자차',
     '자차포함':'자차포함','무자차':'무자차','자포':'자차포함',
+    '자별':'자차별도','자차별도':'자차별도','완전자차':'완전자차',
     '자차보험':'자차포함','슈퍼자차':'슈퍼자차'
   };
   for (const [k,v] of Object.entries(insMap2)) {
@@ -3681,11 +3683,18 @@ function parseText(raw) {
 
   // ★ 차량번호 패턴: "3369-4415" (4자리-4자리) → 택1 차량번호로 메모 저장
   // 날짜/전화번호와 구분: 4자리-4자리 순수 숫자
+  // ★ 전화번호 구성 4자리 미리 수집 (택1 패턴에서도 제외)
+  const phoneDigitSet = new Set();
+  for (const ph of text.matchAll(/01[0-9][- ]?(\d{3,4})[- ]?(\d{4})/g)) {
+    phoneDigitSet.add(ph[1]);
+    phoneDigitSet.add(ph[2]);
+  }
   const dualPlateM = textNoAccount.match(/\b(\d{4})-(\d{4})\b/);
   if (dualPlateM) {
     const before = text.substring(0, dualPlateM.index).slice(-3);
-    if (!/01[0-9]$/.test(before) && !/\d월/.test(before)) {
-      const p1 = dualPlateM[1], p2 = dualPlateM[2];
+    const p1 = dualPlateM[1], p2 = dualPlateM[2];
+    // ★ 전화번호 구성 숫자면 스킵
+    if (!/01[0-9]$/.test(before) && !/\d월/.test(before) && !phoneDigitSet.has(p1) && !phoneDigitSet.has(p2)) {
       r.notes.push(`차량번호(택1): ${p1} 또는 ${p2}`);
       if (!r.plate) r.plate = p1 + '/' + p2;
       // ★ 차량 DB에서 번호판 끝 4자리로 매칭 → 차량명/인승 자동 채움
@@ -3702,11 +3711,19 @@ function parseText(raw) {
   }
   // 단일 차량번호 4자리 (3369 등) — 차량 DB 매칭
   if (!dualPlateM) {
+    // ★ 전화번호에서 추출된 4자리는 차량번호 후보에서 제외
+    const phoneNums = new Set();
+    for (const ph of text.matchAll(/01[0-9][- ]?(\d{3,4})[- ]?(\d{4})/g)) {
+      phoneNums.add(ph[1]); // 중간 4자리
+      phoneNums.add(ph[2]); // 끝 4자리
+    }
     // 텍스트에서 4자리 숫자 후보 수집 (날짜/전화 제외)
     const plateMatches = [...text.matchAll(/\b(\d{4})\b/g)];
     for (const pm of plateMatches) {
       const before3 = text.substring(0, pm.index).slice(-3);
       if (/01[0-9]$/.test(before3) || /\d월/.test(before3)) continue;
+      // ★ 전화번호 구성 숫자이면 스킵
+      if (phoneNums.has(pm[1])) continue;
       const vList = loadVehicles();
       const matched = vList.find(v => (v.plate||'').endsWith(pm[1]));
       if (matched) {
@@ -3769,8 +3786,24 @@ function parseText(raw) {
   // ══════════════════════════════════════════════
   // ★ 카모아: 배차주소/반차주소, (차고지 방문) 접두사 제거
   const _stripPrefix = (s) => (s||'').replace(/^\([^)]+\)\s*/, '').trim();
-  r.pickup_location = _stripPrefix(kvMap['배차주소'] || kvMap['배차지'] || kvMap['배차위치'] || kvMap['배차'] || kvMap['픽업'] || kvMap['픽업주소'] || '');
-  r.return_location = _stripPrefix(kvMap['반차주소'] || kvMap['회차주소'] || kvMap['회차'] || kvMap['회차지'] || kvMap['회차위치'] || kvMap['반납주소'] || kvMap['반납지'] || '');
+  r.pickup_location = _stripPrefix(kvMap['배차주소'] || kvMap['배차지'] || kvMap['배차위치'] || kvMap['배차'] || kvMap['픽업'] || kvMap['픽업주소'] || kvMap['출발지'] || kvMap['출발지점'] || kvMap['출발'] || '');
+  r.return_location = _stripPrefix(kvMap['반차주소'] || kvMap['회차주소'] || kvMap['회차'] || kvMap['회차지'] || kvMap['회차위치'] || kvMap['반납주소'] || kvMap['반납지'] || kvMap['도착지'] || kvMap['도착'] || '');
+
+    // ★ 반납은/배차는 키워드 파싱
+  if (!r.return_location) {
+    const retLines = text.split('\n');
+    for (const rl of retLines) {
+      const rm = rl.match(/반납(?:은|지|장소|위치)?\s*[:：]?\s*([가-힣A-Za-z0-9\s]{2,30})/);
+      if (rm) { r.return_location = rm[1].trim(); break; }
+    }
+  }
+  if (!r.pickup_location) {
+    const pickLines = text.split('\n');
+    for (const pl of pickLines) {
+      const pm2 = pl.match(/배차(?:는|지|장소|위치)?\s*[:：]?\s*([가-힣A-Za-z0-9\s]{2,30})/);
+      if (pm2) { r.pickup_location = pm2[1].trim(); break; }
+    }
+  }
 
   // 카카오맵 링크에서 주소 추출
   if (!r.pickup_location) {
@@ -3874,9 +3907,27 @@ function parseText(raw) {
     };
     const filteredPlaces = allPlaces.filter(p => !isNameLike(p) && !isGreeting(p));
 
-    if (filteredPlaces.length >= 1) r.pickup_location = filteredPlaces[0];
-    if (filteredPlaces.length >= 2) r.return_location  = filteredPlaces[1];
-    if (filteredPlaces.length === 1) r.return_location  = filteredPlaces[0];
+    // ★ 장소 후보 처리:
+    // 아파트/건물 상세주소(동호수 등)가 메인 주소 바로 다음에 오면 합침
+    const mergedPlaces = [];
+    const APT_PAT = /^[가-힣A-Za-z0-9]+\s*\d+동|\d+동\s*\d+호|[가-힣]+아파트|[가-힣]+빌라|[가-힣]+오피스텔|[가-힣]+타운|[가-힣]+파크|[가-힣]+채|[가-힣]+힐|[가-힣]+시티/;
+    for (let pi = 0; pi < filteredPlaces.length; pi++) {
+      const cur = filteredPlaces[pi];
+      const next = filteredPlaces[pi+1];
+      // 다음 줄이 아파트 동호수나 건물명 패턴이면 합침
+      if (next && APT_PAT.test(next) && next.length < 20) {
+        mergedPlaces.push(cur + ' ' + next);
+        pi++; // next는 이미 합쳤으니 스킵
+      } else {
+        mergedPlaces.push(cur);
+      }
+    }
+
+    // 배차/회차 위치 할당
+    // 보통 배차=회차 → 1개면 둘 다 동일
+    if (mergedPlaces.length >= 1) r.pickup_location = mergedPlaces[0];
+    if (mergedPlaces.length >= 2) r.return_location  = mergedPlaces[1];
+    if (mergedPlaces.length === 1) r.return_location  = mergedPlaces[0]; // 동일 장소
 
     // 장소 없으면 기존 address 방식으로 fallback
     if (!r.pickup_location) {
@@ -3894,9 +3945,35 @@ function parseText(raw) {
       }
     }
 
-    // ★ 배차/회차 위치가 끝까지 없으면 → "사무실" 기본값
+      // ★ 전날출고 패턴: 시작일을 하루 전 20:00으로 조정
+  if (/전날출고|전날\s*출고|전일출고/.test(text) && r.start_datetime) {
+    const sd = new Date(r.start_datetime.replace(' ', 'T'));
+    if (!isNaN(sd)) {
+      sd.setDate(sd.getDate() - 1);
+      sd.setHours(20, 0, 0, 0);
+      const pad = n => String(n).padStart(2,'0');
+      r.start_datetime = sd.getFullYear()+'-'+pad(sd.getMonth()+1)+'-'+pad(sd.getDate())+' 20:00';
+    }
+  }
+
+    // ★ 결제방법 파싱 (현금/카드/이체/계좌이체)
+  if (!r.payment_method) {
+    if (/현금/.test(text)) r.payment_method = '현금';
+    else if (/카드/.test(text)) r.payment_method = '카드';
+    else if (/이체|계좌/.test(text)) r.payment_method = '계좌이체';
+  }
+  if (r.payment_method) r.notes.push('결제: ' + r.payment_method);
+
+  // ★ 배차/회차 위치가 끝까지 없으면 → "사무실" 기본값
+    // ★ 지점명 인식 (동대구지점, 본점 등)
+    const branchM = text.match(/(동대구|서대구|북대구|남대구|수성|달서|달성|중구|본점|본사)\s*지점?/);
+    if (branchM && !r.pickup_location) {
+      r.pickup_location = branchM[0].includes('지점') ? branchM[0] : branchM[1] + '지점';
+      if (!r.return_location) r.return_location = r.pickup_location;
+    }
+
     if (!r.pickup_location) r.pickup_location = '사무실';
-    if (!r.return_location)  r.return_location  = '사무실';
+    if (!r.return_location)  r.return_location  = r.pickup_location; // 회차 없으면 배차와 동일
   }
 
   // 이용기간 → notes (날짜범위가 아닌 경우)
@@ -4042,6 +4119,46 @@ function topbarNewOrSave() {
 /* ═══════════════════════════════════════════════════
    예약 등록 폼 — 차량 선택기
 ═══════════════════════════════════════════════════ */
+
+// 예약 상세 모달 — 차량 선택기
+function populateDetailVehiclePicker() {
+  const sel = document.getElementById('de_vehicle_picker');
+  if (!sel) return;
+  const vehicles = (typeof loadVehicles === 'function') ? loadVehicles() : [];
+  const groups = { '승합차': [], '대형차': [], 'SUV': [], '승용차': [], '기타': [] };
+  vehicles.forEach(v => {
+    const cat = (typeof getVehicleCategory === 'function') ? getVehicleCategory(v) : '기타';
+    (groups[cat] || groups['기타']).push(v);
+  });
+  let html = '<option value="">-- 등록차량에서 선택 --</option>';
+  const icons = { '승합차':'🚐', '대형차':'🚙', 'SUV':'🚗', '승용차':'🚘', '기타':'🚕' };
+  ['승합차','대형차','SUV','승용차','기타'].forEach(cat => {
+    if (!groups[cat].length) return;
+    html += `<optgroup label="${icons[cat]} ${cat} (${groups[cat].length}대)">`;
+    groups[cat].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(v => {
+      const label = `${v.plate||'번호없음'} · ${v.name||''} ${v.gen||''} ${v.seat||''}`.trim();
+      html += `<option value="${v.id}">${label}</option>`;
+    });
+    html += '</optgroup>';
+  });
+  sel.innerHTML = html;
+}
+
+function pickVehicleForDetail(vid) {
+  if (!vid) return;
+  const v = loadVehicles().find(x => x.id === vid);
+  if (!v) return;
+  const set = (id, val) => { const el=document.getElementById(id); if(el && val!=null) el.value=val; };
+  set('de_car',    v.name||'');
+  set('de_carnum', v.plate||'');
+  set('de_gen',    v.gen||'');
+  set('de_seat',   v.seat||'');
+  // 차종 select
+  const typeEl = document.getElementById('de_type');
+  if (typeEl && v.type) typeEl.value = v.type;
+  showToast(`✅ ${v.plate||''} ${v.name||''} 선택됨`);
+}
+
 function populateVehiclePicker() {
   const sel = document.getElementById('f_vehicle_picker');
   if (!sel) return;
@@ -5699,7 +5816,7 @@ async function exportExcel() {
         { v: idx+1,                              align:'center' },
         { v: fmtDateTime(r.start_datetime),      align:'center' },
         { v: fmtDateTime(r.end_datetime),        align:'center' },
-        { v: r.customer_name||'',                align:'center' },
+        { v: (r.customer_name==='(미기재)' ? '' : r.customer_name||''),                align:'center' },
         { v: r.phone||'',                        align:'center' },
         { v: r.car_name||'',                     align:'left',   indent:1 },
         { v: plate,                              align:'center' },
@@ -5831,6 +5948,18 @@ async function exportExcel() {
   const fname = `경일렌트카_예약현황_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.xlsx`;
   saveAs(blob, fname);
   showToast('✅ 엑셀 다운로드 완료', 3000);
+}
+
+
+// 금액 입력 시 자동 쉼표 포맷
+function fmtCommaInput(el) {
+  const raw = el.value.replace(/[^0-9]/g, '');
+  const cursor = el.selectionStart;
+  const oldLen = el.value.length;
+  el.value = raw ? Number(raw).toLocaleString() : '';
+  // 커서 위치 보정
+  const diff = el.value.length - oldLen;
+  try { el.setSelectionRange(cursor + diff, cursor + diff); } catch(e) {}
 }
 
 // 날짜 포맷 헬퍼
@@ -6301,6 +6430,8 @@ function getVehicleCategory(nameOrVehicle) {
 
 function loadVehicles() {
   try {
+    // Firebase 캐시 우선 (실시간 동기화)
+    if (_cache.vehicles && _cache.vehicles.length) return _cache.vehicles.slice();
     const saved = JSON.parse(localStorage.getItem(VEHICLE_KEY)) || [];
     if(!saved.length) {
       const samples = [{"id": "v001", "name": "쏘나타", "gen": "DN8 F/L 하이브리드", "seat": "", "plate": "103호1138", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v002", "name": "쏘렌토", "gen": "2.2 디젤", "seat": "6인승", "plate": "103호4592", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v004", "name": "스타리아", "gen": "11인승 HEV", "seat": "11인승", "plate": "700호3477", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v005", "name": "쏠라티", "gen": "디젤", "seat": "", "plate": "700호3478", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v006", "name": "쏘나타", "gen": "2026 LPG", "seat": "", "plate": "103호1042", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v007", "name": "쏠라티", "gen": "26년식", "seat": "", "plate": "702호1304", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v008", "name": "벤츠 GLB", "gen": "GLB200 2020년 디젤", "seat": "", "plate": "127호2003", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v009", "name": "K3", "gen": "더뉴 2세대 휘발유", "seat": "", "plate": "127호2867", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v010", "name": "아반떼", "gen": "CN7 F/L 가솔린 2023년", "seat": "", "plate": "127호3373", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v011", "name": "카니발", "gen": "4.5 F/L HEV 2023년", "seat": "9인승", "plate": "103호4407", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v012", "name": "그랜저", "gen": "GN7 가솔린 2022년", "seat": "", "plate": "127호3341", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v015", "name": "카니발", "gen": "구형 2014년 디젤", "seat": "9인승", "plate": "03호8168", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v016", "name": "카니발", "gen": "구형 2014년 디젤", "seat": "9인승", "plate": "33하0785", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v017", "name": "스타렉스", "gen": "그랜드 2017년 디젤", "seat": "12인승", "plate": "71호3942", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v018", "name": "스타렉스", "gen": "그랜드 2017년 디젤", "seat": "12인승", "plate": "71호3926", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v019", "name": "쏠라티", "gen": "2015년 디젤", "seat": "", "plate": "702호1265", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v020", "name": "스타리아", "gen": "2021년 디젤", "seat": "11인승", "plate": "702호1190", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v021", "name": "스타리아", "gen": "2021년 디젤", "seat": "11인승", "plate": "702호1099", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v022", "name": "그랜저", "gen": "IG 3.0 LPG 2016년", "seat": "", "plate": "43하8210", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v023", "name": "카니발", "gen": "4.5 HEV 리무진 2023년", "seat": "7인승", "plate": "127호2904", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v024", "name": "싼타페", "gen": "MX5 HEV 2023년", "seat": "6인승", "plate": "127호2872", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v025", "name": "K3", "gen": "더뉴 2세대 가솔린", "seat": "", "plate": "27호2867", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v026", "name": "K5", "gen": "F/L 3세대 LPG 2023년", "seat": "", "plate": "127호2842", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v027", "name": "G90", "gen": "RS4 3.5 가솔린 2021년 롱휠베이스", "seat": "", "plate": "127호2773", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v028", "name": "K5", "gen": "F/L LPG", "seat": "", "plate": "127호2731", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v029", "name": "싼타페", "gen": "MX5 가솔린 7인승", "seat": "7인승", "plate": "127호2522", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v030", "name": "카니발", "gen": "4세대 디젤 2023년", "seat": "9인승", "plate": "127호2543", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v031", "name": "카니발", "gen": "4세대 디젤", "seat": "9인승", "plate": "127호2521", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v032", "name": "K5", "gen": "DL3 LPG", "seat": "", "plate": "127호2362", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v033", "name": "그랜저", "gen": "F/IG LPG 3.0", "seat": "", "plate": "127호2328", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v034", "name": "아반떼", "gen": "CN7 LPG", "seat": "", "plate": "127호2322", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v035", "name": "그랜저", "gen": "GN7 LPG 3.5", "seat": "", "plate": "127호2219", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v037", "name": "아반떼", "gen": "CN7 LPG", "seat": "", "plate": "127호2065", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v038", "name": "아반떼", "gen": "CN7 LPG", "seat": "", "plate": "127호2064", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v039", "name": "G90", "gen": "RS4 3.5 가솔린 2021년", "seat": "", "plate": "127호2018", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v040", "name": "아테온", "gen": "2022년 가솔린", "seat": "", "plate": "127호1966", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v041", "name": "카니발", "gen": "4.5 리무진 디젤 2023년", "seat": "7인승", "plate": "127호1868", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v042", "name": "G80", "gen": "스포츠 3.5 가솔린", "seat": "", "plate": "127호1862", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v043", "name": "K5", "gen": "DL3 LPG", "seat": "", "plate": "127호1758", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v044", "name": "쏘나타", "gen": "DN8 LPG", "seat": "", "plate": "127호1736", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v045", "name": "그랜저", "gen": "GN7 HEV", "seat": "", "plate": "127호1653", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v046", "name": "스타리아", "gen": "PG 9인승 LPG", "seat": "9인승", "plate": "127호1643", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v047", "name": "GV70", "gen": "디젤 2021년", "seat": "", "plate": "127호1616", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v048", "name": "투싼", "gen": "NX4 디젤 2020년", "seat": "", "plate": "127호1528", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v049", "name": "K5", "gen": "DL3 LPG", "seat": "", "plate": "127호1500", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v050", "name": "G80", "gen": "RG3 3.5 가솔린", "seat": "", "plate": "127호1444", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v051", "name": "G80", "gen": "RG3 2.5 가솔린", "seat": "", "plate": "127호1415", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v052", "name": "싼타페", "gen": "TM 경유", "seat": "", "plate": "127호1378", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v053", "name": "아반떼", "gen": "CN7 가솔린", "seat": "", "plate": "127호1334", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v055", "name": "그랜저", "gen": "IG F/L 3.0 LPG", "seat": "", "plate": "127호1272", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v056", "name": "G80", "gen": "RG3 3.5 가솔린", "seat": "", "plate": "127호1256", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v057", "name": "K5", "gen": "DL3 LPG", "seat": "", "plate": "127호1219", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v058", "name": "아반떼", "gen": "CN7 LPG", "seat": "", "plate": "127호1189", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v059", "name": "아반떼", "gen": "CN7 가솔린", "seat": "", "plate": "127호1186", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v060", "name": "GV80", "gen": "디젤 2020년", "seat": "", "plate": "127호1154", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v061", "name": "K5", "gen": "DL3 LPG", "seat": "", "plate": "127호1146", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v063", "name": "팰리세이드", "gen": "경유", "seat": "", "plate": "127호1003", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v064", "name": "아반떼", "gen": "CN7 F/L 가솔린 2023년", "seat": "", "plate": "103호4418", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v065", "name": "스타리아", "gen": "HEV 9인승 2021년", "seat": "9인승", "plate": "103호4415", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v066", "name": "아반떼", "gen": "CN7 가솔린", "seat": "", "plate": "103호4406", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v067", "name": "G80", "gen": "RG3 3.5 가솔린", "seat": "", "plate": "103호4238", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v068", "name": "스타리아", "gen": "9인승 경유 2021년", "seat": "9인승", "plate": "103호3369", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v069", "name": "GV80", "gen": "F/L 가솔린 2023년", "seat": "", "plate": "103호1842", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v070", "name": "쏘나타", "gen": "DN8 F/L LPG 2023년", "seat": "", "plate": "103호1807", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v071", "name": "셀토스", "gen": "더뉴 가솔린 2022년", "seat": "", "plate": "103호1492", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v072", "name": "카니발", "gen": "4.5 디젤 9인승 2023년", "seat": "9인승", "plate": "103하1448", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v073", "name": "쏘나타", "gen": "DN8 LPG", "seat": "", "plate": "08하1023", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v074", "name": "아이오닉6", "gen": "2022년 전기", "seat": "", "plate": "03호9940", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v075", "name": "그랜저", "gen": "IG LPG", "seat": "", "plate": "03호9009", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v076", "name": "그랜저", "gen": "IG LPG", "seat": "", "plate": "03호7365", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v077", "name": "쏘나타", "gen": "DN8 LPG", "seat": "", "plate": "03호2909", "status": "운행가능", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}, {"id": "v078", "name": "쏘나타", "gen": "DN8 F/L 가솔린 2023년", "seat": "", "plate": "127하1285", "status": "배차중", "year": "", "color": "", "price": null, "ins_exp": "", "memo": "", "created_at": "2026-04-23T00:00:00.000Z"}];
@@ -6327,7 +6458,14 @@ function resetVehicles() {
 }
 
 function saveVehicles(arr) {
-  localStorage.setItem(VEHICLE_KEY, JSON.stringify(arr));
+  localStorage.setItem(VEHICLE_KEY, JSON.stringify(arr)); // fallback
+  _cache.vehicles = arr.slice();
+  // Firebase에도 저장
+  if (typeof db !== 'undefined' && db) {
+    var obj = {};
+    arr.forEach(function(v){ if(v.id) obj[v.id] = v; });
+    db.ref(FB_VEH).set(obj).catch(function(e){ console.error('[Firebase] 차량 저장 실패:', e); });
+  }
 }
 
 /* ── 렌더링 ── */
@@ -6759,6 +6897,12 @@ function openDetail(id) {
         <tr><th>연락처</th><td><input class="form-input" id="de_phone" value="${(r.phone||'').replace(/"/g,'&quot;')}" placeholder="010-0000-0000"></td></tr>
         <tr><th>시작일시</th><td><input class="form-input" id="de_start" value="${r.start_datetime||''}" placeholder="2026-04-11 20:00"></td></tr>
         <tr><th>종료일시</th><td><input class="form-input" id="de_end" value="${r.end_datetime||''}" placeholder="2026-04-12 20:00"></td></tr>
+        <tr><th>차량선택</th><td>
+          <select id="de_vehicle_picker" class="form-input" style="font-size:13px;background:#f0f9ff;font-weight:600"
+            onchange="pickVehicleForDetail(this.value)">
+            <option value="">-- 등록차량에서 선택 --</option>
+          </select>
+        </td></tr>
         <tr><th>차량명</th><td><input class="form-input" id="de_car" value="${(r.car_name||'').replace(/"/g,'&quot;')}" list="deCarList">
           <datalist id="deCarList"><option value="쏠라티"><option value="스타리아9인승"><option value="스타리아9 HEV"><option value="카니발4.5 HEV 9인승"><option value="카니발 4세대"><option value="G80"><option value="GV70"><option value="CN7"><option value="쏘렌토6인승"><option value="디엣지"></datalist>
         </td></tr>
@@ -6782,9 +6926,9 @@ function openDetail(id) {
             ${['','완전자차','일반자차','일반면책','무자차'].map(v=>`<option value="${v}"${r.insurance_type===v?' selected':''}>${v||'선택'}</option>`).join('')}
           </select>
         </td></tr>
-        <tr><th>총 요금</th><td><input class="form-input" id="de_amount" type="number" value="${r.amount||0}" placeholder="0"></td></tr>
-        <tr><th>계약금</th><td><input class="form-input" id="de_deposit" type="number" value="${r.deposit||''}" placeholder="0"></td></tr>
-        <tr><th>잔금</th><td><input class="form-input" id="de_balance" type="number" value="${r.balance||''}" placeholder="0"></td></tr>
+        <tr><th>총 요금</th><td><input class="form-input" id="de_amount" type="text" inputmode="numeric" value="${r.amount ? Number(r.amount).toLocaleString() : '0'}" placeholder="0" oninput="fmtCommaInput(this)"></td></tr>
+        <tr><th>계약금</th><td><input class="form-input" id="de_deposit" type="text" inputmode="numeric" value="${r.deposit!=null ? Number(r.deposit).toLocaleString() : ''}" placeholder="0" oninput="fmtCommaInput(this)"></td></tr>
+        <tr><th>잔금</th><td><input class="form-input" id="de_balance" type="text" inputmode="numeric" value="${r.balance!=null ? Number(r.balance).toLocaleString() : ''}" placeholder="0"></td></tr>
         <tr><th>배차위치</th><td><input class="form-input" id="de_pickup" value="${(r.pickup_location||r.address||'').replace(/"/g,'&quot;')}"></td></tr>
         <tr><th>회차위치</th><td><input class="form-input" id="de_return" value="${(r.return_location||'').replace(/"/g,'&quot;')}"></td></tr>
         <tr><th>상태</th><td>
@@ -6826,6 +6970,8 @@ function openDetail(id) {
     <button class="btn btn-outline btn-sm" onclick="closeModal()">닫기</button>
   `;
   document.getElementById('detailModal').classList.add('open');
+  // 차량 선택 드롭다운 채우기
+  setTimeout(populateDetailVehiclePicker, 50);
 }
 
 function toggleDetailEdit(on) {
@@ -6841,9 +6987,9 @@ function saveDetailEdit(id) {
   if(idx===-1) return;
   const r = data[idx];
 
-  const amt = parseInt(document.getElementById('de_amount').value)||0;
-  const dep = document.getElementById('de_deposit').value;
-  const bal = document.getElementById('de_balance').value;
+  const amt = parseInt((document.getElementById('de_amount').value||'0').replace(/,/g,''))||0;
+  const dep = (document.getElementById('de_deposit').value||'').replace(/,/g,'');
+  const bal = (document.getElementById('de_balance').value||'').replace(/,/g,'');
 
   data[idx] = {
     ...r,
@@ -7248,6 +7394,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ★ Firebase 실시간 리스너 등록
   _initFirebaseListeners();
+
+  // ★ 차량 데이터 Firebase 마이그레이션 (localStorage → Firebase, 최초 1회)
+  setTimeout(function() {
+    db.ref(FB_VEH).once('value').then(function(snap) {
+      var fbArr = _toArr(snap);
+      if (!fbArr.length) {
+        var local = [];
+        try { local = JSON.parse(localStorage.getItem(VEHICLE_KEY)||'[]'); } catch(e){}
+        if (local.length) {
+          var obj = {};
+          local.forEach(function(v){ if(v && v.id) obj[v.id] = v; });
+          db.ref(FB_VEH).set(obj).then(function(){
+            if(typeof showToast==='function') showToast('✅ 차량 '+local.length+'대 Firebase 저장 완료');
+          });
+        }
+      }
+    }).catch(function(e){ console.error('차량 마이그레이션 오류:', e); });
+  }, 3000);
 
   // ★ Firebase 첫 로드 후 초기화 (최초 1회 시드 데이터 업로드)
   db.ref(FB_RES).once('value', snap => {
@@ -7792,7 +7956,14 @@ function renderScheduleTables() {
         <td class="date-cell">${fmtDt(r.start_datetime)}</td>
         <td class="date-cell">${fmtDt(r.end_datetime)}</td>
         <td class="car-cell">${r.car_name||'-'}${r.seating?' '+r.seating:''}</td>
-        <td class="num-cell" id="sn-${r.id}" onclick="schedEditCell(event,${r.id},'notes')" title="클릭하여 수정">${r.notes||'-'}</td>
+        <td class="num-cell" id="sn-${r.id}" onclick="schedEditCell(event,${r.id},'plate')" title="클릭하여 수정">${
+          r.plate
+            ? r.plate.replace(/^.*?(\d{3,4}[가-힣]\d{4}|\d{4}).*$/, '$1')  // 번호판 정제
+            : (()=>{
+                const m = (r.notes||'').match(/(?:차량번호[：:\s]*)?([가-힣0-9]{2,3}[가-힣]\d{4}|\d{4})/);
+                return m ? m[1] : '-';
+              })()
+        }</td>
         <td class="name-cell" id="sc-${r.id}" onclick="schedEditCell(event,${r.id},'customer_name')" title="클릭하여 수정">${r.customer_name||'-'}</td>
         <td class="phone-cell" id="sp-${r.id}" onclick="schedEditCell(event,${r.id},'phone')" title="클릭하여 수정">${r.phone||'-'}</td>
         <td class="memo-cell" onclick="openDetail(${r.id})">${(r.pickup_location||r.address||'-').substring(0,25)} <span style="color:#888;font-size:11px">${amt} ${balHtml}</span> ${statusHtml}</td>
@@ -7831,7 +8002,7 @@ function schedEditCell(e, id, field) {
   if (!r) return;
 
   const cur = r[field] || '';
-  const fieldLabels = {notes:'차량번호', customer_name:'고객명', phone:'연락처'};
+  const fieldLabels = {plate:'차량번호', customer_name:'고객명', phone:'연락처'};
 
   // 이미 편집 중이면 무시
   if (cell.querySelector('input')) return;
