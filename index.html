@@ -2020,7 +2020,7 @@ body::after{
         <span id="fbStatusDot" style="width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;transition:background .3s;"></span>
         <span id="fbStatusText">연결 중...</span>
       </span>
-      <button class="btn btn-primary btn-sm" onclick="goPage('new')">+ 예약등록</button>
+      <button class="btn btn-primary btn-sm" onclick="topbarNewOrSave()">+ 예약등록</button>
     </div>
   </header>
 
@@ -2092,11 +2092,51 @@ body::after{
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label req">시작 일시</label>
-                    <input type="datetime-local" id="f_start" class="form-input">
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <input type="date" id="f_start_date" class="form-input" style="flex:1.4">
+                      <select id="f_start_hour" class="form-select" style="flex:1">
+                        <option value="06">06시</option><option value="07">07시</option>
+                        <option value="08" selected>08시</option><option value="09">09시</option>
+                        <option value="10">10시</option><option value="11">11시</option>
+                        <option value="12">12시</option><option value="13">13시</option>
+                        <option value="14">14시</option><option value="15">15시</option>
+                        <option value="16">16시</option><option value="17">17시</option>
+                        <option value="18">18시</option><option value="19">19시</option>
+                        <option value="20">20시</option><option value="21">21시</option>
+                        <option value="22">22시</option><option value="23">23시</option>
+                        <option value="00">00시</option><option value="01">01시</option>
+                        <option value="02">02시</option><option value="03">03시</option>
+                      </select>
+                      <select id="f_start_min" class="form-select" style="flex:0.8">
+                        <option value="00" selected>00분</option>
+                        <option value="30">30분</option>
+                      </select>
+                    </div>
+                    <input type="hidden" id="f_start">
                   </div>
                   <div class="form-group">
                     <label class="form-label req">종료 일시</label>
-                    <input type="datetime-local" id="f_end" class="form-input">
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <input type="date" id="f_end_date" class="form-input" style="flex:1.4">
+                      <select id="f_end_hour" class="form-select" style="flex:1">
+                        <option value="06">06시</option><option value="07">07시</option>
+                        <option value="08">08시</option><option value="09">09시</option>
+                        <option value="10">10시</option><option value="11">11시</option>
+                        <option value="12">12시</option><option value="13">13시</option>
+                        <option value="14">14시</option><option value="15">15시</option>
+                        <option value="16">16시</option><option value="17">17시</option>
+                        <option value="18">18시</option><option value="19">19시</option>
+                        <option value="20" selected>20시</option><option value="21">21시</option>
+                        <option value="22">22시</option><option value="23">23시</option>
+                        <option value="00">00시</option><option value="01">01시</option>
+                        <option value="02">02시</option><option value="03">03시</option>
+                      </select>
+                      <select id="f_end_min" class="form-select" style="flex:0.8">
+                        <option value="00" selected>00분</option>
+                        <option value="30">30분</option>
+                      </select>
+                    </div>
+                    <input type="hidden" id="f_end">
                   </div>
                 </div>
               </div>
@@ -2155,9 +2195,15 @@ body::after{
                 </div>
                 <div class="form-row">
                   <div class="form-group">
+                    <label class="form-label">차량번호</label>
+                    <input type="text" id="f_plate" class="form-input" placeholder="예: 127호1285">
+                  </div>
+                  <div class="form-group">
                     <label class="form-label">좌석수</label>
                     <input type="text" id="f_seat" class="form-input" placeholder="9인승...">
                   </div>
+                </div>
+                <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">보험 유형</label>
                     <select id="f_ins" class="form-select">
@@ -2166,6 +2212,7 @@ body::after{
                       <option>고급자차</option><option>완전자차</option><option>자차포함</option><option>무자차</option>
                     </select>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -2633,8 +2680,11 @@ body::after{
           <span class="token" onclick="insertToken(this)">{회차위치}</span>
           <span class="token" onclick="insertToken(this)">{금액}</span>
           <span class="token" onclick="insertToken(this)">{보험유형}</span>
+          <span class="token" onclick="insertToken(this)">{자차면책금}</span>
+          <span class="token" onclick="insertToken(this)">{자차한도}</span>
           <span class="token" onclick="insertToken(this)">{업체명}</span>
           <span class="token" onclick="insertToken(this)">{연락처}</span>
+          <span class="token" onclick="insertToken(this)">{고객연락처}</span>
         </div>
         <textarea id="tmplContent" class="form-textarea" rows="12"></textarea>
       </div>
@@ -2793,7 +2843,7 @@ function saveLogs(arr) {
 }
 
 // ── 설정 ────────────────────────────────────────
-function loadConfig() { return Object.assign({company:'대구렌트카',phone:'053-000-0000'}, _cache.config); }
+function loadConfig() { return Object.assign({company:'대구렌트카',phone:'010-4164-2820'}, _cache.config); }
 function saveConfig(cfg) {
   _cache.config = cfg;
   db.ref(FB_CFG).set(cfg).catch(err => console.error('[Firebase] saveConfig:', err));
@@ -2802,8 +2852,8 @@ function saveConfig(cfg) {
 
 function getDefaultTemplates() {
   return [
-    { id: 1, name: '예약확인 기본형', content: `안녕하세요, {업체명}입니다 🚗\n\n✅ 예약이 확정되었습니다.\n\n👤 고객명: {고객명}\n📅 이용기간: {시작일시} ~ {종료일시}\n🚙 차량: {차량명}\n🛡️ 보험: {보험유형}\n📍 배차위치: {배차위치}\n🔁 회차위치: {회차위치}\n💰 요금: {금액}원\n💳 계약금: {계약금} / 잔금: {잔금}\n\n문의사항은 {연락처}로 연락주세요.\n감사합니다 😊` },
-    { id: 2, name: '카카오 알림톡형', content: `[{업체명}] 렌트카 예약확인\n\n안녕하세요, {고객명}님!\n예약이 확정되었습니다.\n\n■ 이용기간\n  {시작일시} ~ {종료일시}\n\n■ 차량정보\n  {차량명} / {보험유형}\n\n■ 배차/회차\n  배차: {배차위치}\n  회차: {회차위치}\n\n■ 이용금액\n  {금액}원\n  계약금 {계약금} / 잔금 {잔금}\n\n📞 {연락처}` }
+    { id: 1, name: '예약확인 문자형', content: `[{업체명}] 예약 완료\n- 예약자명 : {고객명}\n- 연락처 : {고객연락처}\n- 차량 : {차량명}\n- 일정 : {시작일시} ~ {종료일시}\n- 배차주소 : {배차위치}\n- 회차주소 : {회차위치}\n- 보험 : {보험유형}\n- 총합계 : {금액}\n- 계약금 : {계약금} / 잔금 : {잔금}\n\n배차시간은 전날 다시 연락드린 후 차량 배차 예정입니다.\n면허증 지참 부탁드립니다.\n\n감사합니다 😊\n문의 : 010-4164-2820` },
+    { id: 2, name: '카카오 알림톡형', content: `[{업체명}] 렌트카 예약확인\n\n안녕하세요, {고객명}님!\n예약이 확정되었습니다.\n\n■ 이용기간\n  {시작일시} ~ {종료일시}\n\n■ 차량정보\n  {차량명} / {보험유형}\n\n■ 배차/회차\n  배차: {배차위치}\n  회차: {회차위치}\n\n■ 이용금액\n  총 {금액}\n  계약금 {계약금} / 잔금 {잔금}\n\n배차시간은 전날 다시 연락드린 후 차량 배차 예정입니다.\n면허증 지참 부탁드립니다.\n\n감사합니다 😊\n📞 010-4164-2820` }
   ];
 }
 
@@ -2833,7 +2883,7 @@ function parseText(raw) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const kvMap = {};
   for (const line of lines) {
-    const m = line.match(/^[-*•]?\s*([^:：\n]{1,20}?)\s*[:：]\s*(.+)$/);
+    const m = line.match(/^[-*•]?\s*([^:：\n]{1,25}?)\s*[:：]\s*(.+)$/);
     if (m) {
       const key = m[1].trim().replace(/^\[|\]$/g, '');
       kvMap[key] = m[2].trim();
@@ -2848,7 +2898,8 @@ function parseText(raw) {
   // 2단계: 이름 추출
   // ══════════════════════════════════════════════
   r.customer_name = kvMap['예약자명'] || kvMap['예약자'] || kvMap['이름']
-                 || kvMap['고객명']   || kvMap['성함']   || '';
+                 || kvMap['고객명']   || kvMap['성함']
+                 || kvMap['제1운전자명'] || kvMap['운전자명'] || '';
 
   // [이름] 태그형 — 태그 바로 뒤 한글, 또는 다음 줄 한글
   if (!r.customer_name) {
@@ -3003,7 +3054,9 @@ function parseText(raw) {
   const yr = now2.getFullYear();
   let sd = null, ed = null;
 
-  const scheduleRaw = kvMap['일정'] || kvMap['이용일정'] || kvMap['예약일정'] || '';
+  const scheduleRaw = kvMap['일정'] || kvMap['이용일정'] || kvMap['예약일정']
+                    || kvMap['예약시작'] || '';
+  const schedEndRaw  = kvMap['예약종료'] || '';
 
   // 패턴A: 2026.08.18(화) 09:00 ~ 2026.08.20(목) 18:00
   let m = (scheduleRaw || text).match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})\s*[-~～]\s*(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})/);
@@ -3011,8 +3064,8 @@ function parseText(raw) {
 
   // 패턴B: 배차/반납 별도 필드
   if (!sd) {
-    const sR = kvMap['예약시작']||kvMap['시작일시']||kvMap['배차일시']||kvMap['픽업일시']||'';
-    const eR = kvMap['예약종료']||kvMap['종료일시']||kvMap['반납일시']||kvMap['회차일시']||'';
+    const sR = kvMap['예약시작']||kvMap['시작일시']||kvMap['배차일시']||kvMap['픽업일시']||scheduleRaw||'';
+    const eR = kvMap['예약종료']||kvMap['종료일시']||kvMap['반납일시']||kvMap['회차일시']||schedEndRaw||'';
     if (sR) sd = parseSingleDT(sR, yr);
     if (eR) ed = parseSingleDT(eR, yr);
   }
@@ -3057,18 +3110,32 @@ function parseText(raw) {
   // ★ 패턴D-당일: "5월12일08시당일" → 당일 20:00 반납
   // "당일" 키워드가 있으면 같은 날 20:00로 종료
   if (!sd) {
-    // "5월12일08시당일" 또는 "5월12일 08시 당일"
+    // Case1: "5월12일08시당일" — 시작시각 있음
     m = text.match(/(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시)\s*당일/);
     if (m) {
       const sh = to24(+m[4], m[3]);
       const sm2 = m[5] ? +m[5] : 0;
       sd = mkDT(yr, +m[1], +m[2], sh, sm2);
-      ed = mkDT(yr, +m[1], +m[2], 20, 0);  // 당일 = 같은 날 20:00
+      ed = mkDT(yr, +m[1], +m[2], 20, 0);
+    }
+  }
+  if (!sd) {
+    // Case2: "5월9일 당일" — 시작시각 없음 → 08:00~20:00 기본값
+    m = text.match(/(\d{1,2})월\s*(\d{1,2})일\s*당일/);
+    if (m) {
+      sd = mkDT(yr, +m[1], +m[2], 8, 0);
+      ed = mkDT(yr, +m[1], +m[2], 20, 0);
     }
   }
   // 이미 시작일시가 파싱됐는데 "당일" 키워드만 있는 경우 → 종료일시 보정
-  if (sd && !ed && /당일/.test(text)) {
-    ed = mkDT(sd.getFullYear(), sd.getMonth()+1, sd.getDate(), 20, 0);
+  // "N일9시당일18시" 패턴: 당일 뒤에 반납시각이 있으면 그걸 사용
+  if (!ed && sd && /당일/.test(text)) {
+    const afterDaM = text.match(/당일\s*(오전|오후)?\s*(\d{1,2})시/);
+    if (afterDaM) {
+      ed = mkDT(sd.getFullYear(), sd.getMonth()+1, sd.getDate(), to24(+afterDaM[2], afterDaM[1]), 0);
+    } else {
+      ed = mkDT(sd.getFullYear(), sd.getMonth()+1, sd.getDate(), 20, 0);
+    }
   }
   // 패턴D-1: 4월25일-26일, 4월25일~26일 (일 두 번)
   if (!sd) {
@@ -3144,6 +3211,48 @@ function parseText(raw) {
     if (m) { sd=mkDT(yr,+m[1],+m[2],to24(+m[4],m[3]),0); ed=mkDT(yr,+m[1],+m[5],to24(+m[7],m[6]),0); }
   }
 
+  // ★ 패턴F-2: "6월27일09시28일20시" — 구분자 없이 붙어있는 형태 (월 한 번)
+  if (!sd) {
+    m = text.match(/(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시/);
+    if (m) {
+      sd = mkDT(yr, +m[1], +m[2], to24(+m[4], m[3]), 0);
+      ed = mkDT(yr, +m[1], +m[5], to24(+m[7], m[6]), 0);
+    }
+  }
+
+  // ★ 패턴F-3: "1일16시3일20시" — 월 없이 일+시 두 번 → 현재 월 사용
+  if (!sd) {
+    m = text.match(/(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시/);
+    if (m) {
+      const curMo = new Date().getMonth() + 1;
+      sd = mkDT(yr, curMo, +m[1], to24(+m[3], m[2]), 0);
+      ed = mkDT(yr, curMo, +m[4], to24(+m[6], m[5]), 0);
+      // 종료일이 시작일보다 이전이면 다음 달로
+      if (ed < sd) ed = mkDT(yr, curMo + 1, +m[4], to24(+m[6], m[5]), 0);
+    }
+  }
+
+  // ★ 패턴F-3: "[이름] 태그 줄 안에 날짜 포함" — 태그 제거 후 재탐색
+  if (!sd) {
+    const tagDateLine = lines.find(l => /^\[이름\]/.test(l));
+    if (tagDateLine) {
+      const stripped = tagDateLine.replace(/^\[이름\]\s*/, '');
+      // stripped에서 위 패턴들 재시도
+      let mm = stripped.match(/(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시/);
+      if (mm) {
+        sd = mkDT(yr, +mm[1], +mm[2], to24(+mm[4], mm[3]), 0);
+        ed = mkDT(yr, +mm[1], +mm[5], to24(+mm[7], mm[6]), 0);
+      }
+      if (!mm) {
+        mm = stripped.match(/(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시\s*[-~－]\s*(\d{1,2})일\s*(오전|오후)?\s*(\d{1,2})시/);
+        if (mm) {
+          sd = mkDT(yr, +mm[1], +mm[2], to24(+mm[4], mm[3]), 0);
+          ed = mkDT(yr, +mm[1], +mm[5], to24(+mm[7], mm[6]), 0);
+        }
+      }
+    }
+  }
+
   // 패턴G: 2026.04.23 (목) 09:00 (단일 yyyy)
   if (!sd) {
     m = text.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})/);
@@ -3158,7 +3267,7 @@ function parseText(raw) {
   // ══════════════════════════════════════════════
   const carNames = [
     'G90','G80','G70','GV90','GV80','GV70','GV60',  // 제네시스 (대문자 먼저)
-    '팰리세이드','카니발','스타리아','쏠라티','솔라티',
+    '팰리세이드','올뉴카니발','뉴카니발','카니발','스타리아','쏠라티','솔라티',
     '쏘렌토','모하비','베뉴','넥쏘','캐스퍼',          // 기아/현대 추가
     '카렌스','레이','니로플러스','스타렉스 리무진',
     '그랜저','쏘나타','아반떼','투싼','싼타페','스포티지','코나','셀토스','니로',
@@ -3179,6 +3288,21 @@ function parseText(raw) {
     if (r.car_name) break;
   }
 
+  // ★ 카모아 차량명 처리: "카니발 4세대 9인승" → 차량명/세대/좌석 분리
+  if (!r.car_name && kvMap['차량명']) {
+    const cmFull = kvMap['차량명'];
+    // 차량명 목록에서 매칭
+    for (const cn of carNames) {
+      if (cmFull.toUpperCase().includes(cn.toUpperCase())) { r.car_name = cn; break; }
+    }
+    // 세대 추출
+    const genMK = cmFull.match(/(\d+세대|FL|F\/L|[A-Z]{2,4}\d+)/);
+    if (genMK && !r.car_generation) r.car_generation = genMK[1];
+    // 좌석 추출
+    const seatMK = cmFull.match(/(\d+인승)/);
+    if (seatMK && !r.seating) r.seating = seatMK[1];
+  }
+
   // 세대/트림
   const genSrc = carRaw || text;
   const genM = genSrc.match(/(\d+\.\d+세대|\d+세대|FL|F\/L|페이스리프트|[A-Z]{1,3}\d[A-Z0-9]*|[A-Z]{2,4}\d+)/);
@@ -3195,11 +3319,12 @@ function parseText(raw) {
   // ══════════════════════════════════════════════
   // 6단계: 보험
   // ══════════════════════════════════════════════
-  const insRaw = kvMap['보험'] || kvMap['보험유형'] || kvMap['자차'] || '';
+  const insRaw = kvMap['보험'] || kvMap['보험유형'] || kvMap['자차'] || kvMap['자차보험'] || '';
   const insMap2 = {
     '완전면책':'완전면책','완전자차':'완전자차','완자':'완전자차',
     '일반면책':'일반면책','일반자차':'일반자차','고급자차':'고급자차',
-    '자차포함':'자차포함','무자차':'무자차','자포':'자차포함','슈퍼자차':'슈퍼자차'
+    '자차포함':'자차포함','무자차':'무자차','자포':'자차포함',
+    '자차보험':'자차포함','슈퍼자차':'슈퍼자차'
   };
   for (const [k,v] of Object.entries(insMap2)) {
     if ((insRaw || text).includes(k)) { r.insurance_type = v; break; }
@@ -3216,14 +3341,21 @@ function parseText(raw) {
     r.notes.push(`자포금액: ${parseInt(zapoM[1])}만원 (${zapAmt.toLocaleString()}원)`);
   }
 
+  // ★ 계좌번호/입금계좌 줄은 차량번호 파싱에서 제외
+  const textNoAccount = text
+    .split('\n')
+    .filter(l => !/입금계좌|계좌번호|하나은행|국민은행|신한은행|우리은행|농협|기업은행|카카오뱅크/.test(l))
+    .join('\n');
+
   // ★ 차량번호 패턴: "3369-4415" (4자리-4자리) → 택1 차량번호로 메모 저장
   // 날짜/전화번호와 구분: 4자리-4자리 순수 숫자
-  const dualPlateM = text.match(/\b(\d{4})-(\d{4})\b/);
+  const dualPlateM = textNoAccount.match(/\b(\d{4})-(\d{4})\b/);
   if (dualPlateM) {
     const before = text.substring(0, dualPlateM.index).slice(-3);
     if (!/01[0-9]$/.test(before) && !/\d월/.test(before)) {
       const p1 = dualPlateM[1], p2 = dualPlateM[2];
       r.notes.push(`차량번호(택1): ${p1} 또는 ${p2}`);
+      if (!r.plate) r.plate = p1 + '/' + p2;
       // ★ 차량 DB에서 번호판 끝 4자리로 매칭 → 차량명/인승 자동 채움
       const vList = loadVehicles();
       const matched =
@@ -3249,7 +3381,7 @@ function parseText(raw) {
         if (!r.car_name) r.car_name = matched.name;
         if (!r.seating)  r.seating  = matched.seat || '5인승';
         if (!r.notes.some(n => typeof n==='string' && n.includes('차량번호')))
-          r.notes.push(`차량번호: ${pm[1]}`);
+          r.notes.push(`차량번호: ${pm[1]}`); r.plate = pm[1];
         r.notes.push(`차량 자동매칭: ${matched.plate} ${matched.name} ${matched.seat||'5인승'}`);
         break;
       }
@@ -3257,7 +3389,15 @@ function parseText(raw) {
   }
 
   // 자차면책금 / 자차한도 / 휴차료
-  for (const f of ['자차면책금','자차한도','휴차료','면책금']) {
+  if (kvMap['자차면책금'] || kvMap['면책금']) {
+    r.deductible = kvMap['자차면책금'] || kvMap['면책금'];
+    r.notes.push('자차면책금: ' + r.deductible);
+  }
+  if (kvMap['자차한도']) {
+    r.ins_limit = kvMap['자차한도'];
+    r.notes.push('자차한도: ' + r.ins_limit);
+  }
+  for (const f of ['휴차료']) {
     if (kvMap[f]) r.notes.push(f + ': ' + kvMap[f]);
   }
 
@@ -3265,7 +3405,7 @@ function parseText(raw) {
   // 7단계: 금액 — "20만원", "20만", "200,000원", "N자포"
   //  우선순위: kvMap명시 > 총XX만원 > 자포금액 > 전체텍스트
   // ══════════════════════════════════════════════
-  const amtRaw = kvMap['총합계'] || kvMap['요금'] || kvMap['금액'] || kvMap['결제금액'] || kvMap['합계'] || '';
+  const amtRaw = kvMap['고객 결제금액'] || kvMap['총합계'] || kvMap['요금'] || kvMap['금액'] || kvMap['결제금액'] || kvMap['합계'] || '';
   if (amtRaw) {
     r.amount = parseAmount(amtRaw);
   }
@@ -3282,6 +3422,9 @@ function parseText(raw) {
   if (!r.amount) {
     // 차량번호 패턴(4자리-4자리, 또는 "호"가 앞에 붙은 번호판)을 제거한 텍스트로 파싱
     const textNoPlate = text
+      .split('\n')
+      .filter(l => !/\d+일\d+시/.test(l))     // N일HH시 날짜 줄 제외
+      .join('\n')
       .replace(/\d{4}-\d{4}/g, '')           // 3369-4415 형태
       .replace(/\d+호\d{4}/g, '')             // 702호3369 형태
       .replace(/\d{2}[가-힣]\d{4}/g, '');    // 33하0785 형태
@@ -3292,8 +3435,10 @@ function parseText(raw) {
   // ══════════════════════════════════════════════
   // 8단계: 주소 / 배차 / 회차
   // ══════════════════════════════════════════════
-  r.pickup_location = kvMap['배차주소'] || kvMap['배차지'] || kvMap['배차위치'] || kvMap['배차'] || kvMap['픽업'] || kvMap['픽업주소'] || '';
-  r.return_location = kvMap['회차주소'] || kvMap['회차']   || kvMap['회차지']  || kvMap['회차위치'] || kvMap['반납주소'] || kvMap['반납지'] || '';
+  // ★ 카모아: 배차주소/반차주소, (차고지 방문) 접두사 제거
+  const _stripPrefix = (s) => (s||'').replace(/^\([^)]+\)\s*/, '').trim();
+  r.pickup_location = _stripPrefix(kvMap['배차주소'] || kvMap['배차지'] || kvMap['배차위치'] || kvMap['배차'] || kvMap['픽업'] || kvMap['픽업주소'] || '');
+  r.return_location = _stripPrefix(kvMap['반차주소'] || kvMap['회차주소'] || kvMap['회차'] || kvMap['회차지'] || kvMap['회차위치'] || kvMap['반납주소'] || kvMap['반납지'] || '');
 
   // 카카오맵 링크에서 주소 추출
   if (!r.pickup_location) {
@@ -3317,8 +3462,16 @@ function parseText(raw) {
   // ── 장소명 후보 추출 함수 ──────────────────────────────────────────
   // 장소명 패턴: "XX공원", "XX역", "XX아파트", "XX단지", "XX동", "XX점" 등
   // 주소 패턴:   "XX로 123", "XX동 123", "XX구 XX로" 등
-  const PLACE_PAT = /([가-힣0-9A-Za-z]+(?:공원|체육관|경기장|마트|병원|학교|역|터미널|공항|호텔|모텔|휴게소|주유소|아파트|빌라|빌딩|타워|센터|플라자|몰|점|지점|영업소|주차장|광장|사거리|삼거리|입구|출구|앞|근처|옆|카포|카센터|정비|공장|세차))/g;
+  const PLACE_PAT = /([가-힣0-9A-Za-z]+(?:공원|체육관|경기장|마트|병원|학교|역|터미널|공항|호텔|모텔|휴게소|주유소|아파트|빌라|빌딩|타워|센터|플라자|몰|점|지점|영업소|주차장|광장|사거리|삼거리|입구|출구|앞|근처|옆|카포|카센터|정비|공장|세차|렌트카|렌터카|렌트))/g;
   const ADDR_PAT  = /[가-힣]+(구|동|로|길|읍|면|리|층|호)\s*[\d가-힣]*/;
+
+  // ★ "경산m렌트카 고객", "XX렌트카 고객/손님" → 소속 업체를 메모에 저장
+  const srcRentM = text.match(/([가-힣A-Za-z0-9]+렌트카?)\s*(?:고객|손님|통해|경유|소개)/);
+  if (srcRentM) {
+    r.notes.push('소속업체: ' + srcRentM[1]);
+    // 고객명이 없으면 업체명으로 임시 표기
+    if (!r.customer_name) r.customer_name = srcRentM[1] + '고객';
+  }
 
   // 1) 구조화 키가 없을 때: 전체 텍스트(태그 줄 포함)에서 장소명 후보 수집
   if (!r.pickup_location) {
@@ -3344,12 +3497,13 @@ function parseText(raw) {
     // 독립 줄에서 장소명/주소 추출 (태그·날짜·차량·전화 줄 제외)
     for (const l of lines) {
       const isTagLine   = /^\[이름\]|^\[휴대전화\]/.test(l);
-      const isDateLine  = /\d+월|\d{4}[.\/]/.test(l);
+      const isDateLine  = /\d+월|\d{4}[.\/]|\d+일\d+시/.test(l);
       const isCarLine   = r.car_name && l.includes(r.car_name);
       const isPhoneLine = /01[0-9]/.test(l);
       const isNameLine  = r.customer_name && l.includes(r.customer_name);
       const isRelLine   = /^(친구|지인|동생|형|누나|언니|오빠|선배|후배|동료)/.test(l);
-      if (isTagLine || isDateLine || isCarLine || isPhoneLine || isNameLine || isRelLine) continue;
+      const isGreetLine = /연락부탁|감사합니다|안녕하세요|확인부탁|문의주세요|드립니다|드리겠습니다|바랍니다/.test(l);
+      if (isTagLine || isDateLine || isCarLine || isPhoneLine || isNameLine || isRelLine || isGreetLine) continue;
 
       // 장소명 패턴 (기존 + 카정비/카센터/주차/공장 류 추가)
       const pm = [...l.matchAll(PLACE_PAT)];
@@ -3375,6 +3529,9 @@ function parseText(raw) {
 
     // 수집된 장소 배분: 첫 번째 → 배차, 두 번째 → 회차 (같으면 둘 다 동일)
     // ★ 이름+(나이) 패턴은 장소 후보에서 제거
+    // ★ 인사말/안내문은 장소 후보에서 제외
+    const isGreeting = (s) => /연락부탁|감사합니다|안녕하세요|확인부탁|문의|주세요|드립니다|드리겠습니다|바랍니다|입니다$|합니다$/.test(s);
+
     const isNameLike = (s) => {
       if (!s) return false;
       // "오혜리(만26세 이상)" 같은 패턴
@@ -3383,7 +3540,7 @@ function parseText(raw) {
       if (r.customer_name && s.includes(r.customer_name) && s.length < 15) return true;
       return false;
     };
-    const filteredPlaces = allPlaces.filter(p => !isNameLike(p));
+    const filteredPlaces = allPlaces.filter(p => !isNameLike(p) && !isGreeting(p));
 
     if (filteredPlaces.length >= 1) r.pickup_location = filteredPlaces[0];
     if (filteredPlaces.length >= 2) r.return_location  = filteredPlaces[1];
@@ -3415,9 +3572,43 @@ function parseText(raw) {
   if (duration && !/[-~]/.test(duration) && !/\d{4}/.test(duration))
     r.notes.push('이용기간: ' + duration);
 
+  // ★ 카모아 전용 정보 → notes 저장
+  if (kvMap['누적횟수'])     r.notes.push('누적횟수: ' + kvMap['누적횟수']);
+  if (kvMap['운전자 생년월일']) r.notes.push('생년월일: ' + kvMap['운전자 생년월일']);
+  if (kvMap['종합보험 연령'])  r.notes.push('보험연령: ' + kvMap['종합보험 연령'] + '세 이상');
+  if (kvMap['자차플러스'])    r.notes.push('자차플러스: ' + kvMap['자차플러스']);
+  if (kvMap['차량대여료'])    r.notes.push('차량대여료: ' + kvMap['차량대여료']);
+  if (kvMap['자차요금'])     r.notes.push('자차요금: ' + kvMap['자차요금']);
+  if (kvMap['연식'])         r.notes.push('연식: ' + kvMap['연식'] + '년');
+  // ★ 입금계좌 → notes에 저장
+  if (kvMap['입금계좌']) r.notes.push('입금계좌: ' + kvMap['입금계좌']);
+  if (kvMap['예약번호']) {
+    // 예약번호가 이미 notes에 없으면 추가
+    if (!r.notes.some(n => typeof n==='string' && n.includes('예약번호')))
+      r.notes.push('예약번호: ' + kvMap['예약번호']);
+  }
+
   // 기타
   for (const f of ['특이사항','요청사항','메모','기타','추가요청','차량옵션']) {
     if (kvMap[f]) r.notes.push(f + ': ' + kvMap[f]);
+  }
+
+  // ══════════════════════════════════════════════
+  // ★ 카모아 예약 감지 → 상태:확정, 완납 처리
+  // ══════════════════════════════════════════════
+  const isKamoa = /\[카모아\]/.test(text) || !!(kvMap['예약시작'] && kvMap['반차주소']);
+  if (isKamoa) {
+    r.reservation_status = '확정';
+    r.parsing_confidence  = 'HIGH';
+    // 결제금액 → 계약금(완납)으로 설정
+    const paidRaw = kvMap['고객 결제금액'] || kvMap['카모아 노출금액'] || '';
+    const paidAmt = paidRaw ? parseInt(paidRaw.replace(/[^0-9]/g,'')) : null;
+    if (paidAmt) {
+      r.amount  = r.amount || paidAmt;
+      r.deposit = paidAmt;   // 계약금 = 결제금액 (완납)
+      r.balance = 0;
+    }
+    r.notes.push('카모아 예약 (결제완료)');
   }
 
   // ══════════════════════════════════════════════
@@ -3452,7 +3643,15 @@ function parseAmount(str) {
 
 // ─── 단일 날짜 파싱 ────────────────────────────────
 function parseSingleDT(str, fallbackYear) {
-  let m = str.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})/);
+  if (!str) return null;
+  // ★ 카모아형: "2026.5.2 (토) 오후 6시 00분"
+  let m = str.match(/(\d{4})[.\/](\d{1,2})[.\/](\d{1,2})[^0-9]*(오전|오후)?\s*(\d{1,2})시\s*(\d{2})분?/);
+  if (m) {
+    const h = to24(+m[5], m[4]);
+    return mkDT(+m[1],+m[2],+m[3],h,+m[6]);
+  }
+  // 일반형: yyyy-mm-dd HH:MM
+  m = str.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})/);
   if (m) return mkDT(+m[1],+m[2],+m[3],+m[4],+m[5]);
   m = str.match(/(\d{1,2})[.\-\/](\d{1,2})[^0-9]*(\d{1,2}):(\d{2})/);
   if (m) return mkDT(fallbackYear,+m[1],+m[2],+m[3],+m[4]);
@@ -3545,6 +3744,19 @@ function checkConflict(data, r, excludeId){
   return data.some(x=> x.id!==excludeId && x.car_name===r.car_name && !['취소','완료'].includes(x.reservation_status) && x.start_datetime<r.end_datetime && x.end_datetime>r.start_datetime);
 }
 
+// 상단 예약등록 버튼 — 예약 등록 페이지면 저장, 아니면 페이지 이동
+function topbarNewOrSave() {
+  const isOnNewPage = document.getElementById('page-new')?.classList.contains('active');
+  if (isOnNewPage) {
+    // 폼 저장 버튼 클릭과 동일하게 동작
+    document.getElementById('reservationForm')?.requestSubmit
+      ? document.getElementById('reservationForm').requestSubmit()
+      : document.getElementById('submitBtn')?.click();
+  } else {
+    goPage('new');
+  }
+}
+
 /* ═══════════════════════════════════════════════════
    페이지 전환
 ═══════════════════════════════════════════════════ */
@@ -3556,6 +3768,9 @@ function goPage(page) {
   document.getElementById('topbarTitle').textContent = PAGE_TITLES[page]||page;
   document.querySelectorAll('.nav-item').forEach(li=>{ li.classList.toggle('active', li.dataset.page===page); });
   document.querySelectorAll('.bnav-item[data-page]').forEach(b=>{ b.classList.toggle('active', b.dataset.page===page); });
+  // ★ 예약 등록 페이지면 버튼 → "💾 저장", 나머지면 "＋ 예약등록"
+  const topBtn = document.querySelector('.topbar-right .btn-primary');
+  if (topBtn) topBtn.textContent = (page === 'new') ? '💾 저장' : '+ 예약등록';
   closeSidebar();
   if(page==='dashboard') { syncVehicleStatus(); renderDashboard(); }
   if(page==='list')      renderList();
@@ -3576,6 +3791,35 @@ function goPage(page) {
 /* ═══════════════════════════════════════════════════
    파싱 버튼
 ═══════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════
+   날짜+시간 선택기 헬퍼
+═══════════════════════════════════════════════════ */
+// 날짜 date + 시 select + 분 select → "YYYY-MM-DD HH:MM" 문자열
+function _combineDT(dateId, hourId, minId) {
+  const d = document.getElementById(dateId)?.value || '';
+  const h = document.getElementById(hourId)?.value  || '08';
+  const mn= document.getElementById(minId)?.value   || '00';
+  if (!d) return '';
+  return d + ' ' + h + ':' + mn;
+}
+// "YYYY-MM-DD HH:MM" → 날짜/시/분 각 필드에 채우기
+function _splitDT(dtStr, dateId, hourId, minId) {
+  if (!dtStr) return;
+  const [datePart, timePart] = dtStr.split(' ');
+  const [hh, mm] = (timePart || '08:00').split(':');
+  const dateEl = document.getElementById(dateId);
+  const hourEl = document.getElementById(hourId);
+  const minEl  = document.getElementById(minId);
+  if (dateEl) dateEl.value = datePart || '';
+  if (hourEl) { // select 에서 해당 option 선택
+    for (let o of hourEl.options) if (o.value === hh) { o.selected = true; break; }
+  }
+  if (minEl)  {
+    for (let o of minEl.options)  if (o.value === mm) { o.selected = true; break; }
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    계약금 / 잔금 자동 계산
@@ -3639,11 +3883,15 @@ function fillForm(r) {
   set('f_seat', r.seating); set('f_amount', r.amount||'');
   set('f_deposit', r.deposit||''); set('f_balance', r.balance||'');
   set('f_address', r.address); set('f_pickup', r.pickup_location);
-  set('f_return', r.return_location); set('f_notes', r.notes);
-  set('f_raw', r.raw_text);
+  set('f_return', r.return_location);
+  // ★ 메모란에 원본 문구 그대로 입력
+  set('f_notes', r.raw_text || r.notes || '');
+  set('f_plate', r.plate || ''); set('f_raw', r.raw_text);
+  set('f_deductible', r.deductible || _extractNote(r.notes,'자차면책금'));
+  set('f_ins_limit',  r.ins_limit  || _extractNote(r.notes,'자차한도'));
   calcBalance();
-  if(r.start_datetime) set('f_start', r.start_datetime.replace(' ','T'));
-  if(r.end_datetime)   set('f_end',   r.end_datetime.replace(' ','T'));
+  if(r.start_datetime) _splitDT(r.start_datetime, 'f_start_date','f_start_hour','f_start_min');
+  if(r.end_datetime)   _splitDT(r.end_datetime,   'f_end_date',  'f_end_hour',  'f_end_min');
   const insEl = document.getElementById('f_ins');
   if(r.insurance_type) for(let o of insEl.options) if(o.value===r.insurance_type){ o.selected=true; break; }
   const stEl = document.getElementById('f_status');
@@ -3652,9 +3900,9 @@ function fillForm(r) {
 
 function clearForm() {
   ['f_name','f_phone','f_car','f_gen','f_seat','f_amount',
-   'f_deposit','f_balance',
-   'f_address','f_pickup','f_return','f_notes','f_raw',
-   'f_start','f_end'].forEach(id=>{
+   'f_deposit','f_balance','f_deductible','f_ins_limit',
+   'f_plate','f_address','f_pickup','f_return','f_notes','f_raw',
+   'f_start','f_end','f_start_date','f_end_date'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('pasteText').value='';
@@ -3684,10 +3932,12 @@ function saveReservation(e) {
     id: editId ? parseInt(editId) : nextId++,
     customer_name: g('f_name'),
     phone: g('f_phone'),
-    start_datetime: g('f_start').replace('T',' '),
-    end_datetime:   g('f_end').replace('T',' '),
+    start_datetime: _combineDT('f_start_date','f_start_hour','f_start_min'),
+    end_datetime:   _combineDT('f_end_date','f_end_hour','f_end_min'),
     car_name: g('f_car'), car_generation: g('f_gen'),
-    seating: g('f_seat'), insurance_type: g('f_ins'),
+    plate: g('f_plate'), seating: g('f_seat'), insurance_type: g('f_ins'),
+    deductible: g('f_deductible'),
+    ins_limit:  g('f_ins_limit'),
     amount:  totalAmt,
     deposit: depositAmt,
     balance: balanceAmt,
@@ -4593,6 +4843,13 @@ function copyMsgMob(id) {
 }
 
 // 메시지 생성 공통 로직
+// notes 문자열에서 "키: 값" 추출 헬퍼
+function _extractNote(notes, key) {
+  if (!notes) return '';
+  const m = notes.match(new RegExp(key + '[:\s：]+([^\n]+)'));
+  return m ? m[1].trim() : '';
+}
+
 function _buildMsg(r, tmplContent) {
   const cfg = loadConfig();
   const pickup = r.pickup_location||r.address||'-';
@@ -4611,7 +4868,10 @@ function _buildMsg(r, tmplContent) {
     '{금액}':         r.amount!=null?r.amount.toLocaleString()+'원':'금액 차후',
     '{계약금}':       r.deposit!=null?r.deposit.toLocaleString()+' 원':'-',
     '{잔금}':         r.balance!=null?r.balance.toLocaleString()+' 원':(r.amount!=null&&r.deposit!=null?(r.amount-r.deposit).toLocaleString()+' 원':'-'),
+    '{고객연락처}':   r.phone||'-',
     '{보험유형}':     r.insurance_type||'-',
+    '{자차면책금}':   r.deductible || _extractNote(r.notes, '자차면책금') || '-',
+    '{자차한도}':     r.ins_limit || _extractNote(r.notes, '자차한도') || '-',
     '{업체명}':       cfg.company,
     '{연락처}':       cfg.phone,
     '{차량주의사항}': carNote,
@@ -5907,7 +6167,12 @@ function openDetail(id) {
       <tr><th>시작일시</th><td class="mono">${r.start_datetime||'-'}</td></tr>
       <tr><th>종료일시</th><td class="mono">${r.end_datetime||'-'}</td></tr>
       <tr><th>차량</th><td>${r.car_name||'-'} ${r.car_generation||''} ${r.seating||''}</td></tr>
-      <tr><th>보험</th><td>${r.insurance_type||'-'}</td></tr>
+      <tr><th>차량번호</th><td style="font-family:var(--mono);font-weight:700">${r.plate||'-'}</td></tr>
+      <tr><th>보험</th><td>
+        ${r.insurance_type||'-'}
+        ${(r.deductible||_extractNote(r.notes,'자차면책금'))?`<span style="font-size:11px;color:var(--muted);margin-left:6px">면책금: ${r.deductible||_extractNote(r.notes,'자차면책금')}</span>`:''}
+        ${(r.ins_limit||_extractNote(r.notes,'자차한도'))?`<span style="font-size:11px;color:var(--muted);margin-left:6px">한도: ${r.ins_limit||_extractNote(r.notes,'자차한도')}</span>`:''}
+      </td></tr>
       <tr><th>총 요금</th><td>${fmtAmtHtml(r.amount)}</td></tr>
       ${(r.deposit!=null||r.balance!=null)?`
       <tr><th>계약금</th><td>
