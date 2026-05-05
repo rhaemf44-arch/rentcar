@@ -1976,6 +1976,71 @@ body::after{
   white-space: nowrap !important;
   text-align: left !important;
 }
+
+/* ═══════════════════════════════════════════════════
+   모바일 종합 개선 (480px 이하)
+═══════════════════════════════════════════════════ */
+@media(max-width:480px) {
+
+  /* 예약 등록 폼 — 2열 → 1열 */
+  #reservationForm > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 예약 목록 캘린더 — 일별뷰 기본으로 */
+  .month-cell { min-height:50px !important; }
+  .mc-event { font-size:10px !important; padding:1px 3px !important; }
+
+  /* 일정표 테이블 — 가로 스크롤 + 셀 압축 */
+  .sched-tbl { min-width:520px !important; font-size:11px !important; }
+  .sched-tbl td, .sched-tbl th { padding:6px 6px !important; }
+  /* 차량명 셀 줄바꿈 방지 */
+  .car-cell { white-space:nowrap !important; font-size:11px !important; }
+  .date-cell { white-space:nowrap !important; font-size:10px !important; }
+  .name-cell, .phone-cell { font-size:11px !important; }
+  .num-cell { font-size:10px !important; max-width:60px !important; }
+  .memo-cell { font-size:10px !important; max-width:100px !important; }
+
+  /* 차량 관리 — 목록 테이블 압축 */
+  .vtbl { font-size:12px !important; }
+  .vtbl td, .vtbl th { padding:6px 6px !important; }
+  /* 차량관리 불필요 컬럼 숨김 */
+  .vtbl th:nth-child(4), .vtbl td:nth-child(4),  /* 세대/트림 */
+  .vtbl th:nth-child(7), .vtbl td:nth-child(7) { display:none !important; } /* 보험만기 */
+
+  /* 예약 목록 상단 뷰 탭 숨김 (월별만 표시) */
+  .cal-ctrl-right { display:none !important; }
+
+  /* 차량 관리 요약 카드 2열 */
+  #vehicleSummary { grid-template-columns: repeat(2,1fr) !important; }
+
+  /* 일정표 탭 버튼 작게 */
+  #schedTabBar .view-tab { padding:5px 8px !important; font-size:11px !important; }
+
+  /* 예약 등록 시간 선택기 */
+  #f_start_hour, #f_end_hour { font-size:14px !important; }
+  #f_start_min, #f_end_min { font-size:14px !important; }
+
+  /* 모달 전체화면 */
+  .modal { border-radius:0 !important; width:100vw !important; max-width:100vw !important; margin:0 !important; min-height:100vh; }
+  .modal-overlay { padding:0 !important; align-items:flex-start !important; }
+
+  /* 예약 상세 테이블 압축 */
+  .info-tbl th { width:70px !important; font-size:11px !important; padding:7px 8px !important; }
+  .info-tbl td { font-size:12px !important; padding:7px 8px !important; }
+
+  /* 예약 목록 — lf-summary 가로 스크롤 */
+  .lf-summary { overflow-x:auto !important; flex-wrap:nowrap !important; }
+
+  /* 하단 네비 아이콘 크기 */
+  .bnav-icon { font-size:18px !important; }
+  .bnav-item { font-size:10px !important; }
+
+  /* 대시보드 오늘배차/반납 2열 → 1열 */
+  #dashTodayPickup > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -2076,8 +2141,8 @@ body::after{
               <div class="card-body">
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label req">고객명</label>
-                    <input type="text" id="f_name" class="form-input" required>
+                    <label class="form-label">고객명</label>
+                    <input type="text" id="f_name" class="form-input">
                   </div>
                   <div class="form-group">
                     <label class="form-label">연락처</label>
@@ -2304,6 +2369,8 @@ body::after{
             </div>
           </div>
           <!-- 일정표 엑셀 가져오기 -->
+          <button class="btn btn-sm btn-outline" id="undoBtn" disabled style="opacity:0.4" onclick="_popUndo()" title="되돌릴 내용 없음">↩️ 되돌리기</button>
+          <button class="btn btn-sm" style="background:#fef2f2;color:#c62828;border:1px solid #fecaca;font-weight:600" onclick="deleteAllReservations()">🗑️ 전체삭제</button>
           <button class="btn btn-sm" onclick="document.getElementById('scheduleImportInput').click()"
             style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-weight:600"
             title="일정표_정리 엑셀 파일을 불러와 예약 데이터로 연동합니다">
@@ -2762,7 +2829,13 @@ function _initFirebaseListeners() {
   });
   db.ref(FB_VEH).on('value', function(snap) {
     var arr = _toArr(snap);
-    if (arr.length) _cache.vehicles = arr;
+    if (arr.length) {
+      _cache.vehicles = arr;
+      // 차량 페이지가 열려있으면 즉시 갱신
+      if (document.getElementById('page-vehicles')?.classList.contains('active')) {
+        if(typeof renderVehicles === 'function') renderVehicles();
+      }
+    }
   });
   db.ref(FB_TMPL).on('value', function(snap) {
     var arr = _toArr(snap);
@@ -2804,6 +2877,7 @@ function saveData(arr) {
 
 // 단건 업데이트 (더 효율적 — 전체 덮어쓰기 없음)
 function saveOneRecord(rec) {
+  _pushUndo('예약 저장: ' + (rec.customer_name||''));
   _cache.reservations = _cache.reservations.map(r => r.id === rec.id ? rec : r);
   if (!_cache.reservations.find(r => r.id === rec.id)) _cache.reservations.push(rec);
   db.ref(`${FB_RES}/${rec.id}`).set(rec).catch(err => {
@@ -2814,6 +2888,8 @@ function saveOneRecord(rec) {
 
 // 단건 삭제
 function deleteOneRecord(id) {
+  const _delRec = _cache.reservations.find(r => r.id === id);
+  _pushUndo('예약 삭제: ' + (_delRec ? _delRec.customer_name||'' : ''));
   _cache.reservations = _cache.reservations.filter(r => r.id !== id);
   db.ref(`${FB_RES}/${id}`).remove().catch(err => {
     console.error('[Firebase] deleteOneRecord 실패:', err);
@@ -3773,7 +3849,13 @@ function goPage(page) {
   if (topBtn) topBtn.textContent = (page === 'new') ? '💾 저장' : '+ 예약등록';
   closeSidebar();
   if(page==='dashboard') { syncVehicleStatus(); renderDashboard(); }
-  if(page==='list')      renderList();
+  if(page==='list') {
+    // 모바일(480px 이하)에서는 일별뷰 기본
+    if(window.innerWidth <= 480 && typeof calView !== 'undefined' && calView === 'month') {
+      calView = 'day';
+    }
+    renderList();
+  }
   if(page==='vehicles')  { syncVehicleStatus(); renderVehicles(); }
   if(page==='stats')     { initStatsFilters(); renderStats(); }
   if(page==='templates') renderTemplates();
@@ -5424,9 +5506,17 @@ function importScheduleXLSX(input) {
 
       const dataRows = rows.slice(headerRow + 1);
       const existing = loadData();
-      const existingKeys = new Set(existing.map(r =>
-        (r.start_datetime||'') + '|' + (r.car_name||'') + '|' + (r.customer_name||'')
+      const existingKeySet1 = new Set(existing.map(r =>
+        (r.start_datetime||'').substring(0,16) + '|' + (r.car_name||'').trim() + '|' + (r.customer_name||'').trim()
       ));
+      const existingKeySet2 = new Set(existing.map(r =>
+        (r.start_datetime||'').substring(0,16) + '|' + (r.car_name||'').trim() + '|' + (r.phone||'').replace(/\D/g,'')
+      ));
+      const existingKeySet3 = new Set(existing.flatMap(r => {
+        const m = (r.notes||'').match(/차량번호[:\s]+([\w가-힣]+)/);
+        if (!m) return [];
+        return [(r.start_datetime||'').substring(0,16) + '|' + m[1].trim()];
+      }));
 
       let added = 0, skipped = 0, errors = 0;
       const now = now8();
@@ -5478,9 +5568,14 @@ function importScheduleXLSX(input) {
         const startDT = parseScheduleDT(rawStart);
         const endDT   = parseScheduleDT(rawEnd);
 
-        // 중복 체크
-        const key = startDT + '|' + carName + '|' + custName;
-        if (existingKeys.has(key)) { skipped++; return; }
+        // 중복 체크 (3가지 키 중 하나라도 일치하면 스킵)
+        const key1 = startDT.substring(0,16) + '|' + carName.trim() + '|' + custName.trim();
+        const key2 = startDT.substring(0,16) + '|' + carName.trim() + '|' + phone.replace(/\D/g,'');
+        const key3 = startDT.substring(0,16) + '|' + carNum.trim();
+        const isDup = existingKeySet1.has(key1)
+          || (phone && existingKeySet2.has(key2))
+          || (carNum && existingKeySet3.has(key3));
+        if (isDup) { skipped++; return; }
 
         // 차량명에서 인승 정보 추출
         const seatMatch = carName.match(/(\d+)인승/);
@@ -5515,10 +5610,13 @@ function importScheduleXLSX(input) {
         };
 
         existing.push(rec);
-        existingKeys.add(key);
+        existingKeySet1.add(key1);
+        if (phone) existingKeySet2.add(key2);
+        if (carNum) existingKeySet3.add(key3);
         added++;
       });
 
+      if (added > 0) _pushUndo('일정표 가져오기 ' + added + '건');
       saveData(existing);
       syncAndRefresh();
       input.value = '';
@@ -5533,6 +5631,51 @@ function importScheduleXLSX(input) {
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+/* ═══════════════════════════════════════════════════
+   Undo 스택 (최대 10단계)
+═══════════════════════════════════════════════════ */
+const _undoStack = [];
+const _UNDO_MAX  = 10;
+
+function _pushUndo(label) {
+  const snapshot = JSON.stringify(loadData());
+  _undoStack.push({ label, snapshot });
+  if (_undoStack.length > _UNDO_MAX) _undoStack.shift();
+  _updateUndoBtn();
+}
+function _popUndo() {
+  if (!_undoStack.length) return;
+  const { label, snapshot } = _undoStack.pop();
+  const prev = JSON.parse(snapshot);
+  _cache.reservations = prev;
+  db.ref(FB_RES).set(_toObj(prev)).catch(err => console.error(err));
+  _refreshCurrentPage();
+  showToast('↩️ 되돌리기: ' + label, 3000);
+  _updateUndoBtn();
+}
+function _updateUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  btn.disabled = _undoStack.length === 0;
+  btn.title = _undoStack.length ? ('↩️ 되돌리기: ' + _undoStack[_undoStack.length-1].label) : '되돌릴 내용 없음';
+  btn.style.opacity = _undoStack.length ? '1' : '0.4';
+}
+
+/* ═══════════════════════════════════════════════════
+   전체 삭제
+═══════════════════════════════════════════════════ */
+function deleteAllReservations() {
+  if (!confirm('⚠️ 전체 예약 ' + loadData().length + '건을 삭제합니다.\n되돌리기 버튼으로 복구 가능합니다.\n\n계속 하시겠습니까?')) return;
+  _pushUndo('전체 삭제 ' + loadData().length + '건');
+  _cache.reservations = [];
+  db.ref(FB_RES).remove().then(() => {
+    _refreshCurrentPage();
+    showToast('🗑️ 전체 삭제 완료 (↩️ 되돌리기 가능)', 4000);
+  }).catch(err => {
+    showToast('❌ 삭제 실패: ' + err.message, 4000);
+  });
 }
 
 /* ═══════════════════════════════════════════════════
