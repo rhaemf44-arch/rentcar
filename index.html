@@ -7795,11 +7795,37 @@ function renderWeekend() {
         </div>
       `;
 
-      // 차량별 행
+      // ★ 차량번호 미지정 예약 → 빈 차량 행에 자동 배치
+      // 시간대가 겹치지 않는 빈 슬롯에 순서대로 배치
+      const autoAssigned = {}; // plate → [r, ...]
+      FLEET[cat].forEach(p => { autoAssigned[p] = []; });
+
+      unmatchedRes.forEach(r => {
+        const rs = parseDT(r.start_datetime);
+        const re2 = parseDT(r.end_datetime || r.start_datetime);
+        // 시간 충돌 없는 빈 슬롯 찾기
+        for (const p of FLEET[cat]) {
+          const existing = [...(carResMap[p]||[]), ...(autoAssigned[p]||[])];
+          const hasConflict = existing.some(ex => {
+            const es = parseDT(ex.start_datetime);
+            const ee = parseDT(ex.end_datetime || ex.start_datetime);
+            return es && ee && rs && re2 && es < re2 && ee > rs;
+          });
+          if (!hasConflict) {
+            autoAssigned[p].push(r);
+            break;
+          }
+        }
+      });
+
+      // 차량별 행 (confirmed + auto-assigned 합산)
       const COLOR_PALETTE = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
       const carRows = FLEET[cat].map((p, idx2) => {
         const reservs = carResMap[p];
-        const isUsed = reservs.length > 0;
+        const autoRes = autoAssigned[p] || [];
+        const isUsed = reservs.length > 0 || autoRes.length > 0;
+
+        // 확정 차량번호 막대
         const bars = reservs.map((r, ri) => {
           const sP = tToPct(r.start_datetime);
           const eP = tToPct(r.end_datetime || r.start_datetime);
@@ -7817,6 +7843,24 @@ function renderWeekend() {
             ${w > 8 ? (r.customer_name||'').substring(0,5) : ''}
           </div>`;
         }).join('');
+
+        // 자동배치(차량번호 미지정) 막대 — 회색 점선
+        const autoBars = autoRes.map((r) => {
+          const sP = tToPct(r.start_datetime);
+          const eP = tToPct(r.end_datetime || r.start_datetime);
+          const w  = Math.max(2, eP - sP);
+          const sd = (r.start_datetime||'').substring(5,16);
+          const ed = (r.end_datetime||'').substring(5,16);
+          return `<div title="🔲 차량번호 미지정 | ${r.customer_name||'미기재'} | ${sd}~${ed}"
+            style="position:absolute;left:${sP}%;width:${w}%;top:3px;bottom:3px;
+                   background:#e2e8f0;border:1.5px dashed #94a3b8;border-radius:3px;
+                   display:flex;align-items:center;justify-content:center;
+                   color:#475569;font-size:9px;font-weight:700;
+                   overflow:hidden;white-space:nowrap;padding:0 4px;">
+            ${w > 8 ? (r.customer_name||'').substring(0,4)+'?' : '?'}
+          </div>`;
+        }).join('');
+
         return `
           <div style="display:flex;align-items:center;margin-bottom:4px;font-size:11px">
             <div style="width:60px;flex-shrink:0;font-family:var(--mono);font-weight:700;color:${isUsed?'#1e3a8a':'#94a3b8'};font-size:11px">
@@ -7824,7 +7868,7 @@ function renderWeekend() {
             </div>
             <div style="flex:1;position:relative;height:22px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0;
                         background-image:linear-gradient(to right, transparent 25%, #cbd5e1 25%, #cbd5e1 25.1%, transparent 25.1%, transparent 50%, #cbd5e1 50%, #cbd5e1 50.1%, transparent 50.1%, transparent 75%, #cbd5e1 75%, #cbd5e1 75.1%, transparent 75.1%);">
-              ${bars}
+              ${bars}${autoBars}
             </div>
           </div>
         `;
@@ -7833,12 +7877,21 @@ function renderWeekend() {
       const ganttHTML = dayHeader + carRows;
 
       // 미매칭 예약 (차량번호 미기재)
-      const unmatchedHTML = unmatchedRes.length ? `
+      // 자동 배치도 못 한 예약 (모든 차량이 꽉 찬 경우)
+      const allAutoAssigned = Object.values(autoAssigned).flat();
+      const trulyUnmatched = unmatchedRes.filter(r =>
+        !allAutoAssigned.some(a => a === r)
+      );
+      const unmatchedHTML = trulyUnmatched.length ? `
         <div style="margin-top:6px;padding:6px 8px;background:#fef3c7;border-radius:5px;font-size:10px;color:#92400e">
-          <strong>차량 미지정 ${unmatchedRes.length}건:</strong>
-          ${unmatchedRes.map(r => `${r.customer_name||'미기재'}(${(r.start_datetime||'').substring(5,10)})`).join(', ')}
+          <strong>⚠️ 배치 불가 ${trulyUnmatched.length}건 (차량 부족):</strong>
+          ${trulyUnmatched.map(r => `${r.customer_name||'미기재'}(${(r.start_datetime||'').substring(5,10)})`).join(', ')}
         </div>
-      ` : '';
+      ` : (unmatchedRes.length ? `
+        <div style="margin-top:6px;padding:4px 8px;background:#f0fdf4;border-radius:5px;font-size:10px;color:#166534">
+          ✅ 차량번호 미지정 ${unmatchedRes.length}건 → 자동 배치 완료 (점선 막대)
+        </div>
+      ` : '');
 
       html += `
         <div style="background:${bg};border:1px solid ${brd};border-radius:10px;padding:12px">
