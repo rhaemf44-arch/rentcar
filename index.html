@@ -1927,10 +1927,104 @@ body::after{
   letter-spacing:.04em;
 }
 @media print {
-  .sidebar,.topbar,.fab,.bottom-nav,.btn,.export-wrap { display:none!important; }
-  .main-wrap { margin-left:0!important; }
-  .sched-sheet { display:block!important; page-break-after:always; }
-  .sched-tbl th { background:#e8edf2!important; color:#1a1d23!important; -webkit-print-color-adjust:exact; }
+  /* ── 불필요한 요소 숨김 ── */
+  .sidebar,.topbar,.fab,.bottom-nav,.btn,.export-wrap,
+  #schedTabBar button, .card-header .btn, .view-tab,
+  .sched-filter-bar { display:none!important; }
+
+  /* ── A4 가로 방향 (컬럼 많으니 landscape 권장) ── */
+  @page {
+    size: A4 landscape;
+    margin: 6mm 6mm 6mm 6mm;
+  }
+
+  html, body { margin:0!important; padding:0!important; }
+  * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+
+  .main-wrap { margin-left:0!important; width:100%!important; }
+  .content { padding:0!important; margin:0!important; }
+
+  /* 일정표 페이지만 표시 */
+  .page { display:none!important; }
+  #page-schedule { display:block!important; width:100%!important; }
+
+  /* 카드 여백 제거 */
+  #page-schedule .card { box-shadow:none!important; border:none!important; padding:0!important; margin:0!important; }
+  #page-schedule .card-body { padding:2px 0!important; }
+  #page-schedule .card-header { display:none!important; }
+
+  /* 일정표 탭 제목만 표시 */
+  #schedTabBar { display:flex!important; justify-content:center!important; margin-bottom:4px!important; }
+  #schedTabBar .view-tab.active { display:inline-block!important; font-size:13px!important; font-weight:800!important; border:none!important; background:none!important; }
+
+  /* 일정표 시트 */
+  .sched-sheet {
+    display:block!important;
+    page-break-after: always;
+    width: 100%!important;
+    margin: 0!important;
+    padding: 0!important;
+  }
+  .sched-sheet:last-child { page-break-after: avoid; }
+
+  /* 테이블 A4 꽉 차게 */
+  .sched-tbl {
+    width: 100%!important;
+    min-width: unset!important;
+    font-size: 9.5px!important;
+    border-collapse: collapse!important;
+    table-layout: fixed!important;
+  }
+
+  /* 컬럼 너비 비율 (A4 가로 기준, 총 100%) */
+  .sched-tbl th:nth-child(1), .sched-tbl td:nth-child(1) { width:12%!important; } /* 대여일시 */
+  .sched-tbl th:nth-child(2), .sched-tbl td:nth-child(2) { width:12%!important; } /* 반납일시 */
+  .sched-tbl th:nth-child(3), .sched-tbl td:nth-child(3) { width:11%!important; } /* 차량 */
+  .sched-tbl th:nth-child(4), .sched-tbl td:nth-child(4) { width:9%!important;  } /* 차량번호 */
+  .sched-tbl th:nth-child(5), .sched-tbl td:nth-child(5) { width:9%!important;  } /* 임차인명 */
+  .sched-tbl th:nth-child(6), .sched-tbl td:nth-child(6) { width:11%!important; } /* 연락처 */
+  .sched-tbl th:nth-child(7), .sched-tbl td:nth-child(7) { width:36%!important; } /* 배차·메모 */
+
+  .sched-tbl th {
+    background:#1e293b!important;
+    color:#fff!important;
+    font-size:9.5px!important;
+    padding:5px 4px!important;
+    white-space:nowrap!important;
+    border:1px solid #334155!important;
+  }
+  .sched-tbl td {
+    font-size:9.5px!important;
+    padding:5px 4px!important;
+    vertical-align:middle!important;
+    word-break:break-word!important;
+    white-space:normal!important;
+    border:1px solid #e2e8f0!important;
+    line-height:1.4!important;
+  }
+  /* 행 높이 최소화 */
+  .sched-tbl tr { height: auto!important; min-height:0!important; }
+
+  /* 날짜 구분 헤더 */
+  .sched-tbl .section-row td {
+    background:#1e293b!important;
+    color:#fff!important;
+    font-size:10px!important;
+    padding:4px 8px!important;
+    border:1px solid #0f172a!important;
+  }
+
+  /* 행 색상 유지 */
+  .sched-tbl tr.row-솔라티 td, .sched-tbl tr.row-쏠라티 td { background:#fffde7!important; }
+  .sched-tbl tr.row-스타리아 td { background:#e3f2fd!important; }
+  .sched-tbl tr.row-카니발 td  { background:#e8f5e9!important; }
+
+  /* 날짜/메모 셀 */
+  .date-cell { white-space:nowrap!important; font-family:monospace!important; }
+  .memo-cell { white-space:normal!important; font-size:8.5px!important; }
+  .car-cell  { font-weight:700!important; }
+  .num-cell  { font-family:monospace!important; font-weight:700!important; }
+  .name-cell { font-weight:700!important; }
 }
 
 
