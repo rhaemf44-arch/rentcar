@@ -2691,10 +2691,12 @@ body::after{
                     <label class="form-label">보험 유형</label>
                     <select id="f_ins" class="form-select">
                       <option value="">-- 선택 --</option>
+                      <option value="일반면책">일반면책</option>
+                      <option value="완전면책">완전면책</option>
                       <option value="자차포함">자차포함</option>
                       <option value="자차별도">자차별도</option>
                       <option value="완전자차">완전자차</option>
-                      <option value="무자차">무자차</option>
+                      <option value="무자차">무자차</option>">무자차</option>
                     </select>
                   </div>
                 </div>
@@ -4044,8 +4046,9 @@ function parseText(raw) {
   }
 
   // ★ 카모아 차량명 처리: "카니발 4세대 9인승" → 차량명/세대/좌석 분리
-  if (!r.car_name && kvMap['차량명']) {
-    const cmFull = kvMap['차량명'];
+  const carFullRaw = kvMap['차량'] || kvMap['차량명'] || kvMap['이용차량'] || carRaw;
+  if (!r.car_name && carFullRaw) {
+    const cmFull = carFullRaw;
     // 차량명 목록에서 매칭
     for (const cn of carNames) {
       if (cmFull.toUpperCase().includes(cn.toUpperCase())) { r.car_name = cn; break; }
@@ -4056,6 +4059,11 @@ function parseText(raw) {
     // 좌석 추출
     const seatMK = cmFull.match(/(\d+인승)/);
     if (seatMK && !r.seating) r.seating = seatMK[1];
+  }
+  // ★ PLATE_MAP으로 차량번호 → 차종/인승 보완
+  if (r.plate && !r.car_name) {
+    const pmInfo = typeof getVehicleByPlate4 === 'function' ? getVehicleByPlate4(r.plate) : null;
+    if (pmInfo) { r.car_name = pmInfo.name; r.seating = pmInfo.seat; }
   }
 
   // 세대/트림
@@ -4079,12 +4087,14 @@ function parseText(raw) {
     '완전면책':'완전면책','완전자차':'완전자차','완자':'완전자차',
     '일반면책':'일반면책','일반자차':'일반자차','고급자차':'고급자차',
     '자차포함':'자차포함','무자차':'무자차','자포':'자차포함',
-    '자별':'자차별도','자차별도':'자차별도','완전자차':'완전자차',
+    '자별':'자차별도','자차별도':'자차별도',
     '자차보험':'자차포함','슈퍼자차':'슈퍼자차'
   };
   for (const [k,v] of Object.entries(insMap2)) {
     if ((insRaw || text).includes(k)) { r.insurance_type = v; break; }
   }
+  // ★ 보험 미기재 시 기본값: 일반면책
+  if (!r.insurance_type) r.insurance_type = '일반면책';
 
   // ★ "30자포", "자포30", "자포 30", "15자포", "자포 15" → 보험: 자차포함 + 금액: N만원
   // 패턴1: 숫자+자포 (예: 30자포, 15자포)
