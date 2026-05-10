@@ -2125,13 +2125,13 @@ body::after{
     padding:11px 8px !important;
     min-height:48px !important;
   }
-  /* 자동 파싱 textarea */
+  /* 예약 가져오기 textarea */
   #pasteText {
     font-size:14px !important;
     min-height:140px !important;
     line-height:1.6 !important;
   }
-  /* 자동 파싱 버튼 */
+  /* 예약 가져오기 버튼 */
   #reservationForm button[onclick*="parseText"],
   #reservationForm button[onclick*="resetParseInput"] {
     font-size:15px !important;
@@ -2326,6 +2326,148 @@ body::after{
   #reservationForm .form-input { font-size:15px !important; }
 }
 
+
+@media(max-width:480px) {
+  /* ════ 일정표 모바일 — 컴팩트 카드 ════ */
+  .sched-tbl {
+    min-width:auto !important;
+    font-size:13px !important;
+    display:block !important;
+    border:none !important;
+  }
+  .sched-tbl thead { display:none !important; }
+  .sched-tbl tbody { display:block !important; }
+
+  /* 날짜 구분 헤더 행 */
+  .sched-tbl tr.section-row {
+    display:block !important;
+    background:linear-gradient(90deg,#1e293b,#1e3a5f) !important;
+    border-radius:8px !important;
+    margin:10px 0 4px !important;
+    padding:8px 12px !important;
+    border:none !important;
+    box-shadow:none !important;
+  }
+  .sched-tbl tr.section-row td {
+    display:block !important;
+    color:#fff !important;
+    font-size:13px !important;
+    font-weight:800 !important;
+    padding:0 !important;
+    border:none !important;
+    background:transparent !important;
+  }
+
+  /* 예약 카드 — 한 줄 컴팩트 */
+  .sched-tbl tr:not(.section-row):not(.empty-row) {
+    display:grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    background:#fff !important;
+    border:1px solid #e5e7eb !important;
+    border-radius:10px !important;
+    padding:10px 12px !important;
+    margin-bottom:6px !important;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06) !important;
+    gap:2px 8px !important;
+    align-items:center !important;
+  }
+  /* 차량 행 색상 */
+  .sched-tbl tr.row-쏠라티:not(.section-row) { border-left:4px solid #f59e0b !important; }
+  .sched-tbl tr.row-스타리아:not(.section-row) { border-left:4px solid #3b82f6 !important; }
+  .sched-tbl tr.row-카니발:not(.section-row) { border-left:4px solid #10b981 !important; }
+
+  .sched-tbl td {
+    display:block !important;
+    padding:0 !important;
+    border:none !important;
+    line-height:1.4 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  /* 1행: 날짜범위(왼), 고객명(중), 상태(우) */
+  .sched-tbl td.date-cell:first-child {
+    grid-column:1 !important;
+    grid-row:1 !important;
+    font-size:11px !important;
+    font-family:var(--mono) !important;
+    font-weight:700 !important;
+    color:#1e3a8a !important;
+    white-space:nowrap !important;
+  }
+  .sched-tbl td.date-cell:nth-of-type(2) {
+    display:none !important; /* 반납일시 숨김 — 날짜범위로 통합 */
+  }
+  .sched-tbl td.name-cell {
+    grid-column:2 !important;
+    grid-row:1 !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    color:#111827 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .sched-tbl td.phone-cell {
+    grid-column:3 !important;
+    grid-row:1 !important;
+    font-size:11px !important;
+    font-family:var(--mono) !important;
+    color:#1e40af !important;
+    font-weight:600 !important;
+    white-space:nowrap !important;
+  }
+
+  /* 2행: 차량+번호(왼), 배차위치+금액(우) */
+  .sched-tbl td.car-cell {
+    grid-column:1 !important;
+    grid-row:2 !important;
+    font-size:12px !important;
+    font-weight:700 !important;
+    color:#374151 !important;
+    background:none !important;
+    padding:0 !important;
+    border-radius:0 !important;
+    display:block !important;
+    margin:0 !important;
+    white-space:nowrap !important;
+  }
+  .sched-tbl td.num-cell {
+    display:none !important; /* 차량번호는 car-cell 옆에 붙여서 표시 */
+  }
+  .sched-tbl td.memo-cell {
+    grid-column:2 / span 2 !important;
+    grid-row:2 !important;
+    font-size:11px !important;
+    color:#6b7280 !important;
+    background:none !important;
+    padding:0 !important;
+    border-radius:0 !important;
+    margin:0 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  /* 빈 행 */
+  .sched-tbl tr.empty-row {
+    display:block !important;
+    text-align:center !important;
+    padding:16px !important;
+    color:#aaa !important;
+  }
+
+  /* 일정표 탭 버튼 */
+  #schedTabBar { gap:4px !important; flex-wrap:wrap !important; padding:6px !important; }
+  #schedTabBar .view-tab { padding:8px 10px !important; font-size:12px !important; font-weight:700 !important; min-height:40px !important; }
+}
+
+/* AI 비서 채팅 */
+.ai-msg { padding:10px 14px; border-radius:12px; margin-bottom:10px; font-size:13px; line-height:1.6; max-width:90%; }
+.ai-msg-bot { background:#f0f9ff; border:1px solid #bae6fd; color:#0c4a6e; border-radius:12px 12px 12px 0; }
+.ai-msg-user { background:#1e3a8a; color:#fff; border-radius:12px 12px 0 12px; margin-left:auto; text-align:right; }
 </style>
 </head>
 <body>
@@ -2350,6 +2492,8 @@ body::after{
     <li class="nav-item" data-page="weekend"><button onclick="goPage('weekend')"><span class="nav-icon">🚐</span>주말 가용성</button></li>
     <li class="nav-item" data-page="stats"><button onclick="goPage('stats')"><span class="nav-icon">📈</span>통계</button></li>
     <li class="nav-item" data-page="templates"><button onclick="goPage('templates')"><span class="nav-icon">💬</span>메시지 템플릿</button></li>
+    <li class="nav-item" data-page="ai"><button onclick="goPage('ai')"><span class="nav-icon">🤖</span>AI 비서</button></li>
+    <li class="nav-item" data-page="settings"><button onclick="goPage('settings')"><span class="nav-icon">⚙️</span>설정</button></li>
   </ul>
   <div class="sidebar-footer">
     <button class="quick-btn" onclick="todayDayView()">📆 오늘 일정</button>
@@ -2399,14 +2543,14 @@ body::after{
     <div class="page" id="page-new">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📋 예약 문구 자동 파싱</span>
-          <span class="text-sm text-muted">카카오/문자 문구를 그대로 붙여넣으세요</span>
+          <span class="card-title">📋 예약 가져오기</span>
+          <span class="text-sm text-muted">카카오/문자 내용을 붙여넣으세요</span>
         </div>
         <div class="card-body">
           <textarea class="paste-box" id="pasteText"
-            placeholder="예약 문구를 붙여넣으세요&#10;&#10;예시)&#10;[이름] 20일9시-21일20시 4.5세카니발7-9인승30자포&#10;강병민&#10;[휴대전화] 010-8300-2121"></textarea>
+            placeholder="예약 내용을 붙여넣으세요&#10;&#10;예시)&#10;[이름] 20일9시-21일20시 4.5세카니발7-9인승30자포&#10;강병민&#10;[휴대전화] 010-8300-2121"></textarea>
           <div class="parse-actions">
-            <button class="btn btn-primary" onclick="doParse()">🔍 자동 파싱</button>
+            <button class="btn btn-primary" onclick="doParse()">🔍 예약 가져오기</button>
             <button class="btn btn-outline" onclick="clearForm()">초기화</button>
             <span class="parse-status" id="parseStatus"></span>
           </div>
@@ -2528,47 +2672,38 @@ body::after{
             <div class="card">
               <div class="card-header"><span class="card-title">🚗 차량 정보</span></div>
               <div class="card-body">
+                <!-- 등록차량 선택 -->
                 <div class="form-group" style="margin-bottom:12px">
-                  <label class="form-label">🚙 등록차량에서 선택 (선택 시 자동 입력)</label>
-                  <select id="f_vehicle_picker" class="form-select" onchange="pickVehicleFromList(this.value)">
-                    <option value="">-- 차량 선택 (직접 입력하려면 비워두세요) --</option>
+                  <label class="form-label">🚙 등록차량에서 선택</label>
+                  <select id="f_vehicle_picker" class="form-select" onchange="pickVehicleFromList(this.value)"
+                    style="font-size:15px;padding:12px;background:#f0f9ff;font-weight:600">
+                    <option value="">-- 차량 선택 --</option>
                   </select>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">차량명</label>
-                    <input type="text" id="f_car" class="form-input" list="carList" placeholder="카니발, 스타리아...">
-                    <datalist id="carList">
-                      <option value="카니발"><option value="스타리아"><option value="그랜저">
-                      <option value="쏘나타"><option value="아반떼"><option value="팰리세이드">
-                      <option value="싼타페"><option value="G80"><option value="G90"><option value="스타렉스">
-                    </datalist>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">세대/트림</label>
-                    <input type="text" id="f_gen" class="form-input" placeholder="4세대, FL...">
-                  </div>
-                </div>
+
+                <!-- 차량번호 + 보험 (2열) -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">차량번호</label>
                     <input type="text" id="f_plate" class="form-input" placeholder="예: 127호1285">
                   </div>
                   <div class="form-group">
-                    <label class="form-label">좌석수</label>
-                    <input type="text" id="f_seat" class="form-input" placeholder="9인승...">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
                     <label class="form-label">보험 유형</label>
                     <select id="f_ins" class="form-select">
                       <option value="">-- 선택 --</option>
-                      <option>일반면책</option><option>완전면책</option><option>일반자차</option>
-                      <option>고급자차</option><option>완전자차</option><option>자차포함</option><option>무자차</option>
+                      <option value="자차포함">자차포함</option>
+                      <option value="자차별도">자차별도</option>
+                      <option value="완전자차">완전자차</option>
+                      <option value="무자차">무자차</option>
                     </select>
                   </div>
+                </div>
 
+                <!-- 숨김 필드 (파싱/저장용) -->
+                <div style="display:none">
+                  <input type="text" id="f_car">
+                  <input type="text" id="f_gen">
+                  <input type="text" id="f_seat">
                 </div>
               </div>
             </div>
@@ -2889,11 +3024,195 @@ body::after{
       </div>
     </div>
 
+
+    <!-- ════════════ 설정 ════════════ -->
+    <div class="page" id="page-settings">
+      <div class="card" style="max-width:600px;margin:0 auto">
+        <div class="card-header">
+          <span class="card-title">⚙️ 시스템 설정</span>
+        </div>
+        <div class="card-body">
+
+          <!-- Claude AI 설정 -->
+          <div style="margin-bottom:24px;padding:16px;background:#f0f9ff;border-radius:10px;border:1px solid #bae6fd">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <span style="font-size:20px">🤖</span>
+              <strong style="font-size:15px;color:#0c4a6e">Claude AI 파싱 보완</strong>
+              <span id="aiStatusBadge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:#e2e8f0;color:#64748b">미설정</span>
+            </div>
+            <p style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.6">
+              API 키를 입력하면 파싱 신뢰도가 낮을 때 AI가 자동으로 보완합니다.<br>
+              API 키가 없거나 오류 시 기존 규칙 파싱으로 자동 전환됩니다.
+            </p>
+            <div class="form-group" style="margin-bottom:10px">
+              <label class="form-label">Anthropic API 키</label>
+              <div style="display:flex;gap:8px">
+                <input type="password" id="settingApiKey" class="form-input"
+                  placeholder="sk-ant-api03-..."
+                  style="flex:1;font-family:monospace;font-size:13px">
+                <button class="btn btn-sm" onclick="toggleApiKeyVisible()" style="flex-shrink:0">👁</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+              <label class="form-label" style="margin:0;white-space:nowrap">AI 파싱 사용</label>
+              <input type="checkbox" id="settingAiEnabled" style="width:18px;height:18px;cursor:pointer">
+              <span style="font-size:12px;color:#64748b">체크 시 파싱 신뢰도 MEDIUM/LOW일 때 AI 보완</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveAiSettings()" style="width:100%">💾 AI 설정 저장</button>
+            <div id="aiTestResult" style="margin-top:8px;font-size:12px;display:none"></div>
+          </div>
+
+          <!-- 업체 기본 설정 -->
+          <div style="margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <span style="font-size:20px">🏢</span>
+              <strong style="font-size:15px;color:#1e293b">업체 기본 설정</strong>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">업체명</label>
+                <input type="text" id="settingCompany" class="form-input" placeholder="대구 경일렌트카">
+              </div>
+              <div class="form-group">
+                <label class="form-label">문의 전화번호</label>
+                <input type="text" id="settingPhone" class="form-input" placeholder="010-4164-2820">
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveGeneralSettings()" style="width:100%">💾 기본 설정 저장</button>
+          </div>
+
+          <!-- Firebase 연결 상태 -->
+          <div style="padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:20px">🔥</span>
+              <strong style="font-size:15px;color:#1e293b">Firebase 연결 상태</strong>
+            </div>
+            <div id="settingsFbStatus" style="font-size:13px;color:#475569">확인 중...</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ════════════ AI 비서 ════════════ -->
+    <div class="page" id="page-ai">
+      <div style="max-width:600px;margin:0 auto">
+
+        <!-- 채팅 헤더 -->
+        <div style="background:linear-gradient(135deg,#1e293b,#1e3a8a);border-radius:16px;padding:16px;margin-bottom:12px;color:#fff">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-size:24px">🤖</span>
+            <div>
+              <div style="font-size:16px;font-weight:800">경일렌트카 AI 비서</div>
+              <div style="font-size:11px;color:#94a3b8" id="aiAssistStatus">설정에서 API 키를 입력해주세요</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;line-height:1.6">
+            💬 예약 수정 · 검색 · 분석을 자연어로 요청하세요
+          </div>
+        </div>
+
+        <!-- 빠른 명령 버튼 -->
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          <button class="btn btn-sm btn-outline" onclick="aiQuickCmd('오늘 배차 목록 알려줘')">📦 오늘 배차</button>
+          <button class="btn btn-sm btn-outline" onclick="aiQuickCmd('잔금 미수금 예약 알려줘')">💰 미수금</button>
+          <button class="btn btn-sm btn-outline" onclick="aiQuickCmd('이번주 카니발 예약 있어?')">🚗 카니발 예약</button>
+          <button class="btn btn-sm btn-outline" onclick="aiQuickCmd('이번달 매출 분석해줘')">📊 매출 분석</button>
+          <button class="btn btn-sm btn-outline" onclick="aiQuickCmd('확인필요 상태 예약 목록')">⚠️ 확인필요</button>
+        </div>
+
+        <!-- 채팅 영역 -->
+        <div id="aiChatBox" style="background:#fff;border-radius:12px;padding:14px;min-height:300px;max-height:50vh;overflow-y:auto;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+          <div class="ai-msg ai-msg-bot">
+            안녕하세요! 경일렌트카 AI 비서입니다 😊<br>
+            예약 수정, 검색, 분석 등 무엇이든 말씀해주세요.<br><br>
+            <span style="color:#64748b;font-size:12px">예시:<br>
+            • "3369 예약을 4415로 바꿔줘"<br>
+            • "다음주 금요일 스타리아 예약 있어?"<br>
+            • "박상혁 고객 잔금 얼마야?"<br>
+            • "이번달 쏠라티 가동률 알려줘"</span>
+          </div>
+        </div>
+
+        <!-- 입력창 -->
+        <div style="display:flex;gap:8px">
+          <input type="text" id="aiInput" class="form-input"
+            placeholder="예: 3369 예약을 4415로 바꿔줘"
+            style="flex:1;font-size:15px"
+            onkeydown="if(event.key==='Enter') sendAiMessage()">
+          <button class="btn btn-primary" onclick="sendAiMessage()" style="flex-shrink:0;padding:0 16px">
+            전송
+          </button>
+        </div>
+        <div id="aiTyping" style="font-size:11px;color:#94a3b8;margin-top:6px;display:none">🤖 AI가 답변 중...</div>
+
+      </div>
+    </div>
   </main>
 </div>
 
 <!-- FAB -->
 <button class="fab" onclick="goPage('new')">＋</button>
+
+<!-- AI 플로팅 버튼 -->
+<button id="aiFab" onclick="toggleAiChat()"
+  style="position:fixed;bottom:80px;right:16px;width:52px;height:52px;border-radius:50%;
+         background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;font-size:22px;
+         border:none;box-shadow:0 4px 12px rgba(59,130,246,.4);cursor:pointer;z-index:900;
+         display:flex;align-items:center;justify-content:center;transition:transform .2s">
+  🤖
+</button>
+
+<!-- AI 채팅 플로팅 패널 -->
+<div id="aiPanel" style="display:none;position:fixed;bottom:190px;right:16px;width:min(320px,calc(100vw - 32px));
+     background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);
+     z-index:901;overflow:hidden;flex-direction:column;max-height:70vh">
+
+  <!-- 헤더 -->
+  <div style="background:linear-gradient(135deg,#1e293b,#1e3a8a);padding:12px 14px;
+              display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:18px">🤖</span>
+      <div>
+        <div style="color:#fff;font-size:13px;font-weight:800">AI 비서</div>
+        <div id="aiFloatStatus" style="color:#94a3b8;font-size:10px">설정에서 API 키 입력 필요</div>
+      </div>
+    </div>
+    <button onclick="toggleAiChat()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:0">×</button>
+  </div>
+
+  <!-- 빠른 명령 -->
+  <div style="padding:8px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:4px;flex-wrap:wrap">
+    <button onclick="aiQuickCmd('오늘 배차 목록')" style="font-size:10px;padding:3px 8px;border-radius:10px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;cursor:pointer">📦 오늘배차</button>
+    <button onclick="aiQuickCmd('잔금 미수금 예약')" style="font-size:10px;padding:3px 8px;border-radius:10px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;cursor:pointer">💰 미수금</button>
+    <button onclick="aiQuickCmd('이번달 매출 분석')" style="font-size:10px;padding:3px 8px;border-radius:10px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;cursor:pointer">📊 매출</button>
+    <button onclick="aiQuickCmd('확인필요 예약 목록')" style="font-size:10px;padding:3px 8px;border-radius:10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;cursor:pointer">⚠️ 확인필요</button>
+  </div>
+
+  <!-- 채팅창 -->
+  <div id="aiFloatChat" style="padding:12px;overflow-y:auto;flex:1;min-height:200px;max-height:40vh">
+    <div class="ai-msg ai-msg-bot">
+      안녕하세요! 무엇을 도와드릴까요? 😊<br>
+      <span style="color:#64748b;font-size:11px">
+        예: "3369를 4415로 바꿔줘"<br>
+        예: "김재준 고객 잔금 얼마야?"
+      </span>
+    </div>
+  </div>
+
+  <!-- 입력창 -->
+  <div style="padding:10px;border-top:1px solid #e2e8f0;display:flex;gap:6px">
+    <input type="text" id="aiFloatInput" class="form-input"
+      placeholder="무엇이든 물어보세요..."
+      style="flex:1;font-size:13px;padding:8px 12px"
+      onkeydown="if(event.key==='Enter') sendAiFloat()">
+    <button onclick="sendAiFloat()"
+      style="background:#1e3a8a;color:#fff;border:none;border-radius:8px;
+             padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700">전송</button>
+  </div>
+  <div id="aiFloatTyping" style="font-size:11px;color:#94a3b8;padding:0 10px 8px;display:none">🤖 AI가 답변 중...</div>
+</div>
 
 <!-- 하단 네비 -->
 <nav class="bottom-nav">
@@ -3820,10 +4139,14 @@ function parseText(raw) {
       // ★ 전화번호 구성 숫자이면 스킵
       if (phoneNums.has(pm[1])) continue;
       const vList = loadVehicles();
-      const matched = vList.find(v => (v.plate||'').endsWith(pm[1]));
-      if (matched) {
-        if (!r.car_name) r.car_name = matched.name;
-        if (!r.seating)  r.seating  = matched.seat || '5인승';
+      // ★ PLATE_MAP 우선 조회 → DB 매칭 순서
+      const pmInfo = getVehicleByPlate4(pm[1]);
+      const matched = pmInfo ? null : vList.find(v => (v.plate||'').endsWith(pm[1]));
+      if (pmInfo || matched) {
+        const vName = pmInfo ? pmInfo.name : matched.name;
+        const vSeat = pmInfo ? pmInfo.seat : (matched.seat || '5인승');
+        if (!r.car_name) r.car_name = vName;
+        if (!r.seating)  r.seating  = vSeat;
         if (!r.notes.some(n => typeof n==='string' && n.includes('차량번호')))
           r.notes.push(`차량번호: ${pm[1]}`); r.plate = pm[1];
         r.notes.push(`차량 자동매칭: ${matched.plate} ${matched.name} ${matched.seat||'5인승'}`);
@@ -4352,6 +4675,8 @@ function goPage(page) {
   if (topBtn) topBtn.textContent = (page === 'new') ? '💾 저장' : '+ 예약등록';
   closeSidebar();
   if(page==='dashboard') { syncVehicleStatus(); renderDashboard(); }
+  if(page==='settings')  { renderSettings(); }
+  if(page==='ai')        { updateAiAssistStatus(); }
   if(page==='list') {
     // 모바일(480px 이하)에서는 일별뷰 기본
     if(window.innerWidth <= 480 && typeof calView !== 'undefined' && calView === 'month') {
@@ -4445,21 +4770,34 @@ function calcBalance() {
   }
 }
 
-function doParse() {
+async function doParse() {
   const raw = document.getElementById('pasteText').value.trim();
   if(!raw){ alert('예약 문구를 입력해주세요.'); return; }
   const ps = document.getElementById('parseStatus');
   ps.textContent='파싱 중...'; ps.className='parse-status';
-  const r = parseText(raw);
+  let r = parseText(raw);
+  // ★ AI 보완 (신뢰도 MEDIUM/LOW이거나 회차주소 비어있을 때)
+  const aiSettings = loadAiSettings();
+  if (aiSettings.apiKey && aiSettings.enabled &&
+      (r.parsing_confidence !== 'HIGH' || !r.return_location || r.return_location === '사무실')) {
+    ps.textContent = '🤖 AI 파싱 보완 중...'; ps.className = 'parse-status';
+    r = await enhanceParseWithAI(raw, r);
+    if (r.ai_enhanced) ps.textContent = '✅ AI 파싱 완료';
+  }
   fillForm(r);
   const conf = r.parsing_confidence;
-  const labels = {HIGH:'✅ 파싱 신뢰도: 높음', MEDIUM:'⚠️ 파싱 신뢰도: 보통 — 내용을 확인해주세요', LOW:'❌ 파싱 신뢰도: 낮음 — 직접 입력이 필요합니다'};
+  const aiTag = r.ai_enhanced ? ' 🤖 AI보완' : '';
+  const labels = {
+    HIGH: '✅ 파싱 신뢰도: 높음' + aiTag,
+    MEDIUM: '⚠️ 파싱 신뢰도: 보통 — 내용을 확인해주세요' + aiTag,
+    LOW: '❌ 파싱 신뢰도: 낮음 — 직접 입력이 필요합니다' + aiTag
+  };
   const bar = document.getElementById('confBar');
   bar.style.display='flex';
   document.getElementById('confLabel').textContent = labels[conf];
   document.getElementById('confLabel').className = 'conf-'+conf;
   document.getElementById('confNote').textContent = r.notes||'';
-  ps.textContent='✅ 파싱 완료'; ps.className='parse-status ok';
+  if (!r.ai_enhanced) ps.textContent='✅ 파싱 완료'; ps.className='parse-status ok';
 }
 
 function fillForm(r) {
@@ -6334,6 +6672,226 @@ function deleteAllReservations() {
   });
 }
 
+
+/* ═══════════════════════════════════════════════════
+   Claude AI 설정 & AI 파싱 보완
+═══════════════════════════════════════════════════ */
+
+// AI 설정 로드
+function loadAiSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('_ai_settings') || '{}');
+  } catch(e) { return {}; }
+}
+
+// AI 설정 저장
+function saveAiSettings() {
+  const key = document.getElementById('settingApiKey').value.trim();
+  const enabled = document.getElementById('settingAiEnabled').checked;
+  if (!key) { showToast('❌ API 키를 입력해주세요'); return; }
+  if (!key.startsWith('sk-ant-')) { showToast('❌ 올바른 Claude API 키 형식이 아닙니다 (sk-ant-로 시작)'); return; }
+  const settings = { apiKey: key, enabled };
+  localStorage.setItem('_ai_settings', JSON.stringify(settings));
+  updateAiStatusBadge();
+  showToast('✅ AI 설정 저장 완료');
+}
+
+function toggleApiKeyVisible() {
+  const input = document.getElementById('settingApiKey');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// AI 상태 배지 업데이트
+function updateAiStatusBadge() {
+  const badge = document.getElementById('aiStatusBadge');
+  if (!badge) return;
+  const s = loadAiSettings();
+  if (s.apiKey && s.enabled) {
+    badge.style.background = '#dcfce7';
+    badge.style.color = '#166534';
+    badge.textContent = '✅ 활성화';
+  } else if (s.apiKey && !s.enabled) {
+    badge.style.background = '#fef3c7';
+    badge.style.color = '#92400e';
+    badge.textContent = '⏸ 비활성화';
+  } else {
+    badge.style.background = '#e2e8f0';
+    badge.style.color = '#64748b';
+    badge.textContent = '미설정';
+  }
+}
+
+// 설정 페이지 열릴 때 값 채우기
+function renderSettings() {
+  const s = loadAiSettings();
+  const cfg = loadConfig();
+  const keyEl = document.getElementById('settingApiKey');
+  const enEl  = document.getElementById('settingAiEnabled');
+  const compEl = document.getElementById('settingCompany');
+  const phoneEl = document.getElementById('settingPhone');
+  if (keyEl)   keyEl.value   = s.apiKey || '';
+  if (enEl)    enEl.checked  = !!s.enabled;
+  if (compEl)  compEl.value  = cfg.company || '대구 경일렌트카';
+  if (phoneEl) phoneEl.value = cfg.phone || '010-4164-2820';
+  updateAiStatusBadge();
+  // Firebase 상태
+  const fbEl = document.getElementById('settingsFbStatus');
+  if (fbEl) fbEl.innerHTML = _fbReady
+    ? '<span style="color:#16a34a">🟢 Firebase 연결됨</span>'
+    : '<span style="color:#dc2626">🔴 Firebase 연결 안 됨</span>';
+}
+
+// 업체 기본 설정 저장
+function saveGeneralSettings() {
+  const company = document.getElementById('settingCompany').value.trim();
+  const phone   = document.getElementById('settingPhone').value.trim();
+  const cfg = loadConfig();
+  saveConfig(Object.assign(cfg, { company, phone }));
+  showToast('✅ 기본 설정 저장 완료');
+}
+
+/* ═══════════════════════════════════════════════════
+   AI 파싱 보완 (Claude API 호출)
+   - 기존 규칙 파싱 결과가 MEDIUM/LOW일 때만 호출
+   - 실패 시 기존 결과 그대로 사용 (fallback)
+═══════════════════════════════════════════════════ */
+async function enhanceParseWithAI(raw, ruleResult) {
+  const s = loadAiSettings();
+  if (!s.apiKey || !s.enabled) return ruleResult; // AI 미설정 시 기존 결과
+
+  // 신뢰도 HIGH면 AI 불필요
+  if (ruleResult.parsing_confidence === 'HIGH') return ruleResult;
+
+  try {
+    const prompt = `다음은 렌트카 예약 문자/카카오톡 메시지야. JSON으로 파싱해줘.
+
+예약 문자:
+"""
+${raw}
+"""
+
+규칙 기반 파싱 결과 (참고용):
+- 고객명: ${ruleResult.customer_name || '미파싱'}
+- 연락처: ${ruleResult.phone || '미파싱'}
+- 시작: ${ruleResult.start_datetime || '미파싱'}
+- 종료: ${ruleResult.end_datetime || '미파싱'}
+- 차량: ${ruleResult.car_name || '미파싱'}
+- 배차위치: ${ruleResult.pickup_location || '미파싱'}
+- 회차위치: ${ruleResult.return_location || '미파싱'}
+- 금액: ${ruleResult.amount || '미파싱'}
+
+파싱 규칙:
+- XX콜/소개 → XX고객 (예: 블루렌트카 유화랑 콜 → 블루렌트카 유화랑 고객)
+- 자포 = 자차+렌트비 포함 총액 (20자포 → 200000)
+- 자별 = 자차별도
+- 승합차(쏠라티/스타리아/카니발) 종료 미기재 → 당일 20:00
+- 승용/SUV 종료 미기재 → 시작+24시간
+- 전날출고 → 시작일 하루 전 20:00
+- 배차=회차 같으면 똑같이 표기
+- 날짜는 2026년 기준 (월/일만 있으면)
+- 시간은 24시간제
+
+다음 JSON만 반환해 (다른 설명 없이):
+{
+  "customer_name": "",
+  "phone": "",
+  "start_datetime": "YYYY-MM-DD HH:MM",
+  "end_datetime": "YYYY-MM-DD HH:MM",
+  "car_name": "",
+  "seating": "",
+  "plate": "",
+  "pickup_location": "",
+  "return_location": "",
+  "amount": null,
+  "deposit": null,
+  "insurance_type": "",
+  "notes": ""
+}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) throw new Error('API 오류: ' + res.status);
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const ai = JSON.parse(clean);
+
+    // 기존 결과에서 AI 결과로 빈 항목만 보완
+    const merged = Object.assign({}, ruleResult);
+    if (!merged.customer_name && ai.customer_name) merged.customer_name = ai.customer_name;
+    if (!merged.phone && ai.phone) merged.phone = ai.phone;
+    if (!merged.start_datetime && ai.start_datetime) merged.start_datetime = ai.start_datetime;
+    if (!merged.end_datetime && ai.end_datetime) merged.end_datetime = ai.end_datetime;
+    if (!merged.car_name && ai.car_name) merged.car_name = ai.car_name;
+    if (!merged.seating && ai.seating) merged.seating = ai.seating;
+    if (!merged.plate && ai.plate) merged.plate = ai.plate;
+    if ((!merged.pickup_location || merged.pickup_location === '사무실') && ai.pickup_location)
+      merged.pickup_location = ai.pickup_location;
+    if ((!merged.return_location || merged.return_location === '사무실') && ai.return_location)
+      merged.return_location = ai.return_location;
+    if (!merged.amount && ai.amount) merged.amount = ai.amount;
+    if (!merged.deposit && ai.deposit) merged.deposit = ai.deposit;
+    if (!merged.insurance_type && ai.insurance_type) merged.insurance_type = ai.insurance_type;
+    // 메모 합치기
+    if (ai.notes) {
+      const existingNotes = Array.isArray(merged.notes) ? merged.notes.join('\n') : (merged.notes || '');
+      if (!existingNotes.includes(ai.notes)) {
+        if (Array.isArray(merged.notes)) merged.notes.push('AI보완: ' + ai.notes);
+        else merged.notes = (existingNotes ? existingNotes + '\n' : '') + 'AI보완: ' + ai.notes;
+      }
+    }
+    merged.parsing_confidence = 'HIGH'; // AI 보완 완료
+    merged.ai_enhanced = true;
+    return merged;
+
+  } catch(e) {
+    console.warn('[AI파싱] 실패, 기존 결과 사용:', e.message);
+    return ruleResult; // ★ 실패 시 기존 규칙 결과 그대로 사용
+  }
+}
+
+
+
+// 주말 가용성에서 차량번호 바로 배차
+function assignPlateToRes(resId, plate4, selectEl) {
+  if (!plate4) return;
+  const data = loadData();
+  const r = data.find(x => x.id === resId);
+  if (!r) return;
+
+  // PLATE_MAP으로 차종/인승 자동 매칭
+  const info = getVehicleByPlate4(plate4);
+  r.plate = plate4;
+  if (info) {
+    r.car_name = info.name;
+    r.seating  = info.seat;
+  }
+
+  _pushUndo('차량 배차: ' + (r.customer_name||'') + ' → ' + plate4);
+  saveOneRecord(r);
+  showToast('✅ ' + (r.customer_name||'미기재') + ' → ' + plate4 + (info ? ' '+info.name+' '+info.seat : '') + ' 배차 완료');
+
+  // 드롭다운을 텍스트로 교체
+  if (selectEl && selectEl.parentNode) {
+    const span = document.createElement('span');
+    span.style.cssText = 'color:#1e40af;font-size:10px;font-weight:700;margin-left:4px';
+    span.textContent = '[' + plate4 + ']';
+    selectEl.parentNode.replaceChild(span, selectEl);
+  }
+
+  // 주말 가용성 갱신
+  setTimeout(renderWeekend, 300);
+}
+
 /* ═══════════════════════════════════════════════════
    캘린더 보조 함수
 ═══════════════════════════════════════════════════ */
@@ -6562,6 +7120,44 @@ function getVehicleCategory(nameOrVehicle) {
   // 그 외 세단형
   if (/아반떼|쏘나타|소나타|k3|k5|k7|cn7|dn8|아이오닉|아이오닉6/.test(n)) return '승용차';
   return '기타';
+}
+
+
+/* ═══════════════════════════════════════════════════
+   차량번호 → 차종/인승 매핑 테이블
+═══════════════════════════════════════════════════ */
+const PLATE_MAP = {
+  // 쏠라티 15인승
+  '1265': { name:'쏠라티', seat:'15인승' },
+  '1304': { name:'쏠라티', seat:'15인승' },
+  '3478': { name:'쏠라티', seat:'15인승' },
+  // 스타리아 11인승
+  '1099': { name:'스타리아', seat:'11인승 디젤' },
+  '1190': { name:'스타리아', seat:'11인승 디젤' },
+  '3477': { name:'스타리아', seat:'11인승 하이브리드' },
+  // 스타리아 9인승
+  '1643': { name:'스타리아', seat:'9인승 LPG' },
+  '3369': { name:'스타리아', seat:'9인승 디젤' },
+  '4415': { name:'스타리아', seat:'9인승 하이브리드' },
+  // 카니발 4.5세대 7인승
+  '1868': { name:'카니발4.5세대', seat:'7인승 디젤' },
+  '2904': { name:'카니발4.5세대', seat:'7인승 하이브리드' },
+  // 카니발 4.5세대 9인승
+  '4604': { name:'카니발4.5세대', seat:'9인승 하이브리드' },
+  '4407': { name:'카니발4.5세대', seat:'9인승 하이브리드' },
+  '1448': { name:'카니발4.5세대', seat:'9인승 디젤' },
+  // 카니발 4세대 9인승
+  '2543': { name:'카니발4세대', seat:'9인승 디젤' },
+  // 올뉴카니발 9인승
+  '0785': { name:'올뉴카니발', seat:'9인승' },
+  '8168': { name:'올뉴카니발', seat:'9인승' },
+};
+
+// 차량번호 4자리로 매핑 조회
+function getVehicleByPlate4(plate4) {
+  if (!plate4) return null;
+  const p = String(plate4).replace(/\D/g,'').slice(-4).padStart(4,'0');
+  return PLATE_MAP[p] || null;
 }
 
 function loadVehicles() {
@@ -8006,9 +8602,21 @@ function renderWeekend() {
           ${list.map(r => {
             const sd = (r.start_datetime||'').substring(5,16).replace('-','.').replace(' ',' ');
             const ed = (r.end_datetime||'').substring(5,16).replace('-','.').replace(' ',' ');
-            const plate = extractPlate(r.notes, r.car_name);
+            const plate = r.plate || extractPlate(r.notes, r.car_name);
             const timeStr = (sd && ed) ? `<span style="color:#1e3a8a;font-family:var(--mono);font-size:10px">${sd} ~ ${ed}</span>` : '';
-            return `• ${r.customer_name||'(미기재)'} - ${r.car_name} ${plate ? '['+plate+']' : ''}<br>&nbsp;&nbsp;${timeStr}`;
+            // 차량번호 없으면 배차 버튼 표시
+            const assignBtn = !plate ? `
+              <select onchange="assignPlateToRes(${r.id}, this.value, this)"
+                style="font-size:10px;padding:2px 4px;border:1px solid #3b82f6;border-radius:4px;
+                       color:#1e40af;background:#eff6ff;cursor:pointer;margin-left:4px">
+                <option value="">🚗 차량배차</option>
+                ${FLEET[cat].map(p => {
+                  const info = getVehicleByPlate4(p);
+                  const label = info ? `${p} (${info.name} ${info.seat})` : p;
+                  return `<option value="${p}">${label}</option>`;
+                }).join('')}
+              </select>` : `<span style="color:#1e40af;font-size:10px;font-weight:700">[${plate}]</span>`;
+            return `• ${r.customer_name||'(미기재)'} - ${r.car_name} ${assignBtn}<br>&nbsp;&nbsp;${timeStr}`;
           }).join('<br>')}
           </div>
         </details>`;
@@ -8129,21 +8737,31 @@ function renderScheduleTables() {
       const statusHtml = showBadge ? `<span class="badge ss-${status}" style="font-size:10px;padding:1px 5px">${status}</span>` : '';
       const fmtDt = dt => dt ? dt.replace('2026-','').replace(/-/g,'.') : '-';
 
+      const fmtDt2 = dt => dt ? dt.replace('2026-','').replace(/-/g,'.') : '-';
+      const startFmt = fmtDt2(r.start_datetime);
+      const endFmt   = fmtDt2(r.end_datetime);
+      const dateRange = startFmt !== '-' ? `${startFmt}${endFmt !== '-' ? ' ~ '+endFmt : ''}` : '-';
+      const plateNum = r.plate
+        ? r.plate.replace(/^.*?(\d{4}).*$/, '$1')
+        : (()=>{ const m=(r.notes||'').match(/(?:차량번호[：:\s]*)?(\d{4})/); return m?m[1]:''; })();
+      // PLATE_MAP으로 차종/인승 보완
+      let carName = r.car_name || '-';
+      let carSeat = r.seating || '';
+      if (plateNum) {
+        const pm = getVehicleByPlate4(plateNum);
+        if (pm) { carName = pm.name; carSeat = pm.seat; }
+      }
+      // 인승 중복 방지
+      const carLabel = carName + (carSeat && !carName.includes(carSeat) ? ' '+carSeat : '') + (plateNum ? ' ['+plateNum+']' : '');
+
       tr.innerHTML = `
-        <td class="date-cell">${fmtDt(r.start_datetime)}</td>
-        <td class="date-cell">${fmtDt(r.end_datetime)}</td>
-        <td class="car-cell">${r.car_name||'-'}${r.seating?' '+r.seating:''}</td>
-        <td class="num-cell" id="sn-${r.id}" onclick="schedEditCell(event,${r.id},'plate')" title="클릭하여 수정">${
-          r.plate
-            ? r.plate.replace(/^.*?(\d{3,4}[가-힣]\d{4}|\d{4}).*$/, '$1')  // 번호판 정제
-            : (()=>{
-                const m = (r.notes||'').match(/(?:차량번호[：:\s]*)?([가-힣0-9]{2,3}[가-힣]\d{4}|\d{4})/);
-                return m ? m[1] : '-';
-              })()
-        }</td>
+        <td class="date-cell">${dateRange}</td>
+        <td class="date-cell" style="display:none"></td>
+        <td class="car-cell">${carLabel}</td>
+        <td class="num-cell" style="display:none"></td>
         <td class="name-cell" id="sc-${r.id}" onclick="schedEditCell(event,${r.id},'customer_name')" title="클릭하여 수정">${r.customer_name||'-'}</td>
         <td class="phone-cell" id="sp-${r.id}" onclick="schedEditCell(event,${r.id},'phone')" title="클릭하여 수정">${r.phone||'-'}</td>
-        <td class="memo-cell" onclick="openDetail(${r.id})">${(r.pickup_location||r.address||'-').substring(0,25)} <span style="color:#888;font-size:11px">${amt} ${balHtml}</span> ${statusHtml}</td>
+        <td class="memo-cell" onclick="openDetail(${r.id})">${(r.pickup_location||r.address||'-').substring(0,20)} <span style="color:#888;font-size:11px">${r.amount ? r.amount.toLocaleString()+'원' : ''} ${bal===0?'완납':bal>0?'잔'+bal.toLocaleString()+'원':''}</span> ${statusHtml}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -8265,6 +8883,114 @@ function schedPrint() {
   }, 500);
 }
 
+
+
+/* ═══ AI 플로팅 채팅 ═══ */
+function toggleAiChat() {
+  const panel = document.getElementById('aiPanel');
+  const fab = document.getElementById('aiFab');
+  if (!panel) return;
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  panel.style.flexDirection = 'column';
+  if (!isOpen) {
+    const s = loadAiSettings ? loadAiSettings() : {};
+    const el = document.getElementById('aiFloatStatus');
+    if (el) { el.textContent = s.apiKey && s.enabled ? '● AI 활성화됨' : '⚠ API 키 설정 필요'; el.style.color = s.apiKey && s.enabled ? '#86efac' : '#fcd34d'; }
+    const inp = document.getElementById('aiFloatInput'); if(inp) inp.focus();
+  }
+  if (fab) fab.style.transform = isOpen ? '' : 'rotate(10deg)';
+}
+function aiFloatAddMsg(text, isBot) {
+  const box = document.getElementById('aiFloatChat'); if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + (isBot ? 'ai-msg-bot' : 'ai-msg-user');
+  div.innerHTML = text; box.appendChild(div); box.scrollTop = box.scrollHeight;
+}
+function aiQuickCmd(cmd) {
+  const input = document.getElementById('aiFloatInput');
+  if (input) { input.value = cmd; sendAiFloat(); }
+}
+async function sendAiFloat() {
+  const input = document.getElementById('aiFloatInput');
+  const typing = document.getElementById('aiFloatTyping');
+  if (!input) return;
+  const msg = input.value.trim(); if (!msg) return;
+  aiFloatAddMsg(msg, false); input.value = '';
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if (!s.apiKey || !s.enabled) {
+    aiFloatAddMsg('⚠️ <span onclick="goPage(\'settings\');toggleAiChat()" style="color:#3b82f6;cursor:pointer;text-decoration:underline">설정에서 API 키를 입력해주세요</span>', true); return;
+  }
+  if (typing) typing.style.display = 'block';
+  try {
+    const data = typeof loadData === 'function' ? loadData() : [];
+    const todayStr = new Date().toISOString().substring(0,10);
+    const summary = data.slice(0,120).map(r => ({
+      id:r.id, name:r.customer_name||'미기재', phone:r.phone||'',
+      start:(r.start_datetime||'').substring(0,16), end:(r.end_datetime||'').substring(0,16),
+      car:r.car_name||'', plate:r.plate||'', amount:r.amount||0,
+      balance:r.balance||0, status:r.reservation_status||'', pickup:r.pickup_location||''
+    }));
+    const prompt = `경일렌트카 AI비서. 오늘:${todayStr}
+차량매핑: 쏠라티15인승(1265,1304,3478) 스타리아11인승디젤(1099,1190) 스타리아11인승HEV(3477) 스타리아9인승LPG(1643) 스타리아9인승디젤(3369) 스타리아9인승HEV(4415) 카니발4.5세대7인승디젤(1868) 카니발4.5세대7인승HEV(2904) 카니발4.5세대9인승HEV(4604,4407) 카니발4.5세대9인승디젤(1448) 카니발4세대9인승디젤(2543) 올뉴카니발9인승(0785,8168)
+예약(${data.length}건):${JSON.stringify(summary)}
+요청:"${msg}"
+
+규칙:
+- 예약 수정: <action type="update" id="예약ID" field="필드명" value="새값"></action>
+- 예약 등록(새예약 문구가 오면): <action type="create" data='{"customer_name":"","phone":"","start_datetime":"YYYY-MM-DD HH:MM","end_datetime":"YYYY-MM-DD HH:MM","car_name":"","plate":"","pickup_location":"","return_location":"","amount":0,"insurance_type":"","reservation_status":"확정"}'></action>
+- 검색/조회: 간결하게 목록
+- 분석: 핵심 수치
+- 한국어 3~5문장 이내`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':s.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if (!res.ok) throw new Error('API 오류 ' + res.status);
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '응답 없음';
+    // action 파싱
+    const actions = [...reply.matchAll(/<action[^>]+>(<\/action>|<\/action>)/g)];
+    const updateActions = [...reply.matchAll(/<action type="update" id="(\d+)" field="([^"]+)" value="([^"]+)"><\/action>/g)];
+    const createMatch = reply.match(/<action type="create" data='([^']+)'><\/action>/);
+    const cleanReply = reply.replace(/<action[^>]*>(<\/action>)?/g,'').replace(/<\/action>/g,'').trim();
+    if (createMatch) {
+      try {
+        const newRes = JSON.parse(createMatch[1]);
+        window._aiPendingRes = newRes;
+        aiFloatAddMsg(cleanReply + '<br><br><button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="aiCreateReservation()">✅ 예약 등록</button>', true);
+      } catch(e) { aiFloatAddMsg(cleanReply, true); }
+    } else if (updateActions.length) {
+      let btns = '';
+      updateActions.forEach(m => { btns += `<button class="btn btn-primary btn-sm" style="margin-top:6px;margin-right:4px" onclick="aiApplyUpdate(${m[1]},'${m[2]}','${m[3]}')">✅ ${m[2]} 변경</button>`; });
+      aiFloatAddMsg(cleanReply + '<br>' + btns, true);
+    } else {
+      aiFloatAddMsg(cleanReply, true);
+    }
+  } catch(e) { aiFloatAddMsg('❌ ' + e.message, true); }
+  finally { if (typing) typing.style.display = 'none'; }
+}
+function aiApplyUpdate(resId, field, value) {
+  const data = typeof loadData === 'function' ? loadData() : [];
+  const r = data.find(x => x.id === parseInt(resId));
+  if (!r) { aiFloatAddMsg('❌ 예약을 찾을 수 없습니다.', true); return; }
+  if (typeof _pushUndo === 'function') _pushUndo('AI수정:#' + resId);
+  r[field] = isNaN(value)||value==='' ? value : Number(value);
+  if (typeof saveOneRecord === 'function') saveOneRecord(r);
+  aiFloatAddMsg('✅ 예약 #' + resId + ' ' + field + ' → "' + value + '" 변경 완료!', true);
+}
+function aiCreateReservation() {
+  try {
+    const newRes = window._aiPendingRes; if(!newRes){aiFloatAddMsg('❌ 예약 데이터가 없습니다.', true); return;}
+    if (typeof nextId === 'undefined') window.nextId = Date.now();
+    newRes.id = nextId++;
+    newRes.created_at = new Date().toISOString();
+    newRes.updated_at = new Date().toISOString();
+    if (typeof _pushUndo === 'function') _pushUndo('AI예약등록:' + (newRes.customer_name||''));
+    if (typeof saveOneRecord === 'function') { saveOneRecord(newRes); aiFloatAddMsg('✅ 예약이 등록됐습니다! <span onclick="openDetail(' + newRes.id + ');toggleAiChat()" style="color:#3b82f6;cursor:pointer;text-decoration:underline">예약 보기</span>', true); }
+  } catch(e) { aiFloatAddMsg('❌ 등록 실패: ' + e.message, true); }
+}
 
 </script>
 </body>
