@@ -4461,6 +4461,55 @@ function parseText(raw) {
     r.notes.push('카모아 예약 (결제완료)');
   }
 
+  // ★ 일반 예약문자 — "결제상태: 완납" 또는 "잔금: 0원" 패턴 처리
+  if (!isKamoa) {
+    const isPaid = /결제상태[:：]?\s*완납|결제\s*완료|완납\s*처리|^완납$/m.test(text);
+    const balanceM = text.match(/잔금[:：\s]*([0-9,]+)원?/);
+    const depositM = text.match(/계약금[:：\s]*([0-9,]+)원?/);
+
+    if (isPaid && r.amount) {
+      r.deposit = r.amount;
+      r.balance = 0;
+      r.notes.push('완납');
+    } else if (balanceM) {
+      const balVal = parseInt(balanceM[1].replace(/,/g,''));
+      r.balance = balVal;
+      if (depositM) {
+        r.deposit = parseInt(depositM[1].replace(/,/g,''));
+      } else if (r.amount && balVal === 0) {
+        r.deposit = r.amount;
+      } else if (r.amount) {
+        r.deposit = r.amount - balVal;
+      }
+    } else if (depositM) {
+      r.deposit = parseInt(depositM[1].replace(/,/g,''));
+      if (r.amount) r.balance = r.amount - r.deposit;
+    }
+  }
+
+  // ★ 차량번호 미명시 + 차량명/연료/인승 명시 → PLATE_MAP에서 자동 매칭
+  if (!r.plate && r.car_name) {
+    const fuelM = text.match(/(디젤|HEV|하이브리드|LPG|가솔린|전기)/i);
+    const seatM2 = text.match(/(\d+)\s*인승/);
+    if (fuelM || seatM2) {
+      const fuelTarget = fuelM ? (fuelM[1].toUpperCase() === 'HEV' ? '하이브리드' : fuelM[1]) : null;
+      const seatTarget = seatM2 ? (seatM2[1] + '인승') : null;
+      // PLATE_MAP에서 매칭되는 차량 찾기
+      for (const [plate, info] of Object.entries(PLATE_MAP)) {
+        const nameMatch = r.car_name.includes(info.name) || info.name.includes(r.car_name);
+        const fuelMatch = !fuelTarget || info.fuel === fuelTarget;
+        const seatMatch = !seatTarget || info.seat === seatTarget;
+        if (nameMatch && fuelMatch && seatMatch) {
+          r.plate = plate;
+          r.car_name = info.name;
+          r.seating = info.seat;
+          r.notes.push('차량 자동매칭: ' + plate + ' (' + info.gen + ')');
+          break;
+        }
+      }
+    }
+  }
+
   // ══════════════════════════════════════════════
   // 9단계: 신뢰도
   // ══════════════════════════════════════════════
