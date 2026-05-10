@@ -135,7 +135,6 @@ body {
 .bottom-nav { display: none; }
 .mob-card { display: none; }
 
-
 /* ═══════════════════════════════════════════
    기본 변수 & 리셋
 ═══════════════════════════════════════════ */
@@ -1152,7 +1151,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .month-cal .mc-day { font-size:12px; }
 }
 
-
 /* ═══════════════════════════════════════════════════
    일별 뷰 CSS
 ═══════════════════════════════════════════════════ */
@@ -1289,7 +1287,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .day-nav-btn { padding:4px 8px; font-size:11px; }
 }
 
-
 /* ═══════════════════════════════════════════════════
    목록 인라인 메시지 패널
 ═══════════════════════════════════════════════════ */
@@ -1338,7 +1335,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .msg-quick-btn-mob:hover { background:#dbeafe; }
 .mob-msg-panel { margin-top:8px; }
 
-
 /* 차량 주의사항 */
 .car-note-item {
   border-bottom: 1px solid var(--border);
@@ -1355,7 +1351,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   white-space: pre-wrap; color: var(--muted); line-height: 1.7;
   max-height: 160px; overflow-y: auto; background: #fafafa;
 }
-
 
 /* ═══════════════════════════════════════════════════
    IMS form 스타일 대시보드
@@ -1466,7 +1461,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .s-card { padding:14px 14px !important; }
 }
 
-
 /* 로고 이미지 — 검정 로고를 흰색으로 반전 */
 .logo-img {
   width: 150px;
@@ -1479,7 +1473,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   opacity: 0.92;
 }
 .logo { display:flex; align-items:center; gap:11px; }
-
 
 /* ═══════════════════════════════════════════════════
    발송 버튼
@@ -1520,7 +1513,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 }
 .send-result-badge.kakao { background:#fff9c4; color:#7d6608; border:1px solid #FEE500; }
 .send-result-badge.sms   { background:#d4efdf; color:#1a6632; border:1px solid #2ecc71; }
-
 
 /* ═══════════════════════════════════════════════════
    차량 관리 페이지
@@ -1610,7 +1602,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .vehicle-grid { grid-template-columns: 1fr; }
 }
 
-
 /* ═══════════════════════════════════════════════════
    차량 관리 — 테이블 뷰 개선
 ═══════════════════════════════════════════════════ */
@@ -1671,7 +1662,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .vtbl-row td:nth-child(7) { display: none; }
 }
 
-
 /* ═══════════════════════════════════════════════
    스크롤바 정교화
 ═══════════════════════════════════════════════ */
@@ -1692,7 +1682,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
 ═══════════════════════════════════════════════ */
 ::selection{background:var(--gold); color:#0a0e1a;}
 ::-moz-selection{background:var(--gold); color:#0a0e1a;}
-
 
 /* ═══════════════════════════════════════════════
    추가 디테일 — 캘린더, 간트, 미니 요소
@@ -1878,7 +1867,6 @@ tbody tr:hover { background:rgba(212,168,67,.04) !important; }
   .topbar-title { font-size:15px; }
 }
 
-
 /* 미세 노이즈 텍스처 — 고급스러운 종이 질감 */
 body::after{
   content:''; position:fixed; inset:0;
@@ -1888,7 +1876,6 @@ body::after{
   pointer-events:none;
   z-index:0;
 }
-
 
 /* ═══════════════════════════════════════════
    일정표 스타일
@@ -2026,7 +2013,6 @@ body::after{
   .num-cell  { font-family:monospace!important; font-weight:700!important; }
   .name-cell { font-weight:700!important; }
 }
-
 
 /* 일정표 편집 가능 셀 */
 #schedTblAll td.num-cell:hover,
@@ -2326,7 +2312,6 @@ body::after{
   #reservationForm .form-input { font-size:15px !important; }
 }
 
-
 @media(max-width:480px) {
   /* ════ 일정표 모바일 — 컴팩트 카드 ════ */
   .sched-tbl {
@@ -2492,7 +2477,6 @@ body::after{
     <li class="nav-item" data-page="weekend"><button onclick="goPage('weekend')"><span class="nav-icon">🚐</span>주말 가용성</button></li>
     <li class="nav-item" data-page="stats"><button onclick="goPage('stats')"><span class="nav-icon">📈</span>통계</button></li>
     <li class="nav-item" data-page="templates"><button onclick="goPage('templates')"><span class="nav-icon">💬</span>메시지 템플릿</button></li>
-    <li class="nav-item" data-page="ai"><button onclick="goPage('ai')"><span class="nav-icon">🤖</span>AI 비서</button></li>
     <li class="nav-item" data-page="settings"><button onclick="goPage('settings')"><span class="nav-icon">⚙️</span>설정</button></li>
   </ul>
   <div class="sidebar-footer">
@@ -3143,8 +3127,8 @@ body::after{
           <input type="text" id="aiInput" class="form-input"
             placeholder="예: 3369 예약을 4415로 바꿔줘"
             style="flex:1;font-size:15px"
-            onkeydown="if(event.key==='Enter') sendAiMessage()">
-          <button class="btn btn-primary" onclick="sendAiMessage()" style="flex-shrink:0;padding:0 16px">
+            onkeydown="if(event.key==='Enter') sendAiFloat()">
+          <button class="btn btn-primary" onclick="sendAiFloat()" style="flex-shrink:0;padding:0 16px">
             전송
           </button>
         </div>
@@ -3168,13 +3152,14 @@ body::after{
 </button>
 
 <!-- AI 채팅 플로팅 패널 -->
-<div id="aiPanel" style="display:none;position:fixed;bottom:190px;right:16px;width:min(320px,calc(100vw - 32px));
+<div id="aiPanel" style="display:none;position:fixed;bottom:190px;right:16px;width:min(320px,calc(100vw - 32px));cursor:default;
      background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);
      z-index:901;overflow:hidden;flex-direction:column;max-height:70vh">
 
   <!-- 헤더 -->
   <div style="background:linear-gradient(135deg,#1e293b,#1e3a8a);padding:12px 14px;
-              display:flex;align-items:center;justify-content:space-between">
+              display:flex;align-items:center;justify-content:space-between;
+              cursor:grab;user-select:none" id="aiPanelHeader">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:18px">🤖</span>
       <div>
@@ -3456,7 +3441,15 @@ function _toArr(snapshot) {
   snapshot.forEach(function(child) { arr.push(child.val()); });
   return arr;
 }
+// ★ 디바운스: 연속 렌더링 방지 (300ms)
+var _refreshTimer = null;
 function _refreshCurrentPage() {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(function() {
+    _doRefresh();
+  }, 300);
+}
+function _doRefresh() {
   // ── 현재 페이지 렌더링 ──
   var active = document.querySelector('.page.active');
   if (active) {
@@ -3502,7 +3495,6 @@ function _initFirebaseListeners() {
     _fbReady = true;
     // 강제 즉시 갱신 + 다음 tick에 한번 더 (DOM 보장)
     _refreshCurrentPage();
-    setTimeout(_refreshCurrentPage, 50);
   });
   db.ref(FB_VEH).on('value', function(snap) {
     var arr = _toArr(snap);
@@ -4570,8 +4562,6 @@ function checkConflict(data, r, excludeId){
   });
 }
 
-
-
 // 회차위치 없는 예약 → 배차위치로 일괄 채우기
 function fillMissingReturnLocation() {
   const data = loadData();
@@ -4642,7 +4632,10 @@ function populateDetailVehiclePicker() {
     if (!groups[cat].length) return;
     html += `<optgroup label="${icons[cat]} ${cat} (${groups[cat].length}대)">`;
     groups[cat].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(v => {
-      const label = `${v.plate||'번호없음'} · ${v.name||''} ${v.gen||''} ${v.seat||''}`.trim();
+      // PLATE_MAP에서 상세 정보 보완
+      const pm = typeof getVehicleByPlate4==='function' ? getVehicleByPlate4((v.plate||'').slice(-4)) : null;
+      const genStr = pm ? pm.gen : (v.gen||'');
+      const label = `${v.plate||'번호없음'} · ${v.name||''} ${genStr||v.seat||''}`.trim();
       html += `<option value="${v.id}">${label}</option>`;
     });
     html += '</optgroup>';
@@ -4655,10 +4648,11 @@ function pickVehicleForDetail(vid) {
   const v = loadVehicles().find(x => x.id === vid);
   if (!v) return;
   const set = (id, val) => { const el=document.getElementById(id); if(el && val!=null) el.value=val; };
+  const pmPick = typeof getVehicleByPlate4==='function' ? getVehicleByPlate4((v.plate||'').slice(-4)) : null;
   set('de_car',    v.name||'');
   set('de_carnum', v.plate||'');
-  set('de_gen',    v.gen||'');
-  set('de_seat',   v.seat||'');
+  set('de_gen',    pmPick ? pmPick.gen : (v.gen||''));
+  set('de_seat',   pmPick ? pmPick.seat : (v.seat||''));
   // 차종 select
   const typeEl = document.getElementById('de_type');
   if (typeEl && v.type) typeEl.value = v.type;
@@ -6935,8 +6929,6 @@ ${raw}
   }
 }
 
-
-
 // 주말 가용성에서 차량번호 바로 배차
 function assignPlateToRes(resId, plate4, selectEl) {
   if (!plate4) return;
@@ -7203,30 +7195,30 @@ function getVehicleCategory(nameOrVehicle) {
    차량번호 → 차종/인승 매핑 테이블
 ═══════════════════════════════════════════════════ */
 const PLATE_MAP = {
-  // 쏠라티 15인승
-  '1265': { name:'쏠라티', seat:'15인승' },
-  '1304': { name:'쏠라티', seat:'15인승' },
-  '3478': { name:'쏠라티', seat:'15인승' },
+  // 쏠라티 15인승 디젤 2026
+  '1265': { name:'쏠라티', seat:'15인승', fuel:'디젤', year:'2026', gen:'2026년식 디젤 15인승' },
+  '1304': { name:'쏠라티', seat:'15인승', fuel:'디젤', year:'2026', gen:'2026년식 디젤 15인승' },
+  '3478': { name:'쏠라티', seat:'15인승', fuel:'디젤', year:'2026', gen:'2026년식 디젤 15인승' },
   // 스타리아 11인승
-  '1099': { name:'스타리아', seat:'11인승 디젤' },
-  '1190': { name:'스타리아', seat:'11인승 디젤' },
-  '3477': { name:'스타리아', seat:'11인승 하이브리드' },
+  '1099': { name:'스타리아', seat:'11인승', fuel:'디젤', year:'2023', gen:'2023년식 디젤 11인승' },
+  '1190': { name:'스타리아', seat:'11인승', fuel:'디젤', year:'2023', gen:'2023년식 디젤 11인승' },
+  '3477': { name:'스타리아', seat:'11인승', fuel:'하이브리드', year:'2027', gen:'2027년식 HEV 11인승' },
   // 스타리아 9인승
-  '1643': { name:'스타리아', seat:'9인승 LPG' },
-  '3369': { name:'스타리아', seat:'9인승 디젤' },
-  '4415': { name:'스타리아', seat:'9인승 하이브리드' },
+  '1643': { name:'스타리아', seat:'9인승', fuel:'LPG', year:'2022', gen:'2022년식 LPG 9인승' },
+  '3369': { name:'스타리아', seat:'9인승', fuel:'디젤', year:'2025', gen:'2025년식 디젤 9인승' },
+  '4415': { name:'스타리아', seat:'9인승', fuel:'하이브리드', year:'2026', gen:'2026년식 HEV 9인승' },
   // 카니발 4.5세대 7인승
-  '1868': { name:'카니발4.5세대', seat:'7인승 디젤' },
-  '2904': { name:'카니발4.5세대', seat:'7인승 하이브리드' },
+  '1868': { name:'카니발4.5세대', seat:'7인승', fuel:'디젤', year:'2026', gen:'4.5세대 2026년식 디젤 7인승' },
+  '2904': { name:'카니발4.5세대', seat:'7인승', fuel:'하이브리드', year:'2025', gen:'4.5세대 2025년식 HEV 7인승' },
   // 카니발 4.5세대 9인승
-  '4604': { name:'카니발4.5세대', seat:'9인승 하이브리드' },
-  '4407': { name:'카니발4.5세대', seat:'9인승 하이브리드' },
-  '1448': { name:'카니발4.5세대', seat:'9인승 디젤' },
+  '4604': { name:'카니발4.5세대', seat:'9인승', fuel:'하이브리드', year:'2026', gen:'4.5세대 2026년식 HEV 9인승' },
+  '4407': { name:'카니발4.5세대', seat:'9인승', fuel:'하이브리드', year:'2025', gen:'4.5세대 2025년식 HEV 9인승' },
+  '1448': { name:'카니발4.5세대', seat:'9인승', fuel:'디젤', year:'2023', gen:'4.5세대 2023년식 디젤 9인승' },
   // 카니발 4세대 9인승
-  '2543': { name:'카니발4세대', seat:'9인승 디젤' },
+  '2543': { name:'카니발4세대', seat:'9인승', fuel:'디젤', year:'2018', gen:'4세대 2018년식 디젤 9인승' },
   // 올뉴카니발 9인승
-  '0785': { name:'올뉴카니발', seat:'9인승' },
-  '8168': { name:'올뉴카니발', seat:'9인승' },
+  '0785': { name:'올뉴카니발', seat:'9인승', fuel:'디젤', year:'2018', gen:'올뉴 2018년식 디젤 9인승' },
+  '8168': { name:'올뉴카니발', seat:'9인승', fuel:'디젤', year:'2018', gen:'올뉴 2018년식 디젤 9인승' },
 };
 
 // 차량번호 4자리로 매핑 조회
@@ -7249,8 +7241,6 @@ function loadVehicles() {
     return saved;
   } catch(e) { return []; }
 }
-
-
 
 function manualSync() {
   const changed = syncVehicleStatus();
@@ -8277,8 +8267,6 @@ function _uploadBuiltinSeed() {
   });
 }
 
-
-
 /* ═══════════════════════════════════════════
    일정표 데이터 & 함수
 ═══════════════════════════════════════════ */
@@ -8959,8 +8947,6 @@ function schedPrint() {
   }, 500);
 }
 
-
-
 /* ═══ AI 플로팅 채팅 ═══ */
 function toggleAiChat() {
   const panel = document.getElementById('aiPanel');
@@ -9110,6 +9096,78 @@ function aiCreateReservation() {
     if (typeof saveOneRecord === 'function') { saveOneRecord(newRes); aiFloatAddMsg('✅ 예약이 등록됐습니다! <span onclick="openDetail(' + newRes.id + ');toggleAiChat()" style="color:#3b82f6;cursor:pointer;text-decoration:underline">예약 보기</span>', true); }
   } catch(e) { aiFloatAddMsg('❌ 등록 실패: ' + e.message, true); }
 }
+
+
+/* ═══ AI 패널 드래그 이동 ═══ */
+(function() {
+  var isDragging = false;
+  var startX, startY, startRight, startBottom;
+
+  document.addEventListener('mousedown', function(e) {
+    var header = document.getElementById('aiPanelHeader');
+    if (!header || !header.contains(e.target)) return;
+    var panel = document.getElementById('aiPanel');
+    if (!panel || panel.style.display === 'none') return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    var rect = panel.getBoundingClientRect();
+    startRight = window.innerWidth - rect.right;
+    startBottom = window.innerHeight - rect.bottom;
+    header.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var panel = document.getElementById('aiPanel');
+    if (!panel) return;
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    var newRight = Math.max(0, Math.min(window.innerWidth - 100, startRight - dx));
+    var newBottom = Math.max(0, Math.min(window.innerHeight - 60, startBottom - dy));
+    panel.style.right = newRight + 'px';
+    panel.style.bottom = newBottom + 'px';
+    panel.style.left = 'auto';
+    panel.style.top = 'auto';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!isDragging) return;
+    isDragging = false;
+    var header = document.getElementById('aiPanelHeader');
+    if (header) header.style.cursor = 'grab';
+  });
+
+  // 터치 지원 (모바일)
+  document.addEventListener('touchstart', function(e) {
+    var header = document.getElementById('aiPanelHeader');
+    if (!header || !header.contains(e.target)) return;
+    var panel = document.getElementById('aiPanel');
+    if (!panel || panel.style.display === 'none') return;
+    isDragging = true;
+    var t = e.touches[0];
+    startX = t.clientX; startY = t.clientY;
+    var rect = panel.getBoundingClientRect();
+    startRight = window.innerWidth - rect.right;
+    startBottom = window.innerHeight - rect.bottom;
+  }, {passive: true});
+
+  document.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    var panel = document.getElementById('aiPanel');
+    if (!panel) return;
+    var t = e.touches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    var newRight = Math.max(0, Math.min(window.innerWidth - 100, startRight - dx));
+    var newBottom = Math.max(0, Math.min(window.innerHeight - 60, startBottom - dy));
+    panel.style.right = newRight + 'px';
+    panel.style.bottom = newBottom + 'px';
+  }, {passive: true});
+
+  document.addEventListener('touchend', function() { isDragging = false; });
+})();
 
 </script>
 </body>
