@@ -5270,10 +5270,17 @@ function renderMonthCal(allData) {
 
     html += `<div class="month-cell${isToday?' today':''}${dow===0||dow===6?' weekend':''}">
       <div class="mc-day${dow===0?' sun':dow===6?' sat':''}" onclick="showDayDetail(${y},${m+1},${d})" style="cursor:pointer" title="${m+1}/${d} 일별 보기">${d}</div>
-      ${shown.map(r=>`
-        <div class="mc-event ev-${r.reservation_status}" onclick="openDetail(${r.id})" title="${r.customer_name||''} ${r.car_name||''} ${r.start_datetime||''}">
-          ${r.start_datetime?r.start_datetime.substring(11,16):''} ${r.customer_name||'-'} ${r.car_name||''}
-        </div>`).join('')}
+      ${shown.map(r=>{
+        const plate4 = r.plate ? r.plate.match(/\d{4}/)?.[0] : '';
+        const pmInfo = plate4 && typeof getVehicleByPlate4==='function' ? getVehicleByPlate4(plate4) : null;
+        const carDetail = pmInfo
+          ? `${pmInfo.year}년 ${pmInfo.name} ${pmInfo.seat} ${pmInfo.fuel} ${plate4}`
+          : `${r.car_name||''}${plate4 ? ' '+plate4 : ''}`;
+        return `
+        <div class="mc-event ev-${r.reservation_status}" onclick="openDetail(${r.id})" title="${r.customer_name||''} ${carDetail} ${r.start_datetime||''}">
+          ${r.start_datetime?r.start_datetime.substring(11,16):''} ${r.customer_name||'-'} ${carDetail}
+        </div>`;
+      }).join('')}
       ${more>0?`<div class="mc-more" onclick="showDayDetail(${y},${m+1},${d})">+${more}건 더보기</div>`:''}
       <div class="mc-dot-cnt">${dotHtml}</div>
     </div>`;
