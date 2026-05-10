@@ -4071,6 +4071,19 @@ function parseText(raw) {
   const genM = genSrc.match(/(\d+\.\d+세대|\d+세대|FL|F\/L|페이스리프트|[A-Z]{1,3}\d[A-Z0-9]*|[A-Z]{2,4}\d+)/);
   if (genM) r.car_generation = genM[1];
 
+  // ★ HEV/디젤/LPG/가솔린 연료 타입 인식 → 메모에 저장
+  const fuelKeywords = [
+    ['HEV', '하이브리드'], ['하이브리드', '하이브리드'],
+    ['디젤', '디젤'], ['LPG', 'LPG'], ['가솔린', '가솔린'],
+    ['전기', '전기'], ['PHEV', '플러그인 하이브리드']
+  ];
+  for (const [kw, label] of fuelKeywords) {
+    if ((carFullRaw || text).toUpperCase().includes(kw.toUpperCase())) {
+      if (!r.notes.includes(label)) r.notes.push('연료: ' + label);
+      break;
+    }
+  }
+
   // 좌석수
   const seatM = (carRaw || text).match(/(\d+(?:\s*[-~]\s*\d+)?)\s*(인승|명)/);
   if (seatM) {
@@ -4854,6 +4867,30 @@ function fillForm(r) {
   if(r.insurance_type) for(let o of insEl.options) if(o.value===r.insurance_type){ o.selected=true; break; }
   const stEl = document.getElementById('f_status');
   for(let o of stEl.options) if(o.value===r.reservation_status){ o.selected=true; break; }
+
+  // ★ 차량 드롭다운 자동 매칭 (차량번호 또는 차량명으로)
+  const picker = document.getElementById('f_vehicle_picker');
+  if (picker) {
+    let matched = false;
+    // 1) plate로 매칭
+    if (r.plate) {
+      for (let o of picker.options) {
+        if (o.value && o.text.includes(r.plate.slice(-4))) {
+          o.selected = true; matched = true; break;
+        }
+      }
+    }
+    // 2) 차량명+인승으로 매칭
+    if (!matched && r.car_name) {
+      const seatStr = (r.seating || '').replace(/인승.*/,'').trim();
+      for (let o of picker.options) {
+        const oText = o.text;
+        if (oText.includes(r.car_name) && (!seatStr || oText.includes(seatStr))) {
+          o.selected = true; matched = true; break;
+        }
+      }
+    }
+  }
 }
 
 function clearForm() {
