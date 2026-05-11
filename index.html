@@ -2477,6 +2477,8 @@ body::after{
     <li class="nav-item" data-page="weekend"><button onclick="goPage('weekend')"><span class="nav-icon">🚐</span>주말 가용성</button></li>
     <li class="nav-item" data-page="stats"><button onclick="goPage('stats')"><span class="nav-icon">📈</span>통계</button></li>
     <li class="nav-item" data-page="templates"><button onclick="goPage('templates')"><span class="nav-icon">💬</span>메시지 템플릿</button></li>
+    <li class="nav-item" data-page="quote"><button onclick="goPage('quote')"><span class="nav-icon">📄</span>견적서 작성</button></li>
+    <li class="nav-item" data-page="contract"><button onclick="goPage('contract')"><span class="nav-icon">📝</span>계약서 작성</button></li>
     <li class="nav-item" data-page="settings"><button onclick="goPage('settings')"><span class="nav-icon">⚙️</span>설정</button></li>
   </ul>
   <div class="sidebar-footer">
@@ -3136,6 +3138,273 @@ body::after{
 
       </div>
     </div>
+
+    <!-- ════════════ 견적서 작성 ════════════ -->
+    <div class="page" id="page-quote">
+      <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:340px 1fr;gap:14px">
+
+        <!-- 좌측 입력 -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+
+          <!-- 파일 업로드 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:8px">📂 파일에서 가져오기</div>
+            <div id="qDrop" onclick="document.getElementById('qFile').click()"
+                 ondragover="event.preventDefault();this.style.borderColor='#3b82f6';"
+                 ondragleave="this.style.borderColor='#cbd5e1';"
+                 ondrop="qOnDrop(event)"
+                 style="border:2px dashed #cbd5e1;border-radius:8px;padding:18px 10px;text-align:center;cursor:pointer;background:#f8fafc;transition:.2s">
+              <div style="font-size:24px;margin-bottom:4px">📂</div>
+              <div style="font-size:11px;font-weight:700;color:#475569">HWP / Excel 업로드</div>
+              <div style="font-size:10px;color:#94a3b8;margin-top:2px">.hwp · .xlsx · .xls</div>
+              <input type="file" id="qFile" accept=".hwp,.xlsx,.xls" style="display:none" onchange="qHandleFile(this.files[0])">
+            </div>
+            <div id="qFileStatus" style="margin-top:6px;font-size:11px"></div>
+          </div>
+
+          <!-- ✨ 텍스트 붙여넣기 (AI 자동 파싱) -->
+          <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fbbf24;border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#78350f;margin-bottom:8px">🤖 텍스트 붙여넣기 (AI 자동인식)</div>
+            <textarea id="qPasteText" placeholder="견적 정보를 자유롭게 붙여넣으세요. 예시:
+
+강원특별자치도 속초시 동해대로 4309 대성빌딩 5층 권덕수선거사무소
+총 370만원 발행
+k39101515@daum.net
+700호34477 스타리아
+5월 21일~6월 3일
+견적서 및 세금계산서 부가세 포함
+경일렌트카 박덕규
+품목: 선거용 렌트 및 랩핑" style="width:100%;min-height:120px;padding:8px 10px;border:1px solid #fbbf24;border-radius:6px;font-size:11px;font-family:'맑은 고딕',sans-serif;background:rgba(255,255,255,.7);resize:vertical"></textarea>
+            <button onclick="qParseWithAI()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✨ AI로 자동 분석</button>
+            <div id="qAiStatus" style="margin-top:6px;font-size:11px"></div>
+          </div>
+
+          <!-- 기본정보 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">📋 기본 정보</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">견적일자</label><input id="qDate" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">담당자</label><input id="qContact" placeholder="경일렌트카 박덕규" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">공급받는자</label><input id="qReceiver" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">이메일</label><input id="qEmail" placeholder="example@daum.net" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">사업자번호</label><input id="qBizNo" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">공급자 연락처</label><input id="qSTel" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">수신처 연락처</label><input id="qRTel" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">주소</label><input id="qAddr" placeholder="강원특별자치도 속초시 동해대로..." style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 행사정보 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">🎯 행사 정보</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div><label style="font-size:10px;color:#64748b">행사명</label><input id="qEvName" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">시작일</label><input id="qEvStart" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">종료일</label><input id="qEvEnd" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">배차장소</label><input id="qLocation" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 항목 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:800;color:#1e293b">📦 견적 항목</div>
+              <button onclick="qAddItem()" style="background:#3b82f6;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">+ 추가</button>
+            </div>
+            <div id="qItemList" style="max-height:420px;overflow-y:auto"></div>
+          </div>
+
+          <button onclick="qRenderPreview()" style="background:linear-gradient(135deg,#3b82f6,#1e3a8a);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🔍 미리보기 생성</button>
+          <button onclick="qDownloadExcel()" style="background:linear-gradient(135deg,#10b981,#047857);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">📥 엑셀 다운로드</button>
+          <button onclick="qPrint()" style="background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄</button>
+        </div>
+
+        <!-- 우측 미리보기 -->
+        <div id="qPreviewWrap" style="background:#e5e7eb;border-radius:12px;padding:16px;min-height:600px;overflow-y:auto">
+          <div id="qPreview" style="background:#fff;width:100%;max-width:740px;margin:0 auto;padding:18px 22px;box-shadow:0 4px 30px rgba(0,0,0,.15);font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:9.5px;color:#111">
+            <div style="color:#94a3b8;font-size:13px;text-align:center;padding:60px 0">
+              파일 업로드 또는 항목 입력 후<br><strong style="color:#3b82f6">미리보기 생성</strong> 버튼을 눌러주세요
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ════════════ 계약서 작성 ════════════ -->
+    <div class="page" id="page-contract">
+      <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:340px 1fr;gap:14px">
+
+        <!-- 좌측: 면허증 OCR + 입력 -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+
+          <!-- 면허증 OCR -->
+          <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fbbf24;border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#78350f;margin-bottom:8px">🪪 면허증 자동 인식</div>
+            <div id="cLicDrop" onclick="document.getElementById('cLicFile').click()"
+                 ondragover="event.preventDefault();this.style.borderColor='#d97706'"
+                 ondragleave="this.style.borderColor='#fbbf24'"
+                 ondrop="cLicDrop(event)"
+                 style="border:2px dashed #fbbf24;border-radius:8px;padding:20px 10px;text-align:center;cursor:pointer;background:rgba(255,255,255,.5);transition:.2s">
+              <div style="font-size:28px;margin-bottom:4px">📸</div>
+              <div style="font-size:11px;font-weight:700;color:#78350f">면허증 사진 업로드</div>
+              <div style="font-size:10px;color:#92400e;margin-top:2px">사진/스캔 이미지를 올려주세요</div>
+              <input type="file" id="cLicFile" accept="image/*" style="display:none" onchange="cLicHandle(this.files[0])">
+            </div>
+            <div id="cLicStatus" style="margin-top:6px;font-size:11px;font-weight:600"></div>
+            <div id="cLicPreview" style="margin-top:8px;display:none">
+              <img id="cLicImg" style="max-width:100%;border-radius:6px;border:1px solid #d97706">
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:#78350f;line-height:1.5">
+              💡 AI 비서가 설정되어 있으면<br>면허증을 자동 분석해서 칸을 채워줍니다
+            </div>
+          </div>
+
+          <!-- ✨ 계약서 텍스트 자동인식 -->
+          <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fbbf24;border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#78350f;margin-bottom:8px">🤖 계약 정보 텍스트 자동인식</div>
+            <textarea id="cPasteText" placeholder="계약 정보를 자유롭게 붙여넣으세요. 예시:
+
+스타리아 700호34477
+박덕규 010-1234-5678
+주민번호 850315-1
+면허번호 11-22-333333-44 1종보통
+주소: 대구시 수성구...
+5월21일~6월3일 14일 사용
+결제 370만원" style="width:100%;min-height:110px;padding:8px 10px;border:1px solid #fbbf24;border-radius:6px;font-size:11px;font-family:'맑은 고딕',sans-serif;background:rgba(255,255,255,.7);resize:vertical"></textarea>
+            <button onclick="cParseWithAI()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">✨ AI로 자동 분석</button>
+            <div id="cAiStatus" style="margin-top:6px;font-size:11px"></div>
+          </div>
+
+          <!-- 차량 정보 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">🚗 차량 정보</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div><label style="font-size:10px;color:#64748b">차종</label><input id="cCarType" placeholder="아반떼 cn7" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">차량번호</label><input id="cCarNo" placeholder="103호4418" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">메모</label><input id="cMemo" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 제1운전자 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">👤 제1운전자</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">성명</label><input id="c1Name" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">주민번호</label><input id="c1Resi" placeholder="040507-" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">연락처</label><input id="c1Tel" placeholder="010.0000.0000" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">면허번호</label><input id="c1LicNo" placeholder="22-24-030 912-00" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">면허종별/유효기간</label><input id="c1LicType" placeholder="2종 보통" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">현주소</label><input id="c1Addr" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 제2운전자 (체크박스로 토글) -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:800;color:#1e293b">
+              <input type="checkbox" id="cDriver2Enable" onchange="cToggleDriver2()" style="width:16px;height:16px;cursor:pointer">
+              👥 제2운전자 등록하기
+            </label>
+            <div id="cDriver2Box" style="display:none;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">성명</label><input id="c2Name" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">주민번호</label><input id="c2Resi" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">연락처</label><input id="c2Tel" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">면허번호</label><input id="c2LicNo" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">면허종별/유효기간</label><input id="c2LicType" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">현주소</label><input id="c2Addr" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <!-- 제2운전자 면허증 OCR -->
+              <div style="background:#fffbeb;border:1px dashed #fbbf24;border-radius:7px;padding:9px;margin-top:4px">
+                <div style="font-size:10.5px;font-weight:700;color:#78350f;margin-bottom:5px">🪪 제2운전자 면허증 OCR</div>
+                <div onclick="document.getElementById('cLicFile2').click()"
+                     style="border:1px dashed #d97706;border-radius:5px;padding:8px;text-align:center;cursor:pointer;background:#fff;font-size:10.5px;color:#92400e">
+                  📸 면허증 사진 업로드
+                  <input type="file" id="cLicFile2" accept="image/*" style="display:none" onchange="cLicHandle2(this.files[0])">
+                </div>
+                <div id="cLicStatus2" style="margin-top:5px;font-size:10px"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 대여 기간 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">📅 대여 기간 / 금액</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div><label style="font-size:10px;color:#64748b">대여 일시</label><input id="cStart" placeholder="26년05월12일11시00분" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">반차 예정일</label><input id="cEndPlan" placeholder="26년05월13일13시00분" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">반차 일시 (실제)</label><input id="cEnd" placeholder="(반납 후 기입)" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">내역</label><input id="cDetail" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">계약금</label><input id="cDeposit" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div><label style="font-size:10px;color:#64748b">청구금액</label><input id="cClaim" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">추가요금</label><input id="cExtra" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              </div>
+              <div><label style="font-size:10px;color:#64748b">결제금액</label><input id="cPayment" placeholder="450,000 원" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px;font-weight:700;color:#1e3a8a"></div>
+              <div><label style="font-size:10px;color:#64748b">목적지</label><input id="cDest" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">비고</label><input id="cNote" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 부속품 체크 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">🔧 부속품 / 연료</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkNavi"> NAVIGATION</label>
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkAux"> AUX선</label>
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkSpare"> 예비타이어</label>
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkCharger"> 폰 충전기</label>
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkJacks"> 작키공구</label>
+              <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cChkCover"> 휠캡</label>
+            </div>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label style="font-size:10px;color:#64748b">연료(OUT) %</label><input type="number" id="cFuelOut" min="0" max="100" placeholder="100" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">연료(IN) %</label><input type="number" id="cFuelIn" min="0" max="100" placeholder="(반납시)" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- 회사 선택 -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">🏢 발급 영업소</div>
+            <select id="cCompany" onchange="cRenderPreview()" style="width:100%;padding:7px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px">
+              <option value="suseong">㈜경일렌트카 (수성구 청수로)</option>
+              <option value="bongdeok">경일렌트카 봉덕영업소</option>
+              <option value="newyes">뉴예스렌트카 (신암남로)</option>
+            </select>
+          </div>
+
+          <button onclick="cRenderPreview()" style="background:linear-gradient(135deg,#3b82f6,#1e3a8a);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🔍 미리보기 생성</button>
+          <button onclick="cDownloadExcel()" style="background:linear-gradient(135deg,#10b981,#047857);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">📥 엑셀 다운로드</button>
+          <button onclick="cPrint()" style="background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄</button>
+        </div>
+
+        <!-- 우측 계약서 미리보기 -->
+        <div id="cPreviewWrap" style="background:#e5e7eb;border-radius:12px;padding:16px;min-height:600px;overflow-y:auto">
+          <div id="cPreview" style="background:#fff;width:100%;max-width:780px;margin:0 auto;padding:24px 28px;box-shadow:0 4px 30px rgba(0,0,0,.15);font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:11px;color:#111">
+            <div style="color:#94a3b8;font-size:13px;text-align:center;padding:60px 0">
+              면허증을 올리거나 정보를 입력 후<br><strong style="color:#3b82f6">미리보기 생성</strong> 버튼을 눌러주세요
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -3462,6 +3731,8 @@ function _doRefresh() {
       else if (id === 'page-weekend') { if(typeof renderWeekend==='function') renderWeekend(); }
       else if (id === 'page-vehicles') { if(typeof renderVehicles==='function') renderVehicles(); }
       else if (id === 'page-templates') { if(typeof renderTemplates==='function') renderTemplates(); }
+      else if (id === 'page-quote') { if(typeof qInit==='function') qInit(); }
+      else if (id === 'page-contract') { if(typeof cInit==='function') cInit(); }
     } catch(e) { console.error('[render]', e); }
   }
   // ── 모든 페이지에서 항상 갱신: 사이드바 카운트, 일정표 카운트, undo 버튼 ──
@@ -6133,27 +6404,11 @@ async function exportScheduleFormat() {
     showToast('ExcelJS 로딩 중... 잠시 후 다시 시도해주세요', 3000);
     return;
   }
-
-  // ★ 지난 예약 제외 여부
-  const excludePast = confirm('지난 예약(반납일이 오늘 이전)은 제외하고 내보낼까요?\n\n[확인] = 미래 예약만\n[취소] = 전체 예약');
-
   showToast('일정표 생성 중...', 2000);
 
-  let all = loadData()
+  const all = loadData()
     .filter(r => r.reservation_status !== '취소')
     .sort((a,b) => (a.start_datetime||'') > (b.start_datetime||'') ? 1 : -1);
-
-  // ★ 지난 예약 필터링
-  if (excludePast) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    all = all.filter(r => {
-      const endStr = r.end_datetime || r.start_datetime;
-      if (!endStr) return true;
-      const endDate = new Date(endStr.replace(' ', 'T'));
-      return endDate >= today;
-    });
-  }
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('일정표');
@@ -6284,26 +6539,9 @@ async function exportExcel() {
     showToast('ExcelJS 로딩 중... 잠시 후 다시 시도해주세요', 3000);
     return;
   }
-
-  // ★ 지난 예약 제외 여부 확인
-  const excludePast = confirm('지난 예약(반납일이 오늘 이전)은 제외하고 내보낼까요?\n\n[확인] = 미래 예약만\n[취소] = 전체 예약');
-
   showToast('엑셀 생성 중...', 2000);
 
-  let all = getFiltered();
-
-  // ★ 지난 예약 필터링
-  if (excludePast) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    all = all.filter(r => {
-      const endStr = r.end_datetime || r.start_datetime;
-      if (!endStr) return true; // 날짜 없으면 포함
-      const endDate = new Date(endStr.replace(' ', 'T'));
-      return endDate >= today;
-    });
-  }
-
+  const all = getFiltered();
   // 시작일시 기준 정렬
   all.sort((a,b) => (a.start_datetime||'').localeCompare(b.start_datetime||''));
 
@@ -9258,6 +9496,1199 @@ function aiCreateReservation() {
   document.addEventListener('touchend', function() { isDragging = false; });
 })();
 
+/* ════════════════════════════════════════
+   📄 견적서 작성 기능
+   ════════════════════════════════════════ */
+let qItems = [];
+const Q_CAR_TYPES = ["승합차","승합차(9인)","승합차(11인)","SUV","승용차"];
+const qFmt = n => Number(n||0).toLocaleString('ko-KR');
+
+// SheetJS 동적 로드
+function qLoadXLSX(){
+  return new Promise((resolve,reject)=>{
+    if(window.XLSX) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('XLSX 로드 실패'));
+    document.head.appendChild(s);
+  });
+}
+
+function qOnDrop(e){
+  e.preventDefault();
+  document.getElementById('qDrop').style.borderColor = '#cbd5e1';
+  qHandleFile(e.dataTransfer.files[0]);
+}
+
+async function qHandleFile(file){
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  qSetStatus(`📄 ${file.name} 읽는 중...`, '');
+  try {
+    if(ext==='hwp'){
+      const buf = await file.arrayBuffer();
+      const text = new TextDecoder('utf-16le').decode(buf);
+      qParseHWPText(text);
+    } else if(ext==='xlsx'||ext==='xls'){
+      await qLoadXLSX();
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf,{type:'array'});
+      qParseExcel(wb);
+    } else {
+      qSetStatus('⚠️ .hwp / .xlsx 만 지원합니다','err');
+    }
+  } catch(err){
+    qSetStatus('❌ 파일 읽기 실패: '+err.message,'err');
+  }
+}
+
+function qParseHWPText(text){
+  const knownMgr = {
+    '본부':['좌진아','010-2838-2651'],
+    '파크골프':['최정수','010-2690-3926'],
+    '농구':['부광필','010-6495-5515'],
+    '당구':['강민경','010-4726-7993'],
+    '탁구':['김매영','010-3693-3295'],
+    '수영':['강희정','010-6674-1278'],
+    '배드민턴':['우주범','010-2696-1377'],
+    '볼링':['고영심','010-3839-4866'],
+    '배구':['강인정','010-9660-5814'],
+  };
+  const rowRe = /<([^>]+)><([^>]+)><([^>]+)><([^>]*)><([^>]*)><([^>]*)><([^>]*)>/g;
+  const parsed = [];
+  let m;
+  while((m=rowRe.exec(text))!==null){
+    const [,sport,car,qtyRaw,d1,d2,d3,d4] = m;
+    if(sport.trim()==='종 목'||sport.trim()==='총 계'||sport.trim()==='연번') continue;
+    if(!/[가-힣]/.test(sport)) continue;
+    const hasD1 = d1.trim()!=='';
+    const days = hasD1 ? 4 : 3;
+    const qtyStr = qtyRaw.trim();
+    const mgrs = knownMgr[sport.trim()]||['',''];
+
+    if(qtyStr.includes(' ')){
+      const parts = qtyStr.split(/\s+/);
+      const cars = car.split(/\s{2,}/);
+      parts.forEach((q,i)=>{
+        let cn = (cars[i]||cars[0]||'').trim();
+        if(cn.includes('11인')) cn='승합차(11인)';
+        else if(cn.includes('9인')) cn='승합차(9인)';
+        else if(cn.includes('승합')) cn='승합차';
+        else if(/SUV/i.test(cn)) cn='SUV';
+        else if(cn.includes('승용')) cn='승용차';
+        else cn='승합차';
+        const pr = cn.includes('승용') ? 140000 : 180000;
+        parsed.push({sport:sport.trim(),car:cn,qty:parseInt(q)||1,days,price:pr,manager:mgrs[0],tel:mgrs[1]});
+      });
+    } else {
+      let cn = car.trim();
+      if(cn.includes('11인')) cn='승합차(11인)';
+      else if(cn.includes('9인')) cn='승합차(9인)';
+      else if(cn.includes('승합')) cn='승합차';
+      else if(/SUV/i.test(cn)) cn='SUV';
+      else if(cn.includes('승용')) cn='승용차';
+      const pr = cn.includes('승용') ? 140000 : 180000;
+      parsed.push({sport:sport.trim(),car:cn,qty:parseInt(qtyStr)||1,days,price:pr,manager:mgrs[0],tel:mgrs[1]});
+    }
+  }
+  if(parsed.length===0){
+    qSetStatus('⚠️ HWP에서 항목을 찾지 못했어요. 직접 입력해주세요','err');
+    return;
+  }
+  qItems = parsed;
+  qRenderItems();
+  qRenderPreview();
+  qSetStatus(`✅ HWP 파싱 완료 — ${qItems.length}개 항목 로드됨`,'ok');
+}
+
+function qParseExcel(wb){
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  let headerRow = -1;
+  for(let i=0;i<data.length;i++){
+    const row = data[i].map(c=>String(c));
+    if(row.some(c=>c.includes('종목')||c.includes('차종'))){headerRow=i; break;}
+  }
+  if(headerRow===-1){ qSetStatus('⚠️ 헤더 인식 실패','err'); return; }
+  const headers = data[headerRow].map(c=>String(c).trim());
+  const ci = k => headers.findIndex(h=>h.includes(k));
+  const iSport=ci('종목'), iCar=ci('차종'), iQty=ci('수량'), iDays=ci('일수'),
+        iPrice=ci('단가'), iMgr=ci('담당자'), iTel=ci('연락처');
+  const parsed = [];
+  for(let i=headerRow+1;i<data.length;i++){
+    const r = data[i];
+    const sport = String(r[iSport]||'').trim();
+    if(!sport||sport.includes('합계')) continue;
+    const car = String(r[iCar]||'승합차').trim();
+    parsed.push({
+      sport, car,
+      qty: parseInt(r[iQty])||1,
+      days: parseInt(r[iDays])||3,
+      price: parseInt(String(r[iPrice]||'').replace(/,/g,''))||180000,
+      manager: iMgr>=0?String(r[iMgr]||'').split('\n')[0].trim():'',
+      tel: iTel>=0?String(r[iTel]||'').trim():(iMgr>=0?String(r[iMgr]||'').split('\n')[1]||'':''),
+    });
+  }
+  if(parsed.length===0){ qSetStatus('⚠️ 항목 없음','err'); return; }
+  qItems = parsed;
+  qRenderItems();
+  qRenderPreview();
+  qSetStatus(`✅ Excel 파싱 완료 — ${qItems.length}개`,'ok');
+}
+
+function qSetStatus(msg,type){
+  const el = document.getElementById('qFileStatus');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
+}
+
+function qRenderItems(){
+  const list = document.getElementById('qItemList');
+  if(!list) return;
+  list.innerHTML = '';
+  qItems.forEach((it,i)=>{
+    const amt = it.qty*it.days*it.price;
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:9px;margin-bottom:6px;position:relative';
+    div.innerHTML = `
+      <div style="font-size:9.5px;color:#3b82f6;font-weight:700;margin-bottom:6px">#${i+1} ${it.sport||''}</div>
+      <button onclick="qRemoveItem(${i})" style="position:absolute;top:5px;right:7px;background:none;border:none;color:#94a3b8;font-size:16px;cursor:pointer;line-height:1">×</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div style="grid-column:span 2"><label style="font-size:9px;color:#64748b">종목</label><input value="${it.sport}" onchange="qItems[${i}].sport=this.value" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+        <div><label style="font-size:9px;color:#64748b">차종</label>
+          <select onchange="qItems[${i}].car=this.value;qAutoPrice(${i})" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px">
+            ${Q_CAR_TYPES.map(t=>`<option ${t===it.car?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div><label style="font-size:9px;color:#64748b">수량</label><input type="number" min="1" value="${it.qty}" onchange="qItems[${i}].qty=+this.value;qRefreshAmt(${i})" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+        <div><label style="font-size:9px;color:#64748b">일수</label><input type="number" min="1" value="${it.days}" onchange="qItems[${i}].days=+this.value;qRefreshAmt(${i})" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+        <div><label style="font-size:9px;color:#64748b">단가</label><input type="number" value="${it.price}" onchange="qItems[${i}].price=+this.value;qRefreshAmt(${i})" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+        <div><label style="font-size:9px;color:#64748b">금액</label><div id="qAmt-${i}" style="padding:4px 6px;background:#fef3c7;border:1px solid #fbbf24;border-radius:4px;font-size:10.5px;font-weight:700;color:#78350f;text-align:right">${qFmt(amt)}원</div></div>
+        <div><label style="font-size:9px;color:#64748b">담당자</label><input value="${it.manager}" onchange="qItems[${i}].manager=this.value" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+        <div><label style="font-size:9px;color:#64748b">연락처</label><input value="${it.tel}" onchange="qItems[${i}].tel=this.value" style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:10.5px"></div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function qRefreshAmt(i){
+  const el = document.getElementById('qAmt-'+i);
+  if(el) el.textContent = qFmt(qItems[i].qty*qItems[i].days*qItems[i].price)+'원';
+}
+function qAutoPrice(i){
+  qItems[i].price = qItems[i].car.includes('승용') ? 140000 : 180000;
+  qRenderItems();
+}
+function qAddItem(){
+  qItems.push({sport:'',car:'승합차',qty:1,days:3,price:180000,manager:'',tel:''});
+  qRenderItems();
+}
+function qRemoveItem(i){ qItems.splice(i,1); qRenderItems(); }
+
+function qGetPeriod(it, eeStr){
+  const em = (eeStr||'').match(/(\d{1,2})[.\s\-\/]+(\d{1,2})/);
+  if(!em) return `${it.days}일`;
+  const yr = new Date().getFullYear();
+  const eD = new Date(yr, +em[1]-1, +em[2]);
+  const sD = new Date(eD); sD.setDate(eD.getDate()-it.days+1);
+  const p = d => String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+  return `${p(sD)}~${p(eD)}  ${it.days}일`;
+}
+
+function qRenderPreview(){
+  const qd  = (document.getElementById('qDate').value||'').trim() || '         월   일';
+  const rcv = (document.getElementById('qReceiver').value||'').trim();
+  const biz = (document.getElementById('qBizNo').value||'').trim();
+  const sTel= (document.getElementById('qSTel').value||'').trim();
+  const rTel= (document.getElementById('qRTel').value||'').trim();
+  const ev  = (document.getElementById('qEvName').value||'').trim();
+  const es  = (document.getElementById('qEvStart').value||'').trim();
+  const ee  = (document.getElementById('qEvEnd').value||'').trim();
+  const loc = (document.getElementById('qLocation').value||'').trim();
+  const contact = (document.getElementById('qContact')?.value||'').trim();
+  const email   = (document.getElementById('qEmail')?.value||'').trim();
+  const addr    = (document.getElementById('qAddr')?.value||'').trim();
+  const total = qItems.reduce((s,it)=>s+it.qty*it.days*it.price,0);
+
+  const rows = qItems.map((it,i)=>`
+    <tr>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${i+1}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.sport}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.car}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.qty}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.days}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;font-weight:700;color:#1f3864;background:${i%2===0?'#ebf3fb':'#fff'}">${qFmt(it.price)}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9.5px;font-weight:700;color:#1f3864;background:${i%2===0?'#ebf3fb':'#fff'}">${qFmt(it.qty*it.days*it.price)}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#1f3864;line-height:1.4;background:${i%2===0?'#ebf3fb':'#fff'}">${it.manager}<br>${it.tel}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#595959;background:${i%2===0?'#ebf3fb':'#fff'}">${qGetPeriod(it,ee)}</td>
+    </tr>`).join('');
+
+  document.getElementById('qPreview').innerHTML = `
+    <div style="background:#1f3864;color:#fff;text-align:center;font-size:20px;font-weight:900;letter-spacing:8px;padding:12px 0">견 &nbsp; 적 &nbsp; 서</div>
+    <div style="height:4px;background:#2f5496"></div>
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center;width:80px">견적일자</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${qd}</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center;width:80px">담당자</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${contact}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급자</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">경일렌트카</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">대표자</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">장성달</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">사업자번호</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${biz}</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급자 연락처</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${sTel}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급받는자</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${rcv}</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">연락처</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${rTel}</td>
+      </tr>
+      ${addr||email ? `<tr>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">주소</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${addr}</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">이메일</td>
+        <td style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${email}</td>
+      </tr>` : ''}
+    </table>
+    <div style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;margin-top:4px">▶&nbsp; 행사 개요</div>
+    <table style="border-collapse:collapse;width:100%">
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center;width:70px">행사명</td><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${ev}</td></tr>
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">행사기간</td><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${es} ~ ${ee}</td></tr>
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">배차장소</td><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${loc}</td></tr>
+    </table>
+    <div style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;margin-top:4px">▶&nbsp; 견적 내역</div>
+    <table style="border-collapse:collapse;width:100%">
+      <thead>
+        <tr style="background:#1f3864">
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:30px">연번</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff">종목</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff">차종</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:40px">수량<br>(대)</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:40px">일수<br>(일)</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:70px">단가<br>(원)</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:80px">금액<br>(원)</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff;width:100px">담당자</th>
+          <th style="border:1px solid #fff;padding:5px 2px;text-align:center;font-size:9px;color:#fff">운행기간</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="display:flex;background:#1f3864;margin-top:1px">
+      <div style="flex:1;color:#fff;font-weight:700;font-size:11px;text-align:center;padding:8px;letter-spacing:2px">총 &nbsp; 합 &nbsp; 계 &nbsp; (VAT 포함)</div>
+      <div style="color:#fff2cc;font-weight:900;font-size:14px;padding:8px 14px">${qFmt(total)}</div>
+      <div style="color:#fff2cc;font-size:9px;font-weight:700;padding:8px 10px;white-space:nowrap">원 &nbsp;★ 최종 청구금액</div>
+    </div>
+    <div style="background:#fff2cc;color:#c00000;font-weight:700;font-size:8.5px;padding:4px 8px;border:1px solid #bfbfbf">※ 총합계는 부가가치세(VAT) · 주유비 · 일반자차 자차면책금(50만원) 포함 금액입니다.</div>
+    <div style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;margin-top:4px">▶&nbsp; 안내 사항</div>
+    <table style="border-collapse:collapse;width:100%">
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#f2f2f2">※ 차량 배차 장소: ${loc||''}</td></tr>
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#fff">※ 자차 보험은 일반자차 기준이며, 자차면책금 50만원이 포함된 금액입니다.</td></tr>
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#f2f2f2">※ 차량 배정은 행사 일정에 따라 조정될 수 있습니다.</td></tr>
+      <tr><td style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#fff">※ 문의: 경일렌트카 &nbsp;☎ ${sTel}</td></tr>
+    </table>`;
+}
+
+async function qDownloadExcel(){
+  // 미리보기 최신화
+  qRenderPreview();
+  const previewEl = document.getElementById('qPreview');
+  if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
+
+  // 미리보기 HTML을 Excel이 인식할 수 있는 형태로 감싸기
+  // Excel은 HTML을 직접 열어서 색상/테두리/머지셀까지 재현 가능
+  const previewHtml = previewEl.outerHTML;
+
+  const htmlContent = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>견적서</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  table { border-collapse: collapse; }
+</style>
+</head>
+<body>
+${previewHtml}
+</body>
+</html>`;
+
+  // BOM 추가해서 한글 깨짐 방지
+  const blob = new Blob(['\uFEFF' + htmlContent], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  a.download = `경일렌트카_견적서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 100);
+}
+
+/* ✨ 텍스트 → AI 자동 파싱 */
+function qSetAiStatus(msg,type){
+  const el = document.getElementById('qAiStatus');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
+}
+
+async function qParseWithAI(){
+  const text = (document.getElementById('qPasteText')?.value||'').trim();
+  if(!text){ qSetAiStatus('⚠️ 텍스트를 먼저 붙여넣어주세요','err'); return; }
+
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if(!s.apiKey || !s.enabled){
+    qSetAiStatus('⚠️ 설정에서 AI API 키를 입력해주세요','err');
+    return;
+  }
+
+  qSetAiStatus('🤖 AI가 분석 중...','');
+
+  const prompt = `다음 텍스트는 차량 렌트 견적 요청 내용입니다. 정보를 추출해 JSON으로만 응답하세요. 정보가 없으면 빈 문자열.
+
+[입력 텍스트]
+${text}
+
+[추출 JSON 형식]
+{
+  "date": "견적일자 (예: 2025년 5월 11일, 없으면 빈 문자열)",
+  "contact": "담당자명 (예: 경일렌트카 박덕규)",
+  "receiver": "공급받는자 (예: 권덕수선거사무소, 무지개그룹홈 등)",
+  "receiver_tel": "수신처 연락처",
+  "biz_no": "사업자번호",
+  "supplier_tel": "공급자 연락처",
+  "email": "이메일",
+  "address": "주소",
+  "event_name": "행사명/품목 (예: 선거용 렌트 및 랩핑, 체육대회 차량 임차)",
+  "event_start": "시작일 (예: 2025. 5. 21.(수))",
+  "event_end": "종료일 (예: 2025. 6. 3.(화))",
+  "location": "배차장소",
+  "total_amount": 총금액숫자 (예: 3700000, VAT포함 가격이면 그대로),
+  "items": [
+    {
+      "sport": "용도 또는 종목 (없으면 빈문자열)",
+      "car": "차종 (승합차/SUV/승용차/스타리아/스타렉스/카니발 등)",
+      "plate": "차량번호 (예: 700호34477, 있으면)",
+      "qty": 수량 숫자,
+      "days": 일수 숫자 (날짜 범위로 계산),
+      "price": 1일단가 숫자 (총액÷일수÷수량으로 계산, 없으면 0),
+      "manager": "담당자명",
+      "tel": "담당자 전화번호"
+    }
+  ]
+}
+
+규칙:
+- 날짜 "5월 21~6월 3일"이면 14일로 계산
+- "총 370만원"이면 total_amount=3700000
+- 단가는 총액 ÷ 수량 ÷ 일수로 자동 계산
+- 차량번호 명시되면 비고에 활용
+- JSON만 응답, 다른 텍스트 절대 금지`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':s.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1500,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!res.ok){
+      const errTxt = await res.text();
+      throw new Error('API 오류 '+res.status+': '+errTxt.substring(0,100));
+    }
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '{}';
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('JSON 파싱 실패');
+    const info = JSON.parse(jsonMatch[0]);
+
+    // 기본정보 자동 채우기
+    if(info.date)         document.getElementById('qDate').value = info.date;
+    if(info.contact)      document.getElementById('qContact').value = info.contact;
+    if(info.receiver)     document.getElementById('qReceiver').value = info.receiver;
+    if(info.receiver_tel) document.getElementById('qRTel').value = info.receiver_tel;
+    if(info.biz_no)       document.getElementById('qBizNo').value = info.biz_no;
+    if(info.supplier_tel) document.getElementById('qSTel').value = info.supplier_tel;
+    if(info.email)        document.getElementById('qEmail').value = info.email;
+    if(info.address)      document.getElementById('qAddr').value = info.address;
+    if(info.event_name)   document.getElementById('qEvName').value = info.event_name;
+    if(info.event_start)  document.getElementById('qEvStart').value = info.event_start;
+    if(info.event_end)    document.getElementById('qEvEnd').value = info.event_end;
+    if(info.location)     document.getElementById('qLocation').value = info.location;
+
+    // 견적 항목 채우기
+    if(Array.isArray(info.items) && info.items.length>0){
+      qItems = info.items.map(it=>{
+        let price = parseInt(it.price)||0;
+        // 단가가 0이면 총액에서 역산
+        if(price===0 && info.total_amount){
+          const tot = parseInt(info.total_amount)||0;
+          const qty = parseInt(it.qty)||1;
+          const days = parseInt(it.days)||1;
+          if(qty*days>0) price = Math.round(tot/qty/days);
+        }
+        return {
+          sport: it.sport||'',
+          car: it.car||'승합차',
+          qty: parseInt(it.qty)||1,
+          days: parseInt(it.days)||1,
+          price: price,
+          manager: it.manager||'',
+          tel: it.tel||''
+        };
+      });
+      qRenderItems();
+    }
+
+    qRenderPreview();
+    qSetAiStatus(`✅ AI 분석 완료 — ${qItems.length}개 항목, 총 ${qFmt(info.total_amount||0)}원`,'ok');
+
+  } catch(err){
+    console.error(err);
+    qSetAiStatus('❌ 분석 실패: '+err.message,'err');
+  }
+}
+
+function qPrint(){
+  const html = document.getElementById('qPreview').innerHTML;
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>견적서 인쇄</title>
+    <style>@page{size:A4 portrait;margin:10mm}body{font-family:'맑은 고딕',sans-serif;margin:0;padding:0}</style>
+    </head><body>${html}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script></body></html>`);
+  w.document.close();
+}
+
+function qInit(){
+  if(qItems.length===0){
+    const today = new Date();
+    document.getElementById('qDate').value = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
+    qAddItem();
+  }
+  qRenderItems();
+  qRenderPreview();
+}
+
+
+/* ════════════════════════════════════════
+   📝 계약서 작성 + 면허증 OCR 기능
+   ════════════════════════════════════════ */
+function cLicDrop(e){
+  e.preventDefault();
+  document.getElementById('cLicDrop').style.borderColor='#fbbf24';
+  cLicHandle(e.dataTransfer.files[0]);
+}
+
+async function cLicHandle(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    cSetLicStatus('⚠️ 이미지 파일만 가능합니다','err');
+    return;
+  }
+  // 이미지 미리보기
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('cLicImg').src = e.target.result;
+    document.getElementById('cLicPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  // AI 분석 시도
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if(!s.apiKey || !s.enabled){
+    cSetLicStatus('⚠️ AI 설정 필요 — 설정 페이지에서 API 키를 입력해주세요','err');
+    return;
+  }
+
+  cSetLicStatus('🤖 AI가 면허증을 분석 중...','');
+
+  try {
+    // base64로 변환
+    const b64 = await new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result.split(',')[1]);
+      r.onerror = ()=>reject(new Error('이미지 읽기 실패'));
+      r.readAsDataURL(file);
+    });
+    const mime = file.type;
+
+    const prompt = `이 운전면허증 이미지에서 다음 정보를 정확히 추출해 JSON으로만 응답해주세요. 정보가 없으면 빈 문자열로:
+{
+  "name": "성명",
+  "resident_no": "주민번호 앞 6자리만 (예: 040507-)",
+  "license_no": "면허번호 (예: 22-24-030912-00)",
+  "license_type": "면허종별 (예: 2종 보통, 1종 보통, 1종 대형)",
+  "address": "현주소 전체",
+  "issue_date": "발급일자 (있을 경우)",
+  "expire_date": "유효기간 종료일 (있을 경우)"
+}
+JSON만 응답하고 다른 설명 텍스트는 절대 포함하지 마세요.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': s.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{
+          role:'user',
+          content:[
+            {type:'image', source:{type:'base64', media_type:mime, data:b64}},
+            {type:'text', text:prompt}
+          ]
+        }]
+      })
+    });
+
+    if(!res.ok){
+      const errTxt = await res.text();
+      throw new Error('API 오류 '+res.status+': '+errTxt.substring(0,100));
+    }
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '{}';
+
+    // JSON 추출
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('JSON 응답 파싱 실패');
+    const info = JSON.parse(jsonMatch[0]);
+
+    // 칸 자동 채우기
+    if(info.name)         document.getElementById('c1Name').value = info.name;
+    if(info.resident_no)  document.getElementById('c1Resi').value = info.resident_no;
+    if(info.license_no)   document.getElementById('c1LicNo').value = info.license_no;
+    if(info.license_type){
+      let v = info.license_type;
+      if(info.expire_date) v += ` (유효: ${info.expire_date})`;
+      document.getElementById('c1LicType').value = v;
+    }
+    if(info.address)      document.getElementById('c1Addr').value = info.address;
+
+    cSetLicStatus(`✅ 면허증 인식 완료 — ${info.name||'정보'} 자동 입력됨`,'ok');
+    cRenderPreview();
+
+  } catch(err){
+    console.error(err);
+    cSetLicStatus('❌ 면허증 분석 실패: '+err.message,'err');
+  }
+}
+
+function cSetLicStatus(msg,type){
+  const el = document.getElementById('cLicStatus');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
+}
+
+function cVal(id){ const el=document.getElementById(id); return el?(el.value||''):''; }
+function cChk(id){ const el=document.getElementById(id); return el && el.checked; }
+
+function cRenderPreview(){
+  const carType = cVal('cCarType'), carNo = cVal('cCarNo'), memo = cVal('cMemo');
+  const n1=cVal('c1Name'), r1=cVal('c1Resi'), t1=cVal('c1Tel'),
+        l1=cVal('c1LicNo'), lt1=cVal('c1LicType'), a1=cVal('c1Addr');
+  const n2=cVal('c2Name'), r2=cVal('c2Resi'), t2=cVal('c2Tel'),
+        l2=cVal('c2LicNo'), lt2=cVal('c2LicType'), a2=cVal('c2Addr');
+  const start=cVal('cStart'), endPlan=cVal('cEndPlan'), end=cVal('cEnd'),
+        detail=cVal('cDetail'), deposit=cVal('cDeposit'),
+        claim=cVal('cClaim'), extra=cVal('cExtra'),
+        payment=cVal('cPayment'), dest=cVal('cDest'), note=cVal('cNote');
+  const fuelOut=cVal('cFuelOut'), fuelIn=cVal('cFuelIn');
+  const company = cVal('cCompany') || 'suseong';
+
+  // 회사 정보
+  const COMPANY = {
+    suseong: {
+      name: '㈜경일렌트카',
+      addr: '대구시 수성구 청수로 31길 36 101호(황금동)',
+      tel: '전화: 053)423-0000  팩스 : 053)767-4718'
+    },
+    bongdeok: {
+      name: '경일렌트카 봉덕영업소',
+      addr: '대구광역시 남구 봉덕로 11, 1층',
+      tel: 'TEL : 053)476-5500  /  010.3510.2820'
+    },
+    newyes: {
+      name: '뉴예스렌트카',
+      addr: '대구광역시 동구 신암남로 146, 1층 105호',
+      tel: 'TEL : 053)959-2820'
+    }
+  };
+  const co = COMPANY[company];
+
+  // 체크박스 → ☑ / ☐
+  const chk = (b) => b ? '☑' : '☐';
+
+  // 셀 스타일 (PDF 양식 동일하게 검은 외곽선)
+  const cell = 'border:1px solid #000;padding:3px 6px;font-size:10px;vertical-align:middle;color:#000';
+  const lbl  = `${cell};background:#f3f4f6;font-weight:700;text-align:center;white-space:nowrap`;
+
+  document.getElementById('cPreview').innerHTML = `
+    <!-- 상단 헤더 -->
+    <table style="border-collapse:collapse;width:100%;margin-bottom:0">
+      <tr>
+        <td style="padding:0;border:none;width:65%;vertical-align:top">
+          <div style="text-align:center;padding-top:8px">
+            <div style="font-size:22px;font-weight:900;letter-spacing:6px;color:#000;border-bottom:2.5px solid #000;display:inline-block;padding:0 30px 4px">차량임대차 계약서</div>
+          </div>
+        </td>
+        <td style="border:1px solid #000;padding:3px 8px;width:18%;text-align:center;font-size:10px;font-weight:700;background:#fff">영업소<br><span style="font-size:9px;font-weight:400">TEL :</span></td>
+        <td style="border:1px solid #000;padding:3px 8px;width:17%;text-align:center;font-size:9px;background:#fff"></td>
+      </tr>
+    </table>
+
+    <!-- 회사 정보 + 메모 -->
+    <table style="border-collapse:collapse;width:100%;margin-top:0">
+      <tr>
+        <td style="border:1px solid #000;padding:6px 10px;width:65%;background:#fff" rowspan="2">
+          <div style="font-size:13px;font-weight:900;color:#000;letter-spacing:1px">${co.name}</div>
+          <div style="font-size:10px;color:#000;margin-top:2px">${co.addr}</div>
+          <div style="font-size:10px;color:#000;margin-top:1px">${co.tel}</div>
+        </td>
+        <td style="border:1px solid #000;padding:3px 8px;width:18%;text-align:center;font-size:10px;font-weight:700;background:#f3f4f6">메모</td>
+        <td style="border:1px solid #000;padding:3px 8px;width:17%;font-size:9.5px;background:#fff;min-height:30px">${memo}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #000;padding:3px 8px;font-size:9.5px;background:#fff" colspan="2">&nbsp;</td>
+      </tr>
+    </table>
+
+    <!-- 차종/차량번호 -->
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:80px">차종</td>
+        <td style="${cell};width:35%;text-align:center">${carType}</td>
+        <td style="${lbl};width:80px">차량번호</td>
+        <td style="${cell};text-align:center">${carNo}</td>
+      </tr>
+    </table>
+
+    <!-- 제1운전자 -->
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:60px" rowspan="3">제1운전자</td>
+        <td style="${lbl};width:60px">성 &nbsp; 명</td>
+        <td style="${cell};width:25%;text-align:center">${n1}</td>
+        <td style="${lbl};width:75px">주민번호</td>
+        <td style="${cell};text-align:center">${r1}</td>
+        <td style="${cell};text-align:center;width:30%">연락처 ${t1}</td>
+      </tr>
+      <tr>
+        <td style="${lbl}">면허번호</td>
+        <td style="${cell};text-align:center">${l1}</td>
+        <td style="${lbl}">면허종별및<br>유효기간</td>
+        <td style="${cell};text-align:center" colspan="2">${lt1}</td>
+      </tr>
+      <tr>
+        <td style="${lbl}">현 주 소</td>
+        <td style="${cell};text-align:center" colspan="4">${a1}</td>
+      </tr>
+    </table>
+
+    <!-- 제2운전자 (체크박스 활성화 시에만) -->
+    ${cChk('cDriver2Enable') ? `
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:60px" rowspan="3">제2운전자</td>
+        <td style="${lbl};width:60px">성 &nbsp; 명</td>
+        <td style="${cell};width:25%;text-align:center">${n2}</td>
+        <td style="${lbl};width:75px">주민번호</td>
+        <td style="${cell};text-align:center">${r2}</td>
+        <td style="${cell};text-align:center;width:30%">연락처 ${t2}</td>
+      </tr>
+      <tr>
+        <td style="${lbl}">면허번호</td>
+        <td style="${cell};text-align:center">${l2}</td>
+        <td style="${lbl}">면허종별및<br>유효기간</td>
+        <td style="${cell};text-align:center" colspan="2">${lt2}</td>
+      </tr>
+      <tr>
+        <td style="${lbl}">현 주 소</td>
+        <td style="${cell};text-align:center" colspan="4">${a2}</td>
+      </tr>
+    </table>
+    ` : ''}
+
+    <!-- 대여기간 -->
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:60px" rowspan="3">대여기간</td>
+        <td style="${cell};width:48%">대 여 일 시 : ${start}</td>
+        <td style="${lbl};width:60px">내역 :</td>
+        <td style="${cell}"></td>
+      </tr>
+      <tr>
+        <td style="${cell}">반차 예정일 : ${endPlan}</td>
+        <td style="${cell};background:#fff" colspan="2"></td>
+      </tr>
+      <tr>
+        <td style="${cell}">반 차 일 시 : ${end}</td>
+        <td style="${lbl}">계 약 금 :</td>
+        <td style="${cell};text-align:right">${deposit}</td>
+      </tr>
+    </table>
+
+    <!-- 청구금액 / 결제금액 -->
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:60px">목 적 지</td>
+        <td style="${cell};width:25%;text-align:center">${dest}</td>
+        <td style="${lbl};width:60px">비 &nbsp; 고</td>
+        <td style="${cell};text-align:center">${note}</td>
+        <td style="${lbl};width:75px">청구금액 :</td>
+        <td style="${cell};text-align:right;width:120px">${claim} &nbsp;원</td>
+      </tr>
+      <tr>
+        <td style="${cell};background:#fff" colspan="4">추가요금 : ${extra}</td>
+        <td style="${lbl};background:#fff2cc">결제금액 :</td>
+        <td style="${cell};text-align:right;font-weight:900;color:#b91c1c;font-size:12px;background:#fff2cc">${payment}</td>
+      </tr>
+    </table>
+
+    <!-- 보험 정보 -->
+    <table style="border-collapse:collapse;width:100%">
+      <tr>
+        <td style="${lbl};width:60px">보험회사</td>
+        <td style="${cell};width:25%"></td>
+        <td style="${lbl};width:75px">접 수 번 호</td>
+        <td style="${cell};width:20%"></td>
+        <td style="${lbl};width:75px">담당자</td>
+        <td style="${cell}"></td>
+      </tr>
+      <tr>
+        <td style="${lbl}">피해차종</td>
+        <td style="${cell}"></td>
+        <td style="${lbl}">피해차량번호</td>
+        <td style="${cell}"></td>
+        <td style="${lbl}">담당자연락처</td>
+        <td style="${cell}"></td>
+      </tr>
+      <tr>
+        <td style="${lbl}">대여기간</td>
+        <td style="${cell}"></td>
+        <td style="${lbl}">정 비 공 장</td>
+        <td style="${cell}"></td>
+        <td style="${lbl}">FAX</td>
+        <td style="${cell}"></td>
+      </tr>
+    </table>
+
+    <!-- 하단: 차량 손상 체크 + 계약 주요내용 -->
+    <table style="border-collapse:collapse;width:100%;margin-top:4px">
+      <tr>
+        <!-- 좌측: 차량 손상부위 -->
+        <td style="border:1px solid #000;width:42%;padding:6px;vertical-align:top;font-size:9px;color:#000">
+          <div style="font-size:8.5px;color:#444;margin-bottom:3px">연료는 최초 대여시와 동일한 양으로 반차하셔야 하며, 부족시에는 사용하신 연료량만큼 임차인이 추가 부담합니다.</div>
+          <div style="font-size:8.5px;color:#444;margin-bottom:6px;font-style:italic">Refuelling service charge will apply if you elect to return vehicle with less fuel than when you received it.</div>
+          <div style="font-weight:700;font-size:10px;margin-bottom:6px">차량손상부위 vehicle damage check</div>
+
+          <!-- 차량 다이어그램 (SVG) -->
+          <div style="text-align:center;margin:6px 0">
+            <svg width="200" height="130" viewBox="0 0 200 130" style="border:0">
+              <!-- 차 외곽 -->
+              <rect x="40" y="20" width="120" height="90" rx="14" fill="none" stroke="#000" stroke-width="1.2"/>
+              <!-- 본넷/트렁크 구분 -->
+              <line x1="40" y1="48" x2="160" y2="48" stroke="#000" stroke-width="0.8"/>
+              <line x1="40" y1="82" x2="160" y2="82" stroke="#000" stroke-width="0.8"/>
+              <!-- 중앙 세로선 -->
+              <line x1="100" y1="48" x2="100" y2="82" stroke="#000" stroke-width="0.8"/>
+              <!-- 바퀴 -->
+              <rect x="30" y="32" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
+              <rect x="30" y="76" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
+              <rect x="156" y="32" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
+              <rect x="156" y="76" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
+              <!-- 라벨 -->
+              <text x="15" y="68" font-size="11" font-weight="700" fill="#000">F</text>
+              <text x="15" y="80" font-size="9" fill="#000">(전)</text>
+              <text x="178" y="68" font-size="11" font-weight="700" fill="#000">R</text>
+              <text x="178" y="80" font-size="9" fill="#000">(후)</text>
+              <text x="96" y="16" font-size="10" font-weight="700" fill="#000">R</text>
+              <text x="96" y="126" font-size="10" font-weight="700" fill="#000">L</text>
+            </svg>
+          </div>
+
+          <!-- 연료 게이지 -->
+          <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin:4px 0 8px">
+            <div style="font-size:8.5px;text-align:center">연료(fuel)</div>
+            <div style="border:1px solid #000;padding:3px 6px;font-size:9px;line-height:1.5">
+              <div>O&nbsp;U&nbsp;T &nbsp;&nbsp; ${fuelOut||'__'} %</div>
+              <div>I&nbsp;&nbsp;&nbsp;&nbsp;N &nbsp;&nbsp; ${fuelIn||'__'} %</div>
+            </div>
+            <div style="font-size:8.5px;text-align:center">F<br>│<br>E</div>
+          </div>
+
+          <!-- 부속품 체크리스트 -->
+          <div style="font-size:9px;line-height:1.7;margin-top:4px">
+            ${chk(cChk('cChkNavi'))} NAVIGATION &nbsp;&nbsp; ${chk(cChk('cChkAux'))} AUX선<br>
+            ${chk(cChk('cChkSpare'))} 예비타이어 SPARE TIRE &nbsp; ${chk(cChk('cChkCharger'))} 폰 충전기 PHONE CHARGER<br>
+            ${chk(cChk('cChkJacks'))} 작키공구 JACKS & TOOLS &nbsp; ${chk(cChk('cChkCover'))} 휠캡 WHEEL COVER
+          </div>
+        </td>
+
+        <!-- 우측: 계약 주요내용 -->
+        <td style="border:1px solid #000;padding:8px 10px;vertical-align:top;font-size:9.5px;color:#000;line-height:1.55">
+          <div style="text-align:center;font-weight:700;font-size:11px;margin-bottom:6px;text-decoration:underline">계약주요내용</div>
+
+          <div style="margin-bottom:3px">1. 차량 임차중에 발생한 교통법규 위반에 관한사항은 임차인의 책임입니다.</div>
+
+          <div style="margin-bottom:3px">2. 자동차 <strong>종합보험은 (만26세) 이상 한정운전 특약</strong>이며, 차량손해(자차)를 제외한 (대인, 대물, 자손)에 가입되어 있고, <strong>대인은 무한, 대물은 ( 1억원 )</strong>까지 한도입니다.</div>
+
+          <div style="margin-bottom:3px">3. <strong>자차면책금은 차-차 : 50만원 / 단독사고 : 100만원</strong> 입니다.</div>
+
+          <div style="margin-bottom:3px">4. 대여차량의 <strong>보험 접수시 1건당 대물 300,000원, 대인 300,000원 자손 300,000원의 면책금</strong>을 (제 1,2 임차인)이 책임진다.<br>
+          <strong>휴차료는 대여요금에서 1일요금의 80%입니다.</strong></div>
+
+          <div style="margin-bottom:3px">5. 자차가입시에도 휠, 타이어, 백미러, 에어백은 운전자 면책입니다.</div>
+
+          <div style="margin-bottom:3px">6. 임차인은 교통사고 발생시 그 내용을 즉시 임대인에게 고지하여야 하며 고하지 않을경우 보험혜택을 받지 못할 수도 있습니다.</div>
+
+          <div style="margin-bottom:3px">7. <strong>연료비는 임대인의 부담이며 최초 대여시와 동일한 양으로 반차 하셔야하며, 부득시에는 사용하신 유류대만을 추가 지불하셔야 합니다.</strong></div>
+
+          <div style="margin-bottom:3px">8. 12대 중대과실, 무면허, 음주운전 및 제 3자운전 사고시 보험혜택을 받지 못할 수도 있습니다.</div>
+
+          <div style="margin-bottom:6px">9. <strong>차량실내에서 흡연시 세차(클리닝)비용 300,000원 입니다.</strong></div>
+
+          <!-- 서명란 -->
+          <table style="border-collapse:collapse;width:100%;margin-top:8px">
+            <tr>
+              <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:700;font-size:11px;text-decoration:underline">제1임차인</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:700;font-size:11px">(인)</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:700;font-size:11px;text-decoration:underline">제2임차인*보증인</td>
+              <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:700;font-size:11px">(인)</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- 계약신용정보 동의서 (좌측 박스 하단) -->
+    <div style="border:1px solid #000;padding:8px 10px;margin-top:0;font-size:9px;line-height:1.55;color:#000;border-top:none;width:42%">
+      <div style="text-decoration:underline;font-weight:700;margin-bottom:3px">계약신용정보의 제공,활동, GPS정보활용에 대한 동의서</div>
+      이 계약관련하여 귀사가 본인으로부터 취득한 다음 신용정보의 이동 및 보호에 관한 법률 제23조, 제24조, 제 32조 규정에 따라 타인에게 제공활용시 본인의 동의를 얻어야 하는정보입니다. 이에 본인은 귀사가 임대계약서의 신용정보및 위치정보를 신용정보 집중기관, 신용정보업자, 신용정보제공, 이용자 등에게 제공하여 본인의 신용을 판단하기 위한 자료로서 활용하거나 또는 공공기관에서 정책자료로써 활용하도록 하는데 동의합니다.
+      <div style="text-align:right;font-weight:700;margin-top:6px">(인)</div>
+    </div>
+  `;
+}
+
+/* ✨ 계약서 텍스트 → AI 자동 파싱 */
+function cSetAiStatus(msg,type){
+  const el = document.getElementById('cAiStatus');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
+}
+
+async function cParseWithAI(){
+  const text = (document.getElementById('cPasteText')?.value||'').trim();
+  if(!text){ cSetAiStatus('⚠️ 텍스트를 먼저 붙여넣어주세요','err'); return; }
+
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if(!s.apiKey || !s.enabled){
+    cSetAiStatus('⚠️ 설정에서 AI API 키를 입력해주세요','err');
+    return;
+  }
+
+  cSetAiStatus('🤖 AI가 분석 중...','');
+
+  const prompt = `다음 텍스트는 차량 임대차 계약 정보입니다. 정보를 추출해 JSON으로만 응답하세요. 없으면 빈 문자열.
+
+[입력 텍스트]
+${text}
+
+[JSON 형식]
+{
+  "car_type": "차종 (예: 스타리아, CN7, 아반떼)",
+  "car_no": "차량번호 (예: 700호34477, 103호4418)",
+  "memo": "메모",
+  "driver1_name": "제1운전자 성명",
+  "driver1_resi": "주민번호 (앞 6자리-1)",
+  "driver1_tel": "연락처",
+  "driver1_lic_no": "면허번호",
+  "driver1_lic_type": "면허종별 (예: 1종보통, 2종보통)",
+  "driver1_addr": "현주소",
+  "driver2_name": "제2운전자 성명",
+  "driver2_resi": "주민번호",
+  "driver2_tel": "연락처",
+  "driver2_lic_no": "면허번호",
+  "driver2_lic_type": "면허종별",
+  "driver2_addr": "주소",
+  "start": "대여일시 (예: 26년05월21일11시00분)",
+  "end_plan": "반차예정일",
+  "detail": "내역/품목",
+  "deposit": "계약금",
+  "claim": "청구금액",
+  "extra": "추가요금",
+  "payment": "결제금액 (예: 3,700,000 원)",
+  "destination": "목적지",
+  "note": "비고"
+}
+
+규칙: JSON만 응답, 다른 텍스트 절대 금지`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':s.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1500,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!res.ok){
+      const errTxt = await res.text();
+      throw new Error('API 오류 '+res.status+': '+errTxt.substring(0,100));
+    }
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '{}';
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('JSON 파싱 실패');
+    const info = JSON.parse(jsonMatch[0]);
+
+    const setVal = (id,v) => { if(v){ const el=document.getElementById(id); if(el) el.value = v; } };
+    setVal('cCarType',     info.car_type);
+    setVal('cCarNo',       info.car_no);
+    setVal('cMemo',        info.memo);
+    setVal('c1Name',       info.driver1_name);
+    setVal('c1Resi',       info.driver1_resi);
+    setVal('c1Tel',        info.driver1_tel);
+    setVal('c1LicNo',      info.driver1_lic_no);
+    setVal('c1LicType',    info.driver1_lic_type);
+    setVal('c1Addr',       info.driver1_addr);
+    setVal('c2Name',       info.driver2_name);
+    setVal('c2Resi',       info.driver2_resi);
+    setVal('c2Tel',        info.driver2_tel);
+    setVal('c2LicNo',      info.driver2_lic_no);
+    setVal('c2LicType',    info.driver2_lic_type);
+    setVal('c2Addr',       info.driver2_addr);
+    setVal('cStart',       info.start);
+    setVal('cEndPlan',     info.end_plan);
+    setVal('cDetail',      info.detail);
+    setVal('cDeposit',     info.deposit);
+    setVal('cClaim',       info.claim);
+    setVal('cExtra',       info.extra);
+    setVal('cPayment',     info.payment);
+    setVal('cDest',        info.destination);
+    setVal('cNote',        info.note);
+
+    // 제2운전자 정보 있으면 체크박스 자동 활성화
+    if(info.driver2_name || info.driver2_resi || info.driver2_tel || info.driver2_lic_no){
+      const cb = document.getElementById('cDriver2Enable');
+      if(cb && !cb.checked){
+        cb.checked = true;
+        cToggleDriver2();
+      }
+    }
+
+    cRenderPreview();
+    cSetAiStatus(`✅ AI 분석 완료 — ${info.driver1_name||'계약 정보'} 자동 입력됨`,'ok');
+
+  } catch(err){
+    console.error(err);
+    cSetAiStatus('❌ 분석 실패: '+err.message,'err');
+  }
+}
+
+/* 제2운전자 토글 */
+function cToggleDriver2(){
+  const cb = document.getElementById('cDriver2Enable');
+  const box = document.getElementById('cDriver2Box');
+  if(!cb || !box) return;
+  box.style.display = cb.checked ? 'flex' : 'none';
+  if(!cb.checked){
+    // 해제 시 값 비우기
+    ['c2Name','c2Resi','c2Tel','c2LicNo','c2LicType','c2Addr'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = '';
+    });
+  }
+  cRenderPreview();
+}
+
+/* 제2운전자 면허증 OCR */
+async function cLicHandle2(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    cSetLicStatus2('⚠️ 이미지 파일만 가능합니다','err');
+    return;
+  }
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if(!s.apiKey || !s.enabled){
+    cSetLicStatus2('⚠️ 설정 페이지에서 API 키를 입력해주세요','err');
+    return;
+  }
+  cSetLicStatus2('🤖 AI가 분석 중...','');
+
+  try {
+    const b64 = await new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result.split(',')[1]);
+      r.onerror = ()=>reject(new Error('이미지 읽기 실패'));
+      r.readAsDataURL(file);
+    });
+
+    const prompt = `이 운전면허증 이미지에서 정보를 추출해 JSON으로만 응답:
+{"name":"성명","resident_no":"주민번호 앞6자리-1자리(예:040507-2)","license_no":"면허번호","license_type":"면허종별(예:2종보통)","address":"현주소"}
+JSON만 응답, 다른 텍스트 절대 금지`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':s.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+    if(!res.ok) throw new Error('API 오류 '+res.status);
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '{}';
+    const m = reply.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('JSON 파싱 실패');
+    const info = JSON.parse(m[0]);
+
+    if(info.name)         document.getElementById('c2Name').value    = info.name;
+    if(info.resident_no)  document.getElementById('c2Resi').value    = info.resident_no;
+    if(info.license_no)   document.getElementById('c2LicNo').value   = info.license_no;
+    if(info.license_type) document.getElementById('c2LicType').value = info.license_type;
+    if(info.address)      document.getElementById('c2Addr').value    = info.address;
+
+    cSetLicStatus2(`✅ 인식 완료 — ${info.name||'정보'} 입력됨`,'ok');
+    cRenderPreview();
+  } catch(err){
+    console.error(err);
+    cSetLicStatus2('❌ 분석 실패: '+err.message,'err');
+  }
+}
+
+function cSetLicStatus2(msg,type){
+  const el = document.getElementById('cLicStatus2');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:4px 6px;border-radius:4px">${msg}</div>`;
+}
+
+/* 계약서 엑셀 다운로드 */
+async function cDownloadExcel(){
+  // 미리보기 최신화
+  cRenderPreview();
+  const previewEl = document.getElementById('cPreview');
+  if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
+
+  const previewHtml = previewEl.outerHTML;
+
+  const htmlContent = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>계약서</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  table { border-collapse: collapse; }
+</style>
+</head>
+<body>
+${previewHtml}
+</body>
+</html>`;
+
+  const blob = new Blob(['\uFEFF' + htmlContent], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const fname = `경일렌트카_계약서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${cVal('c1Name')||''}.xls`;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 100);
+}
+
+function cPrint(){
+  cRenderPreview();
+  const html = document.getElementById('cPreview').innerHTML;
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>계약서 인쇄</title>
+    <style>@page{size:A4 portrait;margin:10mm}body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;margin:0;padding:0;color:#111}</style>
+    </head><body>${html}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script></body></html>`);
+  w.document.close();
+}
+
+function cInit(){
+  cRenderPreview();
+}
 </script>
 </body>
 </html>
