@@ -3311,22 +3311,35 @@ k39101515@daum.net
             </div>
           </div>
 
-          <!-- 제2운전자 (접기) -->
-          <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px">
-            <summary style="font-size:12px;font-weight:800;color:#1e293b;cursor:pointer">👥 제2운전자 (선택)</summary>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <!-- 제2운전자 (체크박스로 토글) -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:800;color:#1e293b">
+              <input type="checkbox" id="cDriver2Enable" onchange="cToggleDriver2()" style="width:16px;height:16px;cursor:pointer">
+              👥 제2운전자 등록하기
+            </label>
+            <div id="cDriver2Box" style="display:none;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                <div><label style="font-size:10px;color:#64748b">성명</label><input id="c2Name" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
-                <div><label style="font-size:10px;color:#64748b">주민번호</label><input id="c2Resi" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">성명</label><input id="c2Name" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">주민번호</label><input id="c2Resi" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
               </div>
-              <div><label style="font-size:10px;color:#64748b">연락처</label><input id="c2Tel" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">연락처</label><input id="c2Tel" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                <div><label style="font-size:10px;color:#64748b">면허번호</label><input id="c2LicNo" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
-                <div><label style="font-size:10px;color:#64748b">면허종별/유효기간</label><input id="c2LicType" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">면허번호</label><input id="c2LicNo" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+                <div><label style="font-size:10px;color:#64748b">면허종별/유효기간</label><input id="c2LicType" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
               </div>
-              <div><label style="font-size:10px;color:#64748b">현주소</label><input id="c2Addr" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <div><label style="font-size:10px;color:#64748b">현주소</label><input id="c2Addr" oninput="cRenderPreview()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px"></div>
+              <!-- 제2운전자 면허증 OCR -->
+              <div style="background:#fffbeb;border:1px dashed #fbbf24;border-radius:7px;padding:9px;margin-top:4px">
+                <div style="font-size:10.5px;font-weight:700;color:#78350f;margin-bottom:5px">🪪 제2운전자 면허증 OCR</div>
+                <div onclick="document.getElementById('cLicFile2').click()"
+                     style="border:1px dashed #d97706;border-radius:5px;padding:8px;text-align:center;cursor:pointer;background:#fff;font-size:10.5px;color:#92400e">
+                  📸 면허증 사진 업로드
+                  <input type="file" id="cLicFile2" accept="image/*" style="display:none" onchange="cLicHandle2(this.files[0])">
+                </div>
+                <div id="cLicStatus2" style="margin-top:5px;font-size:10px"></div>
+              </div>
             </div>
-          </details>
+          </div>
 
           <!-- 대여 기간 -->
           <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px">
@@ -3377,6 +3390,7 @@ k39101515@daum.net
           </div>
 
           <button onclick="cRenderPreview()" style="background:linear-gradient(135deg,#3b82f6,#1e3a8a);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🔍 미리보기 생성</button>
+          <button onclick="cDownloadExcel()" style="background:linear-gradient(135deg,#10b981,#047857);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">📥 엑셀 다운로드</button>
           <button onclick="cPrint()" style="background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄</button>
         </div>
 
@@ -9785,42 +9799,54 @@ function qRenderPreview(){
 }
 
 async function qDownloadExcel(){
-  await qLoadXLSX();
-  const qd=document.getElementById('qDate').value||'';
-  const rcv=document.getElementById('qReceiver').value||'';
-  const biz=document.getElementById('qBizNo').value||'';
-  const sTel=document.getElementById('qSTel').value||'';
-  const rTel=document.getElementById('qRTel').value||'';
-  const ev=document.getElementById('qEvName').value||'';
-  const es=document.getElementById('qEvStart').value||'';
-  const ee=document.getElementById('qEvEnd').value||'';
-  const loc=document.getElementById('qLocation').value||'';
-  const contact=document.getElementById('qContact')?.value||'';
-  const email=document.getElementById('qEmail')?.value||'';
-  const addr=document.getElementById('qAddr')?.value||'';
-  const total=qItems.reduce((s,it)=>s+it.qty*it.days*it.price,0);
+  // 미리보기 최신화
+  qRenderPreview();
+  const previewEl = document.getElementById('qPreview');
+  if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
 
-  const data=[
-    ['경일렌트카 견적서'],[''],
-    ['견적일자',qd,'','담당자',contact],
-    ['공급자','경일렌트카','','대표자','장성달'],
-    ['사업자번호',biz,'','공급자 연락처',sTel],
-    ['공급받는자',rcv,'','연락처',rTel],
-    ['주소',addr,'','이메일',email],
-    [''],['[행사 개요]'],
-    ['행사명',ev],['행사기간',`${es} ~ ${ee}`],['배차장소',loc],
-    [''],['[견적 내역]'],
-    ['연번','종목','차종','수량(대)','일수(일)','단가(원)','금액(원)','담당자','연락처','운행기간'],
-    ...qItems.map((it,i)=>[i+1,it.sport,it.car,it.qty,it.days,it.price,it.qty*it.days*it.price,it.manager,it.tel,qGetPeriod(it,ee)]),
-    [''],['총합계 (VAT 포함)','','','','','',total,'원 ★ 최종 청구금액'],
-    [''],['※ 총합계는 부가가치세(VAT)·주유비·일반자차 자차면책금(50만원) 포함 금액입니다.'],
-  ];
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols']=[{wch:14},{wch:20},{wch:14},{wch:8},{wch:8},{wch:12},{wch:14},{wch:12},{wch:16},{wch:18}];
-  XLSX.utils.book_append_sheet(wb,ws,'견적서');
-  const now=new Date();
-  XLSX.writeFile(wb,`경일렌트카_견적서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`);
+  // 미리보기 HTML을 Excel이 인식할 수 있는 형태로 감싸기
+  // Excel은 HTML을 직접 열어서 색상/테두리/머지셀까지 재현 가능
+  const previewHtml = previewEl.outerHTML;
+
+  const htmlContent = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>견적서</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  table { border-collapse: collapse; }
+</style>
+</head>
+<body>
+${previewHtml}
+</body>
+</html>`;
+
+  // BOM 추가해서 한글 깨짐 방지
+  const blob = new Blob(['\uFEFF' + htmlContent], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  a.download = `경일렌트카_견적서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 100);
 }
 
 /* ✨ 텍스트 → AI 자동 파싱 */
@@ -10197,7 +10223,8 @@ function cRenderPreview(){
       </tr>
     </table>
 
-    <!-- 제2운전자 -->
+    <!-- 제2운전자 (체크박스 활성화 시에만) -->
+    ${cChk('cDriver2Enable') ? `
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:60px" rowspan="3">제2운전자</td>
@@ -10218,6 +10245,7 @@ function cRenderPreview(){
         <td style="${cell};text-align:center" colspan="4">${a2}</td>
       </tr>
     </table>
+    ` : ''}
 
     <!-- 대여기간 -->
     <table style="border-collapse:collapse;width:100%">
@@ -10489,6 +10517,15 @@ ${text}
     setVal('cDest',        info.destination);
     setVal('cNote',        info.note);
 
+    // 제2운전자 정보 있으면 체크박스 자동 활성화
+    if(info.driver2_name || info.driver2_resi || info.driver2_tel || info.driver2_lic_no){
+      const cb = document.getElementById('cDriver2Enable');
+      if(cb && !cb.checked){
+        cb.checked = true;
+        cToggleDriver2();
+      }
+    }
+
     cRenderPreview();
     cSetAiStatus(`✅ AI 분석 완료 — ${info.driver1_name||'계약 정보'} 자동 입력됨`,'ok');
 
@@ -10496,6 +10533,147 @@ ${text}
     console.error(err);
     cSetAiStatus('❌ 분석 실패: '+err.message,'err');
   }
+}
+
+/* 제2운전자 토글 */
+function cToggleDriver2(){
+  const cb = document.getElementById('cDriver2Enable');
+  const box = document.getElementById('cDriver2Box');
+  if(!cb || !box) return;
+  box.style.display = cb.checked ? 'flex' : 'none';
+  if(!cb.checked){
+    // 해제 시 값 비우기
+    ['c2Name','c2Resi','c2Tel','c2LicNo','c2LicType','c2Addr'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = '';
+    });
+  }
+  cRenderPreview();
+}
+
+/* 제2운전자 면허증 OCR */
+async function cLicHandle2(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    cSetLicStatus2('⚠️ 이미지 파일만 가능합니다','err');
+    return;
+  }
+  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
+  if(!s.apiKey || !s.enabled){
+    cSetLicStatus2('⚠️ 설정 페이지에서 API 키를 입력해주세요','err');
+    return;
+  }
+  cSetLicStatus2('🤖 AI가 분석 중...','');
+
+  try {
+    const b64 = await new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result.split(',')[1]);
+      r.onerror = ()=>reject(new Error('이미지 읽기 실패'));
+      r.readAsDataURL(file);
+    });
+
+    const prompt = `이 운전면허증 이미지에서 정보를 추출해 JSON으로만 응답:
+{"name":"성명","resident_no":"주민번호 앞6자리-1자리(예:040507-2)","license_no":"면허번호","license_type":"면허종별(예:2종보통)","address":"현주소"}
+JSON만 응답, 다른 텍스트 절대 금지`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':s.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+    if(!res.ok) throw new Error('API 오류 '+res.status);
+    const result = await res.json();
+    const reply = result.content?.[0]?.text || '{}';
+    const m = reply.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('JSON 파싱 실패');
+    const info = JSON.parse(m[0]);
+
+    if(info.name)         document.getElementById('c2Name').value    = info.name;
+    if(info.resident_no)  document.getElementById('c2Resi').value    = info.resident_no;
+    if(info.license_no)   document.getElementById('c2LicNo').value   = info.license_no;
+    if(info.license_type) document.getElementById('c2LicType').value = info.license_type;
+    if(info.address)      document.getElementById('c2Addr').value    = info.address;
+
+    cSetLicStatus2(`✅ 인식 완료 — ${info.name||'정보'} 입력됨`,'ok');
+    cRenderPreview();
+  } catch(err){
+    console.error(err);
+    cSetLicStatus2('❌ 분석 실패: '+err.message,'err');
+  }
+}
+
+function cSetLicStatus2(msg,type){
+  const el = document.getElementById('cLicStatus2');
+  if(!el) return;
+  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
+  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
+  el.innerHTML = `<div style="background:${bg};color:${fg};padding:4px 6px;border-radius:4px">${msg}</div>`;
+}
+
+/* 계약서 엑셀 다운로드 */
+async function cDownloadExcel(){
+  // 미리보기 최신화
+  cRenderPreview();
+  const previewEl = document.getElementById('cPreview');
+  if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
+
+  const previewHtml = previewEl.outerHTML;
+
+  const htmlContent = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>계약서</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  table { border-collapse: collapse; }
+</style>
+</head>
+<body>
+${previewHtml}
+</body>
+</html>`;
+
+  const blob = new Blob(['\uFEFF' + htmlContent], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const fname = `경일렌트카_계약서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${cVal('c1Name')||''}.xls`;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 100);
 }
 
 function cPrint(){
