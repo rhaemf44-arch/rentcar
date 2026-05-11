@@ -9503,7 +9503,7 @@ let qItems = [];
 const Q_CAR_TYPES = ["승합차","승합차(9인)","승합차(11인)","SUV","승용차"];
 const qFmt = n => Number(n||0).toLocaleString('ko-KR');
 
-// SheetJS 동적 로드
+// SheetJS 동적 로드 (Excel 파일 파싱용)
 function qLoadXLSX(){
   return new Promise((resolve,reject)=>{
     if(window.XLSX) return resolve();
@@ -9801,16 +9801,33 @@ function qRenderPreview(){
 async function qDownloadExcel(){
   // 미리보기 최신화
   qRenderPreview();
+  await new Promise(r => setTimeout(r, 100));
+
   const previewEl = document.getElementById('qPreview');
   if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
 
-  // 미리보기 HTML을 Excel이 인식할 수 있는 형태로 감싸기
-  // Excel은 HTML을 직접 열어서 색상/테두리/머지셀까지 재현 가능
-  const previewHtml = previewEl.outerHTML;
+  // 미리보기 복제 + 인라인 스타일 강제
+  const cloned = previewEl.cloneNode(true);
+  cloned.querySelectorAll('svg').forEach(svg=>{
+    const ph = document.createElement('div');
+    ph.style.cssText = 'border:1px solid #000;padding:20px;text-align:center;font-size:11px;color:#666';
+    ph.textContent = '(이미지)';
+    svg.parentNode.replaceChild(ph, svg);
+  });
+  cloned.querySelectorAll('*').forEach(el=>{
+    const cs = window.getComputedStyle(el);
+    const bg = cs.backgroundColor;
+    if(bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'){
+      el.style.backgroundColor = bg;
+    }
+    if(cs.color) el.style.color = cs.color;
+  });
 
-  const htmlContent = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  const previewHtml = cloned.outerHTML;
+
+  const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
+<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
 <meta charset="UTF-8">
 <!--[if gte mso 9]>
 <xml>
@@ -9820,6 +9837,13 @@ async function qDownloadExcel(){
         <x:Name>견적서</x:Name>
         <x:WorksheetOptions>
           <x:DisplayGridlines/>
+          <x:Print>
+            <x:ValidPrinterInfo/>
+            <x:PaperSizeIndex>9</x:PaperSizeIndex>
+            <x:Scale>90</x:Scale>
+            <x:HorizontalResolution>600</x:HorizontalResolution>
+            <x:VerticalResolution>600</x:VerticalResolution>
+          </x:Print>
         </x:WorksheetOptions>
       </x:ExcelWorksheet>
     </x:ExcelWorksheets>
@@ -9827,7 +9851,8 @@ async function qDownloadExcel(){
 </xml>
 <![endif]-->
 <style>
-  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  @page { size: A4 portrait; margin: 10mm; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; margin: 0; padding: 0; }
   table { border-collapse: collapse; }
 </style>
 </head>
@@ -9836,7 +9861,6 @@ ${previewHtml}
 </body>
 </html>`;
 
-  // BOM 추가해서 한글 깨짐 방지
   const blob = new Blob(['\uFEFF' + htmlContent], {type:'application/vnd.ms-excel;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -9848,6 +9872,7 @@ ${previewHtml}
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 100);
 }
+
 
 /* ✨ 텍스트 → AI 자동 파싱 */
 function qSetAiStatus(msg,type){
@@ -10630,14 +10655,37 @@ function cSetLicStatus2(msg,type){
 async function cDownloadExcel(){
   // 미리보기 최신화
   cRenderPreview();
+  await new Promise(r => setTimeout(r, 100)); // 렌더링 완료 대기
+
   const previewEl = document.getElementById('cPreview');
   if(!previewEl){ alert('미리보기를 먼저 생성해주세요'); return; }
 
-  const previewHtml = previewEl.outerHTML;
+  // 미리보기 HTML 복제 후 SVG → 텍스트 대체 (Excel은 SVG 미지원)
+  const cloned = previewEl.cloneNode(true);
+  cloned.querySelectorAll('svg').forEach(svg=>{
+    const ph = document.createElement('div');
+    ph.style.cssText = 'border:1px solid #000;padding:20px;text-align:center;font-size:11px;color:#666;background:#f9fafb;min-height:120px;line-height:120px';
+    ph.textContent = '🚗 차량 손상부위 (수기 표시)';
+    svg.parentNode.replaceChild(ph, svg);
+  });
 
-  const htmlContent = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  // 인라인 스타일 강제 적용 보강 (일부 background-color가 안 먹는 경우 대비)
+  cloned.querySelectorAll('*').forEach(el=>{
+    const cs = window.getComputedStyle(el);
+    const bg = cs.backgroundColor;
+    if(bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'){
+      el.style.backgroundColor = bg;
+    }
+    // 폰트 색상도 강제 적용
+    if(cs.color) el.style.color = cs.color;
+  });
+
+  const previewHtml = cloned.outerHTML;
+
+  // Excel이 인식 가능한 HTML 형식 (Office Namespace 포함)
+  const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
+<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
 <meta charset="UTF-8">
 <!--[if gte mso 9]>
 <xml>
@@ -10647,6 +10695,13 @@ async function cDownloadExcel(){
         <x:Name>계약서</x:Name>
         <x:WorksheetOptions>
           <x:DisplayGridlines/>
+          <x:Print>
+            <x:ValidPrinterInfo/>
+            <x:PaperSizeIndex>9</x:PaperSizeIndex>
+            <x:Scale>90</x:Scale>
+            <x:HorizontalResolution>600</x:HorizontalResolution>
+            <x:VerticalResolution>600</x:VerticalResolution>
+          </x:Print>
         </x:WorksheetOptions>
       </x:ExcelWorksheet>
     </x:ExcelWorksheets>
@@ -10654,8 +10709,10 @@ async function cDownloadExcel(){
 </xml>
 <![endif]-->
 <style>
-  body, table, td, th, div { font-family: '맑은 고딕', sans-serif; }
+  @page { size: A4 portrait; margin: 10mm; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; margin: 0; padding: 0; }
   table { border-collapse: collapse; }
+  td, th { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
 </style>
 </head>
 <body>
