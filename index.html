@@ -3748,8 +3748,20 @@ function updateSidebarCounts() {
     var data = (typeof loadData === 'function') ? loadData() : [];
     var today = new Date();
     var td = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-    var pickup = data.filter(function(r){ return (r.start_datetime||'').startsWith(td) && r.reservation_status !== '취소'; }).length;
-    var ret    = data.filter(function(r){ return (r.end_datetime||'').startsWith(td)   && r.reservation_status !== '취소'; }).length;
+    // Date 기준 비교 (isSameDate 사용 — 문자열 prefix 비교 대신)
+    var todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var pickup = data.filter(function(r){
+      if (r.reservation_status === '취소') return false;
+      return typeof isSameDate === 'function'
+        ? isSameDate(parseDT(r.start_datetime), todayDate)
+        : (r.start_datetime||'').startsWith(td);
+    }).length;
+    var ret = data.filter(function(r){
+      if (r.reservation_status === '취소') return false;
+      return typeof isSameDate === 'function'
+        ? isSameDate(parseDT(r.end_datetime), todayDate)
+        : (r.end_datetime||'').startsWith(td);
+    }).length;
     var pending= data.filter(function(r){ return r.reservation_status === '확인필요' || r.reservation_status === '접수'; }).length;
     var elPickup  = document.getElementById('quickTodayPickup');
     var elReturn  = document.getElementById('quickTodayReturn');
@@ -5604,12 +5616,11 @@ function renderGantt(allData) {
   }
 
   // 이 주 예약 (시작일 기준 + 종료일이 이 주에 걸치는 것도)
+  // 주별 간트: overlap 기준 (isRangeOverlap) — 취소 제외
   const weekData = allData.filter(r => {
-    if(!r.start_datetime) return false;
-    const s = new Date(r.start_datetime.replace(' ','T'));
-    const e = r.end_datetime ? new Date(r.end_datetime.replace(' ','T')) : s;
-    return s <= sun && e >= mon;
-  }).sort((a,b) => a.start_datetime > b.start_datetime ? 1 : -1);
+    if (r.reservation_status === '취소') return false;
+    return isRangeOverlap(r, mon, sun);
+  }).sort((a,b) => (a.start_datetime||'') > (b.start_datetime||'') ? 1 : -1);
 
   // 7일 배열
   const days = [];
@@ -5731,21 +5742,40 @@ function renderDayView(allData) {
   const today  = new Date();
   const isToday = today.getFullYear()===y && today.getMonth()+1===m && today.getDate()===d;
 
-  // 이날 배차 또는 반납인 예약
-  const pickups = allData.filter(r=>(r.start_datetime||'').startsWith(ds))
-    .sort((a,b)=>a.start_datetime>b.start_datetime?1:-1);
-  const returns = allData.filter(r=>(r.end_datetime||'').startsWith(ds) && !(r.start_datetime||'').startsWith(ds))
-    .sort((a,b)=>a.end_datetime>b.end_datetime?1:-1);
-  // 이날 진행중인 예약 (배차도 반납도 아니지만 기간 안에 포함)
-  const ongoing = allData.filter(r=>{
-    if(!r.start_datetime||!r.end_datetime) return false;
-    const s = r.start_datetime.substring(0,10);
-    const e = r.end_datetime.substring(0,10);
-    return s < ds && e > ds;
-  }).sort((a,b)=>a.start_datetime>b.start_datetime?1:-1);
+  // ── 날짜 필터 — 공통 유틸(getReservationStartAt / isSameDate / isDateOverlap) 사용 ──
+  // 집계 기준:
+  //   배차(pickup)  : start_datetime 날짜 === 선택 날짜
+  //   반납(return)  : end_datetime   날짜 === 선택 날짜  (배차와 별도 — 당일배차+당일반납은 배차 섹션에만 표시)
+  //   운행중(ongoing): 날짜가 예약 기간 안에 포함되나, 배차도 반납도 아닌 건
+  const _dayDate = new Date(y, m-1, d);
+  const pickups = allData
+    .filter(r => r.reservation_status !== '취소' && isSameDate(getReservationStartAt(r), _dayDate))
+    .sort((a,b) => (a.start_datetime||'') > (b.start_datetime||'') ? 1 : -1);
+  const returns = allData
+    .filter(r => r.reservation_status !== '취소'
+              && isSameDate(getReservationEndAt(r), _dayDate)
+              && !isSameDate(getReservationStartAt(r), _dayDate))  // 당일 배차·반납은 배차 섹션에 표시
+    .sort((a,b) => (a.end_datetime||'') > (b.end_datetime||'') ? 1 : -1);
+  // 운행중: 기간이 해당 날짜에 걸치나, 배차도 반납도 아닌 건
+  const ongoing = allData
+    .filter(r => {
+      if (r.reservation_status === '취소') return false;
+      const rs = getReservationStartAt(r);
+      const re = getReservationEndAt(r);
+      if (!rs) return false;
+      // 배차일 또는 반납일이면 각 섹션에서 표시 → 운행중 중복 제외
+      if (isSameDate(rs, _dayDate) || isSameDate(re, _dayDate)) return false;
+      return isDateOverlap(r, _dayDate);
+    })
+    .sort((a,b) => (a.start_datetime||'') > (b.start_datetime||'') ? 1 : -1);
 
-  const totalAmt = [...pickups,...returns].filter(r=>r.reservation_status!=='취소')
-    .reduce((s,r)=>s+(r.amount||0),0);
+  // 매출 집계: 배차+반납+운행중 중 취소 제외 (중복 제거용 Set)
+  const _amtSet = new Set();
+  [...pickups, ...returns, ...ongoing].forEach(r => { if (r.reservation_status !== '취소') _amtSet.add(r.id); });
+  const totalAmt = [..._amtSet].reduce((s, id) => {
+    const r = allData.find(x => x.id === id);
+    return s + (r ? (r.amount||0) : 0);
+  }, 0);
 
   // 인접 날짜 빠른 이동 버튼
   const dayNavHtml = (() => {
@@ -6341,13 +6371,23 @@ function _copyText(text) {
 ═══════════════════════════════════════════════════ */
 function quickStatus(id, sel) {
   const status = sel.value;
+  // 단건 업데이트 방식으로 변경 (saveOneRecord: 캐시 + Firebase 즉시 반영)
   const data = loadData();
-  const r = data.find(x=>x.id===id);
-  if(r){ r.reservation_status=status; r.updated_at=now8(); saveData(data); }
+  const r = data.find(x => x.id === id);
+  if (r) {
+    r.reservation_status = status;
+    r.updated_at = now8();
+    saveOneRecord(r);
+  }
   sel.className = `status-sel ss-${status}`;
   syncAndRefresh(); // 차량 상태 자동 연동
   showToast(`상태 변경: ${status}`);
+  // 예약목록 + 주말 가용성표 동시 갱신
   renderList();
+  const wkPage = document.getElementById('page-weekend');
+  if (wkPage && wkPage.classList.contains('active')) {
+    if (typeof renderWeekend === 'function') renderWeekend();
+  }
 }
 
 function clearFilter() {
@@ -8681,11 +8721,15 @@ const SCHED_LABELS = ['스타리아','카니발','승용','기타·미정'];
    주말 차량 가용성 분석
 ═══════════════════════════════════════════════════ */
 function getWeekendCategoryFromName(carName) {
+  // 차량명 → 주말 가용성 카테고리 분류
+  // 우선순위: PLATE_MAP에서 이름 확인 → 문자열 매칭
   if (!carName) return null;
-  const n = carName.toLowerCase().replace(/\s/g,'');
+  const n = String(carName).toLowerCase().replace(/[\s\-_]/g,'');
+  // 쏠라티 계열 (솔라티·스프린터 포함)
   if (n.includes('쏠라티') || n.includes('솔라티') || n.includes('스프린터')) return '쏠라티';
-  if (n.includes('스타리아') || n.includes('스티리아') || n.includes('스타렉스')) return '스타리아';
-  // 카니발만 (디엣지/CN7/쏘나타/그랜저 등 승용은 제외)
+  // 스타리아 계열 (스타렉스도 같은 차종으로 처리)
+  if (n.includes('스타리아') || n.includes('스타렉스') || n.includes('스티리아')) return '스타리아';
+  // 카니발 (카니방 오타 포함, 승용/SUV 제외)
   if (n.includes('카니발') || n.includes('카니방')) return '카니발';
   return null;
 }
@@ -8717,11 +8761,14 @@ function getWeekendsAhead(weeks) {
 }
 
 function dateOverlap(aStart, aEnd, bStart, bEnd) {
-  // 두 기간이 겹치는지
+  // 두 기간이 겹치는지 — Date 객체 또는 timestamp 기준 비교
   if (!aStart || !bStart) return false;
-  const aS = aStart.getTime(), aE = (aEnd||aStart).getTime();
-  const bS = bStart.getTime(), bE = (bEnd||bStart).getTime();
-  return aS <= bE && bS <= aE;
+  const aS = aStart instanceof Date ? aStart.getTime() : +aStart;
+  const aE = aEnd   instanceof Date ? aEnd.getTime()   : (aEnd   ? +aEnd   : aS);
+  const bS = bStart instanceof Date ? bStart.getTime() : +bStart;
+  const bE = bEnd   instanceof Date ? bEnd.getTime()   : (bEnd   ? +bEnd   : bS);
+  // reservationStart <= rangeEnd AND reservationEnd >= rangeStart
+  return aS <= bE && aE >= bS;
 }
 
 function parseDT(s) {
@@ -8730,6 +8777,151 @@ function parseDT(s) {
   const m = String(s).match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
   if (!m) return null;
   return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🔧 공통 예약 날짜/차량 유틸 — 예약목록·주말표·가용성표 모두 이 함수로 통일
+   ═══════════════════════════════════════════════════════════════
+
+   [날짜 분류 기준]
+   - 배차(pickup)  : 예약 start_datetime의 날짜 === D
+   - 반납(return)  : 예약 end_datetime의 날짜   === D
+   - 운행중(ongoing): start_date <= D <= end_date (배차·반납 포함)
+     ※ 배차와 운행중 중복 표시는 UI 의도에 따라 renderDayView에서 처리
+
+   [Overlap 기준 — 주말표/가용성표]
+   reservationStart <= rangeEnd  AND  reservationEnd >= rangeStart
+   → 기간 안에 단 1분이라도 걸리는 예약을 모두 포함
+
+   [차량 분류 우선순위]
+   1. r.plate 끝 4자리 → PLATE_MAP 조회
+   2. r.car_name 문자열 매칭
+   3. null (미분류)
+═══════════════════════════════════════════════════════════════ */
+
+/**
+ * 예약 시작 Date 반환 (parseDT 래퍼)
+ */
+function getReservationStartAt(r) {
+  return parseDT(r.start_datetime);
+}
+
+/**
+ * 예약 종료 Date 반환 (없으면 시작일과 동일)
+ */
+function getReservationEndAt(r) {
+  return parseDT(r.end_datetime) || getReservationStartAt(r);
+}
+
+/**
+ * 두 날짜가 같은 날(YYYY-MM-DD)인지 비교
+ */
+function isSameDate(a, b) {
+  if (!a || !b) return false;
+  const da = a instanceof Date ? a : parseDT(a);
+  const db = b instanceof Date ? b : parseDT(b);
+  if (!da || !db) return false;
+  return da.getFullYear() === db.getFullYear()
+      && da.getMonth()    === db.getMonth()
+      && da.getDate()     === db.getDate();
+}
+
+/**
+ * 예약 r 이 날짜 dateObj 에 걸쳐 있는지 (배차·반납·운행중 모두 포함)
+ */
+function isDateOverlap(r, dateObj) {
+  const rs = getReservationStartAt(r);
+  const re = getReservationEndAt(r);
+  if (!rs) return false;
+  // 하루 전체: 00:00 ~ 23:59:59
+  const dayStart = new Date(dateObj); dayStart.setHours(0,0,0,0);
+  const dayEnd   = new Date(dateObj); dayEnd.setHours(23,59,59,999);
+  return dateOverlap(rs, re, dayStart, dayEnd);
+}
+
+/**
+ * 예약 r 이 기간 [rangeStart, rangeEnd] 에 걸쳐 있는지
+ */
+function isRangeOverlap(r, rangeStart, rangeEnd) {
+  const rs = getReservationStartAt(r);
+  const re = getReservationEndAt(r);
+  if (!rs) return false;
+  return dateOverlap(rs, re, rangeStart, rangeEnd);
+}
+
+/**
+ * 예약 r의 대여 일수 (일 단위, 최소 1)
+ */
+function getReservationDuration(r) {
+  const rs = getReservationStartAt(r);
+  const re = getReservationEndAt(r);
+  if (!rs || !re) return 1;
+  return Math.max(1, Math.ceil((re - rs) / 86400000));
+}
+
+/**
+ * 차량 분류 함수 — 예약목록·주말표·가용성표 모두 이 함수로 통일
+ * 우선순위: 1) r.plate → PLATE_MAP  2) r.car_name 문자열 매칭
+ * @returns {string|null} '쏠라티' | '스타리아' | '카니발' | null
+ */
+function getReservationCategory(r) {
+  // 1) plate 기준 PLATE_MAP 우선 조회
+  if (r.plate) {
+    const p4 = (r.plate || '').match(/(\d{4})/)?.[1];
+    if (p4 && typeof PLATE_MAP !== 'undefined' && PLATE_MAP[p4]) {
+      return getWeekendCategoryFromName(PLATE_MAP[p4].name);
+    }
+  }
+  // 2) car_name 문자열 매칭 (fallback)
+  return getWeekendCategoryFromName(r.car_name);
+}
+
+/**
+ * 🔍 디버그 함수 — console.log로 날짜별/기간별 예약 현황 출력
+ * 사용: debugReservations('2026-05-24')  또는
+ *        debugReservations('2026-05-22', '2026-05-25')
+ */
+function debugReservations(dateOrStart, endDateStr) {
+  const all = loadData();
+  const label = endDateStr
+    ? `[DEBUG] ${dateOrStart} ~ ${endDateStr}`
+    : `[DEBUG] ${dateOrStart}`;
+
+  if (endDateStr) {
+    // 기간 overlap 모드
+    const rS = parseDT(dateOrStart); rS && rS.setHours(0,0,0,0);
+    const rE = parseDT(endDateStr);  rE && rE.setHours(23,59,59,999);
+    const overlapping = all.filter(r => r.reservation_status !== '취소' && isRangeOverlap(r, rS, rE));
+    const byCategory  = { '쏠라티':0, '스타리아':0, '카니발':0, '기타':0 };
+    overlapping.forEach(r => {
+      const cat = getReservationCategory(r) || '기타';
+      byCategory[cat] = (byCategory[cat]||0) + 1;
+    });
+    console.group(label);
+    console.log('Firebase 전체 예약 수:', all.length);
+    console.log('기간 겹침 예약 수:', overlapping.length);
+    console.log('차량별:', byCategory);
+    console.log('예약 목록:', overlapping.map(r => `[${r.id}] ${r.customer_name} | ${r.car_name} | ${r.start_datetime} ~ ${r.end_datetime} | ${r.reservation_status}`));
+    console.groupEnd();
+  } else {
+    // 단일 날짜 모드
+    const dateObj = parseDT(dateOrStart);
+    if (!dateObj) { console.warn('[DEBUG] 날짜 파싱 실패:', dateOrStart); return; }
+    const notCancelled = all.filter(r => r.reservation_status !== '취소');
+    const pickups  = notCancelled.filter(r => isSameDate(parseDT(r.start_datetime), dateObj));
+    const returns_ = notCancelled.filter(r => isSameDate(parseDT(r.end_datetime), dateObj));
+    const ongoing  = notCancelled.filter(r => isDateOverlap(r, dateObj));
+    const byCategory = { '쏠라티':0, '스타리아':0, '카니발':0, '기타':0 };
+    ongoing.forEach(r => { const c = getReservationCategory(r)||'기타'; byCategory[c]=(byCategory[c]||0)+1; });
+    console.group(label);
+    console.log('Firebase 전체 예약 수:', all.length);
+    console.log('날짜 겹침(운행중+배차+반납):', ongoing.length);
+    console.log('  배차:', pickups.length);
+    console.log('  반납:', returns_.length);
+    console.log('  운행중(당일 포함):', ongoing.length);
+    console.log('차량별 (겹침 기준):', byCategory);
+    console.groupEnd();
+  }
 }
 
 function renderWeekend() {
@@ -8845,22 +9037,27 @@ function renderWeekend() {
       const totalMs  = dayEnd - dayStart;
       const DOW3 = ['일','월','화','수','목','금','토'];
 
-      // 차량별 예약 그룹화 (plate 끝 4자리로 매칭)
+      // 차량별 예약 그룹화 (plate 끝 4자리 우선 → car_name fallback)
       const carResMap = {};
       FLEET[cat].forEach(p => carResMap[p] = []);
       const unmatchedRes = [];
       list.forEach(r => {
-        const rp = extractPlate(r.notes, r.car_name) || r.plate || '';
+        // plate 필드 → 끝 4자리 추출
+        const p4fromPlate = (r.plate || '').match(/(\d{4})/)?.[1];
+        // notes/car_name에서 4자리 추출 (기존 extractPlate 로직)
+        const p4fromNotes = extractPlate(r.notes, r.car_name);
+        const rp = p4fromPlate || p4fromNotes || '';
         const matched = FLEET[cat].find(p => rp && rp.includes(p));
         if (matched) carResMap[matched].push(r);
         else unmatchedRes.push(r);
       });
 
       // 시간 → % 위치 변환
+      // 시간 → 타임라인 % 위치 (parseDT 기반, 범위 클램프)
       const tToPct = (dtStr) => {
         const dt = parseDT(dtStr); if (!dt) return 0;
-        const ms = Math.max(dayStart, Math.min(dayEnd, dt)) - dayStart;
-        return (ms / totalMs) * 100;
+        const clamped = Math.max(dayStart.getTime(), Math.min(dayEnd.getTime(), dt.getTime()));
+        return ((clamped - dayStart.getTime()) / totalMs) * 100;
       };
 
       // 날짜 헤더 (금/토/일)
@@ -9063,15 +9260,16 @@ function countReservedInRange(reservations, category, rangeStart, rangeEnd) {
 }
 
 function getReservedListInRange(reservations, category, rangeStart, rangeEnd) {
-  const endOfRange = new Date(rangeEnd);
-  endOfRange.setHours(23,59,59,999);
+  // rangeEnd 는 해당 날의 23:59:59 까지 포함
+  const rS = rangeStart instanceof Date ? rangeStart : parseDT(rangeStart);
+  const rE = rangeEnd   instanceof Date ? new Date(rangeEnd) : parseDT(rangeEnd);
+  if (rE) rE.setHours(23,59,59,999);
   return reservations.filter(r => {
     if (r.reservation_status === '취소') return false;
-    if (getWeekendCategoryFromName(r.car_name) !== category) return false;
-    const rs = parseDT(r.start_datetime);
-    const re = parseDT(r.end_datetime) || rs;
-    if (!rs) return false;
-    return dateOverlap(rs, re, rangeStart, endOfRange);
+    // 차량 분류 — PLATE_MAP 우선(getReservationCategory) + car_name fallback
+    if (getReservationCategory(r) !== category) return false;
+    // Overlap 기준: reservationStart <= rangeEnd AND reservationEnd >= rangeStart
+    return isRangeOverlap(r, rS, rE);
   });
 }
 
@@ -9079,12 +9277,13 @@ function renderScheduleTables() {
   const all = loadData();
   const todayStr = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
 
+  // getTab — 공통 분류 함수(getWeekendCategoryFromName)와 동일 기준 사용
   function getTab(carName) {
-    const cn = (carName||'').replace(/\s/g,'').toLowerCase();
-    if (cn.includes('쏠라티')||cn.includes('솔라티')||cn.includes('쏠라')||cn.includes('점정신형')) return 0;
-    if (cn.includes('스타리아')||cn.includes('스타렉스')) return 1;
-    if (cn.includes('카니발')||cn.includes('카니방')||cn.includes('뉴카니발')||cn.includes('구카니발')) return 2;
-    return 3;
+    const cat = getWeekendCategoryFromName(carName);
+    if (cat === '쏠라티')  return 0;
+    if (cat === '스타리아') return 1;
+    if (cat === '카니발')  return 2;
+    return 3; // 기타 승용
   }
 
   // 오늘 이전 반납 완료 → 대여종료 / 나머지 → 현재 일정
@@ -9697,32 +9896,63 @@ function qGetPeriod(it, eeStr){
   return `${p(sD)}~${p(eD)}  ${it.days}일`;
 }
 
-function qRenderPreview(){
-  const qd  = (document.getElementById('qDate').value||'').trim() || '         월   일';
-  const rcv = (document.getElementById('qReceiver').value||'').trim();
-  const biz = (document.getElementById('qBizNo').value||'').trim();
-  const sTel= (document.getElementById('qSTel').value||'').trim();
-  const rTel= (document.getElementById('qRTel').value||'').trim();
-  const ev  = (document.getElementById('qEvName').value||'').trim();
-  const es  = (document.getElementById('qEvStart').value||'').trim();
-  const ee  = (document.getElementById('qEvEnd').value||'').trim();
-  const loc = (document.getElementById('qLocation').value||'').trim();
-  const contact = (document.getElementById('qContact')?.value||'').trim();
-  const email   = (document.getElementById('qEmail')?.value||'').trim();
-  const addr    = (document.getElementById('qAddr')?.value||'').trim();
-  const total = qItems.reduce((s,it)=>s+it.qty*it.days*it.price,0);
+/* ─────────────────────────────────────────────────
+   📄 견적서 — normalizedData 기반 통합 렌더링/내보내기
+   ─────────────────────────────────────────────────
+   qGetNormalized() : 입력 필드 → 정규화 데이터 오브젝트
+   qRenderPreview() : normalizedData → HTML 미리보기
+   qDownloadExcel() : normalizedData → 엑셀 (동일 템플릿)
+   qPrint()         : 미리보기 DOM → 인쇄창 (동일 HTML)
+   ───────────────────────────────────────────────── */
 
-  const rows = qItems.map((it,i)=>`
+function qGetNormalized(){
+  const g = (id) => (document.getElementById(id)?.value||'').trim();
+  const qd      = g('qDate') || '         월   일';
+  const rcv     = g('qReceiver');
+  const biz     = g('qBizNo');
+  const sTel    = g('qSTel');
+  const rTel    = g('qRTel');
+  const ev      = g('qEvName');
+  const es      = g('qEvStart');
+  const ee      = g('qEvEnd');
+  const loc     = g('qLocation');
+  const contact = g('qContact');
+  const email   = g('qEmail');
+  const addr    = g('qAddr');
+
+  // 항목별 금액 계산은 여기서 한 번만
+  const items = qItems.map((it, i) => ({
+    no:      i + 1,
+    sport:   it.sport  || '',
+    car:     it.car    || '',
+    qty:     it.qty,
+    days:    it.days,
+    price:   it.price,
+    amount:  it.qty * it.days * it.price,
+    manager: it.manager || '',
+    tel:     it.tel    || '',
+    period:  qGetPeriod(it, ee),
+  }));
+
+  const total = items.reduce((s, it) => s + it.amount, 0);
+
+  return { qd, rcv, biz, sTel, rTel, ev, es, ee, loc, contact, email, addr, items, total };
+}
+
+function qRenderPreview(){
+  const d = qGetNormalized();
+
+  const rows = d.items.map(it => `
     <tr>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${i+1}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.sport}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.car}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.qty}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${i%2===0?'#ebf3fb':'#fff'}">${it.days}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;font-weight:700;color:#1f3864;background:${i%2===0?'#ebf3fb':'#fff'}">${qFmt(it.price)}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9.5px;font-weight:700;color:#1f3864;background:${i%2===0?'#ebf3fb':'#fff'}">${qFmt(it.qty*it.days*it.price)}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#1f3864;line-height:1.4;background:${i%2===0?'#ebf3fb':'#fff'}">${it.manager}<br>${it.tel}</td>
-      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#595959;background:${i%2===0?'#ebf3fb':'#fff'}">${qGetPeriod(it,ee)}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.no}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.sport}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.car}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.qty}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.days}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9px;font-weight:700;color:#1f3864;background:${it.no%2===1?'#ebf3fb':'#fff'}">${qFmt(it.price)}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:9.5px;font-weight:700;color:#1f3864;background:${it.no%2===1?'#ebf3fb':'#fff'}">${qFmt(it.amount)}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#1f3864;line-height:1.4;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.manager}<br>${it.tel}</td>
+      <td style="border:1px solid #bfbfbf;padding:3px;text-align:center;font-size:8.5px;color:#595959;background:${it.no%2===1?'#ebf3fb':'#fff'}">${it.period}</td>
     </tr>`).join('');
 
   document.getElementById('qPreview').innerHTML = `
@@ -9733,9 +9963,9 @@ function qRenderPreview(){
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">견적일자</td>
-        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${qd}</td>
+        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.qd}</td>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">담당자</td>
-        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${contact}</td>
+        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.contact}</td>
       </tr>
       <tr>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급자</td>
@@ -9745,28 +9975,28 @@ function qRenderPreview(){
       </tr>
       <tr>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">사업자번호</td>
-        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${biz}</td>
+        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.biz}</td>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급자 연락처</td>
-        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${sTel}</td>
+        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.sTel}</td>
       </tr>
       <tr>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">공급받는자</td>
-        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${rcv}</td>
+        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.rcv}</td>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">연락처</td>
-        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${rTel}</td>
+        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.rTel}</td>
       </tr>
-      ${addr||email ? `<tr>
+      ${d.addr||d.email ? `<tr>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">주소</td>
-        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${addr}</td>
+        <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.addr}</td>
         <td colspan="2" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#2f5496;color:#fff;font-weight:700;text-align:center">이메일</td>
-        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${email}</td>
+        <td colspan="3" style="border:1px solid #bfbfbf;padding:4px 7px;font-size:9px;background:#ebf3fb">${d.email}</td>
       </tr>` : ''}
     </table>
     <table style="border-collapse:collapse;width:100%;margin-top:4px">
       <tr><td colspan="9" style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;border:1px solid #2980b9">▶&nbsp; 행사 개요</td></tr>
-      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">행사명</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${ev}</td></tr>
-      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">행사기간</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${es} ~ ${ee}</td></tr>
-      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">배차장소</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${loc}</td></tr>
+      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">행사명</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${d.ev}</td></tr>
+      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">행사기간</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${d.es} ~ ${d.ee}</td></tr>
+      <tr><td colspan="2" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px;background:#d6e4f0;font-weight:700;text-align:center">배차장소</td><td colspan="7" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:9px">${d.loc}</td></tr>
     </table>
     <table style="border-collapse:collapse;width:100%;margin-top:4px">
       <tr><td colspan="9" style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;border:1px solid #2980b9">▶&nbsp; 견적 내역</td></tr>
@@ -9790,7 +10020,7 @@ function qRenderPreview(){
     <table style="border-collapse:collapse;width:100%;margin-top:1px">
       <tr style="background:#1f3864">
         <td colspan="6" style="color:#fff;font-weight:700;font-size:11px;text-align:center;padding:8px;letter-spacing:2px;border:1px solid #1f3864">총 &nbsp; 합 &nbsp; 계 &nbsp; (VAT 포함)</td>
-        <td style="color:#fff2cc;font-weight:900;font-size:14px;padding:8px 14px;text-align:right;border:1px solid #1f3864">${qFmt(total)}</td>
+        <td style="color:#fff2cc;font-weight:900;font-size:14px;padding:8px 14px;text-align:right;border:1px solid #1f3864">${qFmt(d.total)}</td>
         <td colspan="2" style="color:#fff2cc;font-size:9px;font-weight:700;padding:8px 10px;white-space:nowrap;border:1px solid #1f3864">원 &nbsp;★ 최종 청구금액</td>
       </tr>
     </table>
@@ -9799,12 +10029,13 @@ function qRenderPreview(){
     </table>
     <table style="border-collapse:collapse;width:100%;margin-top:4px">
       <tr><td colspan="9" style="background:#2980b9;color:#fff;font-weight:700;font-size:9.5px;padding:5px 10px;border:1px solid #2980b9">▶&nbsp; 안내 사항</td></tr>
-      <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#f2f2f2">※ 차량 배차 장소: ${loc||''}</td></tr>
+      <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#f2f2f2">※ 차량 배차 장소: ${d.loc||''}</td></tr>
       <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#fff">※ 자차 보험은 일반자차 기준이며, 자차면책금 50만원이 포함된 금액입니다.</td></tr>
       <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#f2f2f2">※ 차량 배정은 행사 일정에 따라 조정될 수 있습니다.</td></tr>
-      <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#fff">※ 문의: 경일렌트카 &nbsp;☎ ${sTel}</td></tr>
+      <tr><td colspan="9" style="border:1px solid #bfbfbf;padding:3px 8px;font-size:8.5px;color:#595959;font-style:italic;background:#fff">※ 문의: 경일렌트카 &nbsp;☎ ${d.sTel}</td></tr>
     </table>`;
 }
+
 
 async function qLoadJSZip(){
   return new Promise((resolve,reject)=>{
@@ -9829,60 +10060,36 @@ function qB64ToBytes(b64){
 }
 
 async function qDownloadExcel(){
+  /* ── qGetNormalized()로 미리보기와 동일한 데이터 사용 ── */
+  const d = qGetNormalized();
+
   await qLoadJSZip();
 
-  // 입력값 수집
-  const qd  = document.getElementById('qDate').value || '';
-  const rcv = document.getElementById('qReceiver').value || '';
-  const biz = document.getElementById('qBizNo').value || '';
-  const sTel= document.getElementById('qSTel').value || '';
-  const rTel= document.getElementById('qRTel').value || '';
-  const ev  = document.getElementById('qEvName').value || '';
-  const es  = document.getElementById('qEvStart').value || '';
-  const ee  = document.getElementById('qEvEnd').value || '';
-  const loc = document.getElementById('qLocation').value || '';
-  const contact = document.getElementById('qContact')?.value || '';
-  const email   = document.getElementById('qEmail')?.value || '';
-  const addr    = document.getElementById('qAddr')?.value || '';
-
-  // 템플릿 로드
+  // 템플릿 로드 (base64)
   const bytes = qB64ToBytes(V6_TEMPLATE_B64);
   const zip = await JSZip.loadAsync(bytes);
-
-  // sheet1.xml 읽기
   let sheetXml = await zip.file('xl/worksheets/sheet1.xml').async('string');
 
   // XML 이스케이프 헬퍼
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  // 셀 값을 inline string으로 변경 (sharedString index 안 씀)
-  // 기존 셀 XML을 모두 찾아서 처리
-  // 패턴: <x:c r="A4" s="2" t="s"><x:v>50</x:v></x:c>
-  //   →   <x:c r="A4" s="2" t="inlineStr"><x:is><x:t>견적일자</x:t></x:is></x:c>
-
-  // 셀 값을 설정하는 함수: 기존 셀의 스타일(s 속성)은 보존, t와 v만 변경
+  // 셀을 inlineStr로 설정 (기존 스타일 보존)
   function setCellString(xml, cellRef, value){
-    // 빈 셀이거나 자체 닫힘이거나 본문 있는 형태 둘 다 대응
-    const re1 = new RegExp(`<x:c r="${cellRef}"([^/>]*?)(?:\s*t="[^"]*")?[^/>]*\s*/>`, 'g');
-    const re2 = new RegExp(`<x:c r="${cellRef}"([^>]*?)(?:\s*t="[^"]*")?[^>]*>[\s\S]*?</x:c>`, 'g');
-    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\d+)"`));
+    const re1 = new RegExp(`<x:c r="${cellRef}"([^/>]*?)(?:\\s*t="[^"]*")?[^/>]*\\s*/>`, 'g');
+    const re2 = new RegExp(`<x:c r="${cellRef}"([^>]*?)(?:\\s*t="[^"]*")?[^>]*>[\\s\\S]*?</x:c>`, 'g');
+    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\\d+)"`));
     const styleAttr = styleMatch ? ` s="${styleMatch[1]}"` : '';
     const newCell = `<x:c r="${cellRef}"${styleAttr} t="inlineStr"><x:is><x:t xml:space="preserve">${esc(value)}</x:t></x:is></x:c>`;
-    // 먼저 본문있는 형태 시도, 안되면 자체닫힘
     let replaced = xml.replace(re2, newCell);
     if(replaced === xml) replaced = xml.replace(re1, newCell);
-    if(replaced === xml){
-      // 셀이 아예 없으면 추가 (행 끝에)
-      // 간단히 무시 (대부분 케이스에서 셀은 있음)
-    }
     return replaced;
   }
 
   function setCellNumber(xml, cellRef, value){
-    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\d+)"`));
+    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\\d+)"`));
     const styleAttr = styleMatch ? ` s="${styleMatch[1]}"` : '';
-    const re1 = new RegExp(`<x:c r="${cellRef}"[^/>]*\s*/>`, 'g');
-    const re2 = new RegExp(`<x:c r="${cellRef}"[^>]*>[\s\S]*?</x:c>`, 'g');
+    const re1 = new RegExp(`<x:c r="${cellRef}"[^/>]*\\s*/>`, 'g');
+    const re2 = new RegExp(`<x:c r="${cellRef}"[^>]*>[\\s\\S]*?</x:c>`, 'g');
     const newCell = `<x:c r="${cellRef}"${styleAttr}><x:v>${value}</x:v></x:c>`;
     let replaced = xml.replace(re2, newCell);
     if(replaced === xml) replaced = xml.replace(re1, newCell);
@@ -9890,21 +10097,21 @@ async function qDownloadExcel(){
   }
 
   function clearCell(xml, cellRef){
-    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\d+)"`));
+    const styleMatch = xml.match(new RegExp(`<x:c r="${cellRef}"[^>]*?s="(\\d+)"`));
     const styleAttr = styleMatch ? ` s="${styleMatch[1]}"` : '';
-    const re1 = new RegExp(`<x:c r="${cellRef}"[^/>]*\s*/>`, 'g');
-    const re2 = new RegExp(`<x:c r="${cellRef}"[^>]*>[\s\S]*?</x:c>`, 'g');
+    const re1 = new RegExp(`<x:c r="${cellRef}"[^/>]*\\s*/>`, 'g');
+    const re2 = new RegExp(`<x:c r="${cellRef}"[^>]*>[\\s\\S]*?</x:c>`, 'g');
     const newCell = `<x:c r="${cellRef}"${styleAttr}/>`;
     let replaced = xml.replace(re2, newCell);
     if(replaced === xml) replaced = xml.replace(re1, newCell);
     return replaced;
   }
 
-  // ── 1. 기본정보 (4~7행) ──
+  // ── 1. 기본정보 (4~7행) ── normalizedData에서 직접 사용
   sheetXml = setCellString(sheetXml, 'A4', '견적일자');
-  sheetXml = setCellString(sheetXml, 'B4', qd);
+  sheetXml = setCellString(sheetXml, 'B4', d.qd);
   sheetXml = setCellString(sheetXml, 'E4', '담당자');
-  sheetXml = setCellString(sheetXml, 'G4', contact);
+  sheetXml = setCellString(sheetXml, 'G4', d.contact);
 
   sheetXml = setCellString(sheetXml, 'A5', '공급자');
   sheetXml = setCellString(sheetXml, 'B5', '경일렌트카');
@@ -9912,73 +10119,65 @@ async function qDownloadExcel(){
   sheetXml = setCellString(sheetXml, 'G5', '장성달');
 
   sheetXml = setCellString(sheetXml, 'A6', '사업자번호');
-  sheetXml = setCellString(sheetXml, 'B6', biz);
+  sheetXml = setCellString(sheetXml, 'B6', d.biz);
   sheetXml = setCellString(sheetXml, 'E6', '공급자 연락처');
-  sheetXml = setCellString(sheetXml, 'G6', sTel);
+  sheetXml = setCellString(sheetXml, 'G6', d.sTel);
 
   sheetXml = setCellString(sheetXml, 'A7', '공급받는자');
-  sheetXml = setCellString(sheetXml, 'B7', rcv);
+  sheetXml = setCellString(sheetXml, 'B7', d.rcv);
   sheetXml = setCellString(sheetXml, 'E7', '연락처');
-  sheetXml = setCellString(sheetXml, 'G7', rTel);
+  sheetXml = setCellString(sheetXml, 'G7', d.rTel);
 
   // ── 2. 행사정보 (10~12행) ──
   sheetXml = setCellString(sheetXml, 'A10', '행사명');
-  sheetXml = setCellString(sheetXml, 'B10', ev);
+  sheetXml = setCellString(sheetXml, 'B10', d.ev);
   sheetXml = setCellString(sheetXml, 'A11', '행사기간');
-  sheetXml = setCellString(sheetXml, 'B11', `${es} ~ ${ee}`);
+  sheetXml = setCellString(sheetXml, 'B11', `${d.es} ~ ${d.ee}`);
   sheetXml = setCellString(sheetXml, 'A12', '배차장소');
-  sheetXml = setCellString(sheetXml, 'B12', loc);
+  sheetXml = setCellString(sheetXml, 'B12', d.loc);
 
-  // ── 3. 견적 내역 (16~29행, 최대 14개) ──
+  // ── 3. 견적 내역 (16~29행, 최대 14개) — normalizedData.items 사용
   const TEMPLATE_START = 16;
-  const TEMPLATE_ROWS = 14;
-  const count = qItems.length;
+  const TEMPLATE_ROWS  = 14;
 
-  for(let i=0; i<TEMPLATE_ROWS; i++){
-    const r = TEMPLATE_START + i;
-    if(i < count){
-      const it = qItems[i];
-      const amount = it.qty * it.days * it.price;
-      sheetXml = setCellNumber(sheetXml, `A${r}`, i+1);
-      sheetXml = setCellString(sheetXml, `B${r}`, it.sport || '');
-      sheetXml = setCellString(sheetXml, `C${r}`, it.car || '');
+  for(let i = 0; i < TEMPLATE_ROWS; i++){
+    const r  = TEMPLATE_START + i;
+    const it = d.items[i];
+    if(it){
+      sheetXml = setCellNumber(sheetXml, `A${r}`, it.no);
+      sheetXml = setCellString(sheetXml, `B${r}`, it.sport);
+      sheetXml = setCellString(sheetXml, `C${r}`, it.car);
       sheetXml = setCellNumber(sheetXml, `D${r}`, it.qty);
       sheetXml = setCellNumber(sheetXml, `E${r}`, it.days);
       sheetXml = setCellNumber(sheetXml, `F${r}`, it.price);
-      sheetXml = setCellNumber(sheetXml, `G${r}`, amount);
-      sheetXml = setCellString(sheetXml, `H${r}`, `${it.manager}
-${it.tel}`);
-      sheetXml = setCellString(sheetXml, `I${r}`, qGetPeriod(it, ee));
+      sheetXml = setCellNumber(sheetXml, `G${r}`, it.amount);
+      sheetXml = setCellString(sheetXml, `H${r}`, `${it.manager}\n${it.tel}`);
+      sheetXml = setCellString(sheetXml, `I${r}`, it.period);
     } else {
-      // 빈 항목 — 셀 값만 비움 (스타일은 유지)
       for(const col of ['A','B','C','D','E','F','G','H','I']){
         sheetXml = clearCell(sheetXml, `${col}${r}`);
       }
     }
   }
 
-  // ── 4. 총합계 (G32) ──
-  const total = qItems.reduce((s, it) => s + it.qty * it.days * it.price, 0);
+  // ── 4. 총합계 (G32) — normalizedData.total 사용
   sheetXml = setCellString(sheetXml, 'A32', '총   합   계  (VAT 포함)');
-  sheetXml = setCellNumber(sheetXml, 'G32', total);
+  sheetXml = setCellNumber(sheetXml, 'G32', d.total);
   sheetXml = setCellString(sheetXml, 'H32', '원  ');
 
-  // ── 5. 안내사항 (A36, A39) ──
-  sheetXml = setCellString(sheetXml, 'A36', `※ 차량 배차 장소: ${loc}`);
+  // ── 5. 안내사항 ──
+  sheetXml = setCellString(sheetXml, 'A36', `※ 차량 배차 장소: ${d.loc}`);
   sheetXml = setCellString(sheetXml, 'A37', '※ 자차 보험은 일반자차 기준이며, 자차면책금 50만원이 포함된 금액입니다.');
   sheetXml = setCellString(sheetXml, 'A38', '※ 차량 배정은 행사 일정에 따라 조정될 수 있습니다.');
-  sheetXml = setCellString(sheetXml, 'A39', `※ 문의: 경일렌트카  ☎ ${sTel}`);
+  sheetXml = setCellString(sheetXml, 'A39', `※ 문의: 경일렌트카  ☎ ${d.sTel}`);
 
-  // sheet1.xml 다시 저장
   zip.file('xl/worksheets/sheet1.xml', sheetXml);
 
-  // zip 생성
   const blob = await zip.generateAsync({
     type:'blob',
     mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     compression:'DEFLATE'
   });
-
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -9990,142 +10189,9 @@ ${it.tel}`);
   setTimeout(()=>URL.revokeObjectURL(url), 100);
 }
 
-
-/* ✨ 텍스트 → AI 자동 파싱 */
-function qSetAiStatus(msg,type){
-  const el = document.getElementById('qAiStatus');
-  if(!el) return;
-  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
-  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
-  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
-}
-
-async function qParseWithAI(){
-  const text = (document.getElementById('qPasteText')?.value||'').trim();
-  if(!text){ qSetAiStatus('⚠️ 텍스트를 먼저 붙여넣어주세요','err'); return; }
-
-  const s = typeof loadAiSettings === 'function' ? loadAiSettings() : {};
-  if(!s.apiKey || !s.enabled){
-    qSetAiStatus('⚠️ 설정에서 AI API 키를 입력해주세요','err');
-    return;
-  }
-
-  qSetAiStatus('🤖 AI가 분석 중...','');
-
-  const prompt = `다음 텍스트는 차량 렌트 견적 요청 내용입니다. 정보를 추출해 JSON으로만 응답하세요. 정보가 없으면 빈 문자열.
-
-[입력 텍스트]
-${text}
-
-[추출 JSON 형식]
-{
-  "date": "견적일자 (예: 2025년 5월 11일, 없으면 빈 문자열)",
-  "contact": "담당자명 (예: 경일렌트카 박덕규)",
-  "receiver": "공급받는자 (예: 권덕수선거사무소, 무지개그룹홈 등)",
-  "receiver_tel": "수신처 연락처",
-  "biz_no": "사업자번호",
-  "supplier_tel": "공급자 연락처",
-  "email": "이메일",
-  "address": "주소",
-  "event_name": "행사명/품목 (예: 선거용 렌트 및 랩핑, 체육대회 차량 임차)",
-  "event_start": "시작일 (예: 2025. 5. 21.(수))",
-  "event_end": "종료일 (예: 2025. 6. 3.(화))",
-  "location": "배차장소",
-  "total_amount": 총금액숫자 (예: 3700000, VAT포함 가격이면 그대로),
-  "items": [
-    {
-      "sport": "용도 또는 종목 (없으면 빈문자열)",
-      "car": "차종 (승합차/SUV/승용차/스타리아/스타렉스/카니발 등)",
-      "plate": "차량번호 (예: 700호34477, 있으면)",
-      "qty": 수량 숫자,
-      "days": 일수 숫자 (날짜 범위로 계산),
-      "price": 1일단가 숫자 (총액÷일수÷수량으로 계산, 없으면 0),
-      "manager": "담당자명",
-      "tel": "담당자 전화번호"
-    }
-  ]
-}
-
-규칙:
-- 날짜 "5월 21~6월 3일"이면 14일로 계산
-- "총 370만원"이면 total_amount=3700000
-- 단가는 총액 ÷ 수량 ÷ 일수로 자동 계산
-- 차량번호 명시되면 비고에 활용
-- JSON만 응답, 다른 텍스트 절대 금지`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':s.apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-5',
-        max_tokens:1500,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    if(!res.ok){
-      const errTxt = await res.text();
-      throw new Error('API 오류 '+res.status+': '+errTxt.substring(0,100));
-    }
-    const result = await res.json();
-    const reply = result.content?.[0]?.text || '{}';
-    const jsonMatch = reply.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('JSON 파싱 실패');
-    const info = JSON.parse(jsonMatch[0]);
-
-    // 기본정보 자동 채우기
-    if(info.date)         document.getElementById('qDate').value = info.date;
-    if(info.contact)      document.getElementById('qContact').value = info.contact;
-    if(info.receiver)     document.getElementById('qReceiver').value = info.receiver;
-    if(info.receiver_tel) document.getElementById('qRTel').value = info.receiver_tel;
-    if(info.biz_no)       document.getElementById('qBizNo').value = info.biz_no;
-    if(info.supplier_tel) document.getElementById('qSTel').value = info.supplier_tel;
-    if(info.email)        document.getElementById('qEmail').value = info.email;
-    if(info.address)      document.getElementById('qAddr').value = info.address;
-    if(info.event_name)   document.getElementById('qEvName').value = info.event_name;
-    if(info.event_start)  document.getElementById('qEvStart').value = info.event_start;
-    if(info.event_end)    document.getElementById('qEvEnd').value = info.event_end;
-    if(info.location)     document.getElementById('qLocation').value = info.location;
-
-    // 견적 항목 채우기
-    if(Array.isArray(info.items) && info.items.length>0){
-      qItems = info.items.map(it=>{
-        let price = parseInt(it.price)||0;
-        // 단가가 0이면 총액에서 역산
-        if(price===0 && info.total_amount){
-          const tot = parseInt(info.total_amount)||0;
-          const qty = parseInt(it.qty)||1;
-          const days = parseInt(it.days)||1;
-          if(qty*days>0) price = Math.round(tot/qty/days);
-        }
-        return {
-          sport: it.sport||'',
-          car: it.car||'승합차',
-          qty: parseInt(it.qty)||1,
-          days: parseInt(it.days)||1,
-          price: price,
-          manager: it.manager||'',
-          tel: it.tel||''
-        };
-      });
-      qRenderItems();
-    }
-
-    qRenderPreview();
-    qSetAiStatus(`✅ AI 분석 완료 — ${qItems.length}개 항목, 총 ${qFmt(info.total_amount||0)}원`,'ok');
-
-  } catch(err){
-    console.error(err);
-    qSetAiStatus('❌ 분석 실패: '+err.message,'err');
-  }
-}
-
 function qPrint(){
+  /* 인쇄 전 미리보기를 최신 데이터로 갱신 — 미리보기와 동일한 HTML 출력 보장 */
+  qRenderPreview();
   const html = document.getElementById('qPreview').innerHTML;
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>견적서 인쇄</title>
@@ -10260,46 +10326,59 @@ function cSetLicStatus(msg,type){
   el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
 }
 
+/* ─────────────────────────────────────────────────
+   📝 계약서 — normalizedData 기반 통합 렌더링/내보내기
+   ─────────────────────────────────────────────────
+   cGetNormalized()  : 입력 필드 → 정규화 데이터 오브젝트
+   cRenderPreview()  : normalizedData → HTML 미리보기
+   cDownloadExcel()  : normalizedData → 엑셀 템플릿
+   cPrint()          : 미리보기 DOM → 인쇄창 (동일 HTML)
+   ───────────────────────────────────────────────── */
+
 function cVal(id){ const el=document.getElementById(id); return el?(el.value||''):''; }
 function cChk(id){ const el=document.getElementById(id); return el && el.checked; }
 
-function cRenderPreview(){
-  const carType = cVal('cCarType'), carNo = cVal('cCarNo'), memo = cVal('cMemo');
-  const n1=cVal('c1Name'), r1=cVal('c1Resi'), t1=cVal('c1Tel'),
-        l1=cVal('c1LicNo'), lt1=cVal('c1LicType'), a1=cVal('c1Addr');
-  const n2=cVal('c2Name'), r2=cVal('c2Resi'), t2=cVal('c2Tel'),
-        l2=cVal('c2LicNo'), lt2=cVal('c2LicType'), a2=cVal('c2Addr');
-  const start=cVal('cStart'), endPlan=cVal('cEndPlan'), end=cVal('cEnd'),
-        detail=cVal('cDetail'), deposit=cVal('cDeposit'),
-        claim=cVal('cClaim'), extra=cVal('cExtra'),
-        payment=cVal('cPayment'), dest=cVal('cDest'), note=cVal('cNote');
-  const fuelOut=cVal('cFuelOut'), fuelIn=cVal('cFuelIn');
-  const company = cVal('cCompany') || 'suseong';
+/* 회사 정보 상수 (미리보기/엑셀 공유) */
+const C_COMPANY = {
+  suseong:  { name:'㈜경일렌트카',          addr:'대구시 수성구 청수로 31길 36 101호(황금동)', tel:'전화: 053)423-0000  팩스 : 053)767-4718' },
+  bongdeok: { name:'경일렌트카 봉덕영업소', addr:'대구광역시 남구 봉덕로 11, 1층',             tel:'TEL : 053)476-5500  /  010.3510.2820' },
+  newyes:   { name:'뉴예스렌트카',           addr:'대구광역시 동구 신암남로 146, 1층 105호',   tel:'TEL : 053)959-2820' },
+};
 
-  // 회사 정보
-  const COMPANY = {
-    suseong: {
-      name: '㈜경일렌트카',
-      addr: '대구시 수성구 청수로 31길 36 101호(황금동)',
-      tel: '전화: 053)423-0000  팩스 : 053)767-4718'
-    },
-    bongdeok: {
-      name: '경일렌트카 봉덕영업소',
-      addr: '대구광역시 남구 봉덕로 11, 1층',
-      tel: 'TEL : 053)476-5500  /  010.3510.2820'
-    },
-    newyes: {
-      name: '뉴예스렌트카',
-      addr: '대구광역시 동구 신암남로 146, 1층 105호',
-      tel: 'TEL : 053)959-2820'
-    }
+function cGetNormalized(){
+  const company   = cVal('cCompany') || 'suseong';
+  const co        = C_COMPANY[company] || C_COMPANY.suseong;
+  const driver2On = cChk('cDriver2Enable');
+  const chkMap    = ['cChkNavi','cChkAux','cChkSpare','cChkCharger','cChkJacks','cChkCover']
+                      .reduce((m,id) => { m[id] = cChk(id); return m; }, {});
+  return {
+    company, co, driver2On,
+    carType: cVal('cCarType'), carNo: cVal('cCarNo'), memo: cVal('cMemo'),
+    // 제1운전자
+    n1: cVal('c1Name'), r1: cVal('c1Resi'), t1: cVal('c1Tel'),
+    l1: cVal('c1LicNo'), lt1: cVal('c1LicType'), a1: cVal('c1Addr'),
+    // 제2운전자
+    n2: cVal('c2Name'), r2: cVal('c2Resi'), t2: cVal('c2Tel'),
+    l2: cVal('c2LicNo'), lt2: cVal('c2LicType'), a2: cVal('c2Addr'),
+    // 대여정보
+    start: cVal('cStart'), endPlan: cVal('cEndPlan'), end: cVal('cEnd'),
+    detail: cVal('cDetail'), deposit: cVal('cDeposit'),
+    claim: cVal('cClaim'), extra: cVal('cExtra'),
+    payment: cVal('cPayment'), dest: cVal('cDest'), note: cVal('cNote'),
+    // 연료/부속
+    fuelOut: cVal('cFuelOut'), fuelIn: cVal('cFuelIn'),
+    chkNavi:    chkMap['cChkNavi'],
+    chkAux:     chkMap['cChkAux'],
+    chkSpare:   chkMap['cChkSpare'],
+    chkCharger: chkMap['cChkCharger'],
+    chkJacks:   chkMap['cChkJacks'],
+    chkCover:   chkMap['cChkCover'],
   };
-  const co = COMPANY[company];
+}
 
-  // 체크박스 → ☑ / ☐
-  const chk = (b) => b ? '☑' : '☐';
-
-  // 셀 스타일 (PDF 양식 동일하게 검은 외곽선)
+function cRenderPreview(){
+  const d   = cGetNormalized();
+  const chk = b => b ? '☑' : '☐';
   const cell = 'border:1px solid #000;padding:3px 6px;font-size:10px;vertical-align:middle;color:#000';
   const lbl  = `${cell};background:#f3f4f6;font-weight:700;text-align:center;white-space:nowrap`;
 
@@ -10316,115 +10395,107 @@ function cRenderPreview(){
         <td style="border:1px solid #000;padding:3px 8px;width:17%;text-align:center;font-size:9px;background:#fff"></td>
       </tr>
     </table>
-
     <!-- 회사 정보 + 메모 -->
     <table style="border-collapse:collapse;width:100%;margin-top:0">
       <tr>
         <td style="border:1px solid #000;padding:6px 10px;width:65%;background:#fff" rowspan="2">
-          <div style="font-size:13px;font-weight:900;color:#000;letter-spacing:1px">${co.name}</div>
-          <div style="font-size:10px;color:#000;margin-top:2px">${co.addr}</div>
-          <div style="font-size:10px;color:#000;margin-top:1px">${co.tel}</div>
+          <div style="font-size:13px;font-weight:900;color:#000;letter-spacing:1px">${d.co.name}</div>
+          <div style="font-size:10px;color:#000;margin-top:2px">${d.co.addr}</div>
+          <div style="font-size:10px;color:#000;margin-top:1px">${d.co.tel}</div>
         </td>
         <td style="border:1px solid #000;padding:3px 8px;width:18%;text-align:center;font-size:10px;font-weight:700;background:#f3f4f6">메모</td>
-        <td style="border:1px solid #000;padding:3px 8px;width:17%;font-size:9.5px;background:#fff;min-height:30px">${memo}</td>
+        <td style="border:1px solid #000;padding:3px 8px;width:17%;font-size:9.5px;background:#fff;min-height:30px">${d.memo}</td>
       </tr>
       <tr>
         <td style="border:1px solid #000;padding:3px 8px;font-size:9.5px;background:#fff" colspan="2">&nbsp;</td>
       </tr>
     </table>
-
     <!-- 차종/차량번호 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:80px">차종</td>
-        <td style="${cell};width:35%;text-align:center">${carType}</td>
+        <td style="${cell};width:35%;text-align:center">${d.carType}</td>
         <td style="${lbl};width:80px">차량번호</td>
-        <td style="${cell};text-align:center">${carNo}</td>
+        <td style="${cell};text-align:center">${d.carNo}</td>
       </tr>
     </table>
-
     <!-- 제1운전자 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:60px" rowspan="3">제1운전자</td>
         <td style="${lbl};width:60px">성 &nbsp; 명</td>
-        <td style="${cell};width:25%;text-align:center">${n1}</td>
+        <td style="${cell};width:25%;text-align:center">${d.n1}</td>
         <td style="${lbl};width:75px">주민번호</td>
-        <td style="${cell};text-align:center">${r1}</td>
-        <td style="${cell};text-align:center;width:30%">연락처 ${t1}</td>
+        <td style="${cell};text-align:center">${d.r1}</td>
+        <td style="${cell};text-align:center;width:30%">연락처 ${d.t1}</td>
       </tr>
       <tr>
         <td style="${lbl}">면허번호</td>
-        <td style="${cell};text-align:center">${l1}</td>
+        <td style="${cell};text-align:center">${d.l1}</td>
         <td style="${lbl}">면허종별및<br>유효기간</td>
-        <td style="${cell};text-align:center" colspan="2">${lt1}</td>
+        <td style="${cell};text-align:center" colspan="2">${d.lt1}</td>
       </tr>
       <tr>
         <td style="${lbl}">현 주 소</td>
-        <td style="${cell};text-align:center" colspan="4">${a1}</td>
+        <td style="${cell};text-align:center" colspan="4">${d.a1}</td>
       </tr>
     </table>
-
-    <!-- 제2운전자 (체크박스 활성화 시에만) -->
-    ${cChk('cDriver2Enable') ? `
+    ${d.driver2On ? `
+    <!-- 제2운전자 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:60px" rowspan="3">제2운전자</td>
         <td style="${lbl};width:60px">성 &nbsp; 명</td>
-        <td style="${cell};width:25%;text-align:center">${n2}</td>
+        <td style="${cell};width:25%;text-align:center">${d.n2}</td>
         <td style="${lbl};width:75px">주민번호</td>
-        <td style="${cell};text-align:center">${r2}</td>
-        <td style="${cell};text-align:center;width:30%">연락처 ${t2}</td>
+        <td style="${cell};text-align:center">${d.r2}</td>
+        <td style="${cell};text-align:center;width:30%">연락처 ${d.t2}</td>
       </tr>
       <tr>
         <td style="${lbl}">면허번호</td>
-        <td style="${cell};text-align:center">${l2}</td>
+        <td style="${cell};text-align:center">${d.l2}</td>
         <td style="${lbl}">면허종별및<br>유효기간</td>
-        <td style="${cell};text-align:center" colspan="2">${lt2}</td>
+        <td style="${cell};text-align:center" colspan="2">${d.lt2}</td>
       </tr>
       <tr>
         <td style="${lbl}">현 주 소</td>
-        <td style="${cell};text-align:center" colspan="4">${a2}</td>
+        <td style="${cell};text-align:center" colspan="4">${d.a2}</td>
       </tr>
-    </table>
-    ` : ''}
-
+    </table>` : ''}
     <!-- 대여기간 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:60px" rowspan="3">대여기간</td>
-        <td style="${cell};width:48%">대 여 일 시 : ${start}</td>
+        <td style="${cell};width:48%">대 여 일 시 : ${d.start}</td>
         <td style="${lbl};width:60px">내역 :</td>
         <td style="${cell}"></td>
       </tr>
       <tr>
-        <td style="${cell}">반차 예정일 : ${endPlan}</td>
+        <td style="${cell}">반차 예정일 : ${d.endPlan}</td>
         <td style="${cell};background:#fff" colspan="2"></td>
       </tr>
       <tr>
-        <td style="${cell}">반 차 일 시 : ${end}</td>
+        <td style="${cell}">반 차 일 시 : ${d.end}</td>
         <td style="${lbl}">계 약 금 :</td>
-        <td style="${cell};text-align:right">${deposit}</td>
+        <td style="${cell};text-align:right">${d.deposit}</td>
       </tr>
     </table>
-
     <!-- 청구금액 / 결제금액 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
         <td style="${lbl};width:60px">목 적 지</td>
-        <td style="${cell};width:25%;text-align:center">${dest}</td>
+        <td style="${cell};width:25%;text-align:center">${d.dest}</td>
         <td style="${lbl};width:60px">비 &nbsp; 고</td>
-        <td style="${cell};text-align:center">${note}</td>
+        <td style="${cell};text-align:center">${d.note}</td>
         <td style="${lbl};width:75px">청구금액 :</td>
-        <td style="${cell};text-align:right;width:120px">${claim} &nbsp;원</td>
+        <td style="${cell};text-align:right;width:120px">${d.claim} &nbsp;원</td>
       </tr>
       <tr>
-        <td style="${cell};background:#fff" colspan="4">추가요금 : ${extra}</td>
+        <td style="${cell};background:#fff" colspan="4">추가요금 : ${d.extra}</td>
         <td style="${lbl};background:#fff2cc">결제금액 :</td>
-        <td style="${cell};text-align:right;font-weight:900;color:#b91c1c;font-size:12px;background:#fff2cc">${payment}</td>
+        <td style="${cell};text-align:right;font-weight:900;color:#b91c1c;font-size:12px;background:#fff2cc">${d.payment}</td>
       </tr>
     </table>
-
     <!-- 보험 정보 -->
     <table style="border-collapse:collapse;width:100%">
       <tr>
@@ -10452,32 +10523,23 @@ function cRenderPreview(){
         <td style="${cell}"></td>
       </tr>
     </table>
-
     <!-- 하단: 차량 손상 체크 + 계약 주요내용 -->
     <table style="border-collapse:collapse;width:100%;margin-top:4px">
       <tr>
-        <!-- 좌측: 차량 손상부위 -->
         <td style="border:1px solid #000;width:42%;padding:6px;vertical-align:top;font-size:9px;color:#000">
           <div style="font-size:8.5px;color:#444;margin-bottom:3px">연료는 최초 대여시와 동일한 양으로 반차하셔야 하며, 부족시에는 사용하신 연료량만큼 임차인이 추가 부담합니다.</div>
           <div style="font-size:8.5px;color:#444;margin-bottom:6px;font-style:italic">Refuelling service charge will apply if you elect to return vehicle with less fuel than when you received it.</div>
           <div style="font-weight:700;font-size:10px;margin-bottom:6px">차량손상부위 vehicle damage check</div>
-
-          <!-- 차량 다이어그램 (SVG) -->
           <div style="text-align:center;margin:6px 0">
             <svg width="200" height="130" viewBox="0 0 200 130" style="border:0">
-              <!-- 차 외곽 -->
               <rect x="40" y="20" width="120" height="90" rx="14" fill="none" stroke="#000" stroke-width="1.2"/>
-              <!-- 본넷/트렁크 구분 -->
               <line x1="40" y1="48" x2="160" y2="48" stroke="#000" stroke-width="0.8"/>
               <line x1="40" y1="82" x2="160" y2="82" stroke="#000" stroke-width="0.8"/>
-              <!-- 중앙 세로선 -->
               <line x1="100" y1="48" x2="100" y2="82" stroke="#000" stroke-width="0.8"/>
-              <!-- 바퀴 -->
               <rect x="30" y="32" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
               <rect x="30" y="76" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
               <rect x="156" y="32" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
               <rect x="156" y="76" width="14" height="22" fill="none" stroke="#000" stroke-width="1"/>
-              <!-- 라벨 -->
               <text x="15" y="68" font-size="11" font-weight="700" fill="#000">F</text>
               <text x="15" y="80" font-size="9" fill="#000">(전)</text>
               <text x="178" y="68" font-size="11" font-weight="700" fill="#000">R</text>
@@ -10486,49 +10548,32 @@ function cRenderPreview(){
               <text x="96" y="126" font-size="10" font-weight="700" fill="#000">L</text>
             </svg>
           </div>
-
-          <!-- 연료 게이지 -->
           <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin:4px 0 8px">
             <div style="font-size:8.5px;text-align:center">연료(fuel)</div>
             <div style="border:1px solid #000;padding:3px 6px;font-size:9px;line-height:1.5">
-              <div>O&nbsp;U&nbsp;T &nbsp;&nbsp; ${fuelOut||'__'} %</div>
-              <div>I&nbsp;&nbsp;&nbsp;&nbsp;N &nbsp;&nbsp; ${fuelIn||'__'} %</div>
+              <div>O&nbsp;U&nbsp;T &nbsp;&nbsp; ${d.fuelOut||'__'} %</div>
+              <div>I&nbsp;&nbsp;&nbsp;&nbsp;N &nbsp;&nbsp; ${d.fuelIn||'__'} %</div>
             </div>
             <div style="font-size:8.5px;text-align:center">F<br>│<br>E</div>
           </div>
-
-          <!-- 부속품 체크리스트 -->
           <div style="font-size:9px;line-height:1.7;margin-top:4px">
-            ${chk(cChk('cChkNavi'))} NAVIGATION &nbsp;&nbsp; ${chk(cChk('cChkAux'))} AUX선<br>
-            ${chk(cChk('cChkSpare'))} 예비타이어 SPARE TIRE &nbsp; ${chk(cChk('cChkCharger'))} 폰 충전기 PHONE CHARGER<br>
-            ${chk(cChk('cChkJacks'))} 작키공구 JACKS & TOOLS &nbsp; ${chk(cChk('cChkCover'))} 휠캡 WHEEL COVER
+            ${chk(d.chkNavi)} NAVIGATION &nbsp;&nbsp; ${chk(d.chkAux)} AUX선<br>
+            ${chk(d.chkSpare)} 예비타이어 SPARE TIRE &nbsp; ${chk(d.chkCharger)} 폰 충전기 PHONE CHARGER<br>
+            ${chk(d.chkJacks)} 작키공구 JACKS &amp; TOOLS &nbsp; ${chk(d.chkCover)} 휠캡 WHEEL COVER
           </div>
         </td>
-
-        <!-- 우측: 계약 주요내용 -->
         <td style="border:1px solid #000;padding:8px 10px;vertical-align:top;font-size:9.5px;color:#000;line-height:1.55">
           <div style="text-align:center;font-weight:700;font-size:11px;margin-bottom:6px;text-decoration:underline">계약주요내용</div>
-
           <div style="margin-bottom:3px">1. 차량 임차중에 발생한 교통법규 위반에 관한사항은 임차인의 책임입니다.</div>
-
           <div style="margin-bottom:3px">2. 자동차 <strong>종합보험은 (만26세) 이상 한정운전 특약</strong>이며, 차량손해(자차)를 제외한 (대인, 대물, 자손)에 가입되어 있고, <strong>대인은 무한, 대물은 ( 1억원 )</strong>까지 한도입니다.</div>
-
           <div style="margin-bottom:3px">3. <strong>자차면책금은 차-차 : 50만원 / 단독사고 : 100만원</strong> 입니다.</div>
-
           <div style="margin-bottom:3px">4. 대여차량의 <strong>보험 접수시 1건당 대물 300,000원, 대인 300,000원 자손 300,000원의 면책금</strong>을 (제 1,2 임차인)이 책임진다.<br>
           <strong>휴차료는 대여요금에서 1일요금의 80%입니다.</strong></div>
-
           <div style="margin-bottom:3px">5. 자차가입시에도 휠, 타이어, 백미러, 에어백은 운전자 면책입니다.</div>
-
           <div style="margin-bottom:3px">6. 임차인은 교통사고 발생시 그 내용을 즉시 임대인에게 고지하여야 하며 고하지 않을경우 보험혜택을 받지 못할 수도 있습니다.</div>
-
           <div style="margin-bottom:3px">7. <strong>연료비는 임대인의 부담이며 최초 대여시와 동일한 양으로 반차 하셔야하며, 부득시에는 사용하신 유류대만을 추가 지불하셔야 합니다.</strong></div>
-
           <div style="margin-bottom:3px">8. 12대 중대과실, 무면허, 음주운전 및 제 3자운전 사고시 보험혜택을 받지 못할 수도 있습니다.</div>
-
           <div style="margin-bottom:6px">9. <strong>차량실내에서 흡연시 세차(클리닝)비용 300,000원 입니다.</strong></div>
-
-          <!-- 서명란 -->
           <table style="border-collapse:collapse;width:100%;margin-top:8px">
             <tr>
               <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:700;font-size:11px;text-decoration:underline">제1임차인</td>
@@ -10542,23 +10587,13 @@ function cRenderPreview(){
         </td>
       </tr>
     </table>
-
-    <!-- 계약신용정보 동의서 (좌측 박스 하단) -->
+    <!-- 계약신용정보 동의서 -->
     <div style="border:1px solid #000;padding:8px 10px;margin-top:0;font-size:9px;line-height:1.55;color:#000;border-top:none;width:42%">
       <div style="text-decoration:underline;font-weight:700;margin-bottom:3px">계약신용정보의 제공,활동, GPS정보활용에 대한 동의서</div>
       이 계약관련하여 귀사가 본인으로부터 취득한 다음 신용정보의 이동 및 보호에 관한 법률 제23조, 제24조, 제 32조 규정에 따라 타인에게 제공활용시 본인의 동의를 얻어야 하는정보입니다. 이에 본인은 귀사가 임대계약서의 신용정보및 위치정보를 신용정보 집중기관, 신용정보업자, 신용정보제공, 이용자 등에게 제공하여 본인의 신용을 판단하기 위한 자료로서 활용하거나 또는 공공기관에서 정책자료로써 활용하도록 하는데 동의합니다.
       <div style="text-align:right;font-weight:700;margin-top:6px">(인)</div>
     </div>
   `;
-}
-
-/* ✨ 계약서 텍스트 → AI 자동 파싱 */
-function cSetAiStatus(msg,type){
-  const el = document.getElementById('cAiStatus');
-  if(!el) return;
-  const bg = type==='ok'?'#dcfce7':type==='err'?'#fee2e2':'#dbeafe';
-  const fg = type==='ok'?'#166534':type==='err'?'#991b1b':'#1e40af';
-  el.innerHTML = `<div style="background:${bg};color:${fg};padding:5px 8px;border-radius:5px">${msg}</div>`;
 }
 
 async function cParseWithAI(){
@@ -10772,106 +10807,92 @@ function cSetLicStatus2(msg,type){
 // 계약서 템플릿 base64
 const CONTRACT_TEMPLATE_B64 = "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";
 
-async function cDownloadExcel(){
-  await qLoadJSZip();
-  const driver2On = document.getElementById('cDriver2Enable')?.checked;
 
-  // 템플릿 로드
+/* 계약서 엑셀 다운로드 — cGetNormalized() 기반 */
+async function cDownloadExcel(){
+  const d = cGetNormalized();  // 미리보기와 동일한 데이터 소스
+  await qLoadJSZip();
+
   const bytes = qB64ToBytes(CONTRACT_TEMPLATE_B64);
   const zip = await JSZip.loadAsync(bytes);
   let sheetXml = await zip.file('xl/worksheets/sheet1.xml').async('string');
 
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  // 계약서 템플릿은 표준 형식 (prefix 없음: <c r="..." />)
   function setCellString(xml, cellRef, value){
-    const styleMatch = xml.match(new RegExp(`<c r="${cellRef}"[^>]*?s="(\d+)"`));
+    const styleMatch = xml.match(new RegExp(`<c r="${cellRef}"[^>]*?s="(\\d+)"`));
     const styleAttr = styleMatch ? ` s="${styleMatch[1]}"` : '';
-    const re1 = new RegExp(`<c r="${cellRef}"[^/>]*\s*/>`, 'g');
-    const re2 = new RegExp(`<c r="${cellRef}"[^>]*>[\s\S]*?</c>`, 'g');
+    const re1 = new RegExp(`<c r="${cellRef}"[^/>]*\\s*/>`, 'g');
+    const re2 = new RegExp(`<c r="${cellRef}"[^>]*>[\\s\\S]*?</c>`, 'g');
     const newCell = `<c r="${cellRef}"${styleAttr} t="inlineStr"><is><t xml:space="preserve">${esc(value)}</t></is></c>`;
     let replaced = xml.replace(re2, newCell);
     if(replaced === xml) replaced = xml.replace(re1, newCell);
     return replaced;
   }
 
+  const chk = b => b ? '☑' : '☐';
+
   // 회사 정보
-  const COMPANY = {
-    suseong: {name:'㈜경일렌트카', addr:'대구시 수성구 청수로 31길 36 101호(황금동)', tel:'전화: 053)423-0000  팩스: 053)767-4718'},
-    bongdeok:{name:'경일렌트카 봉덕영업소', addr:'대구광역시 남구 봉덕로 11, 1층', tel:'TEL: 053)476-5500 / 010.3510.2820'},
-    newyes:  {name:'뉴예스렌트카', addr:'대구광역시 동구 신암남로 146, 1층 105호', tel:'TEL: 053)959-2820'}
-  };
-  const co = COMPANY[cVal('cCompany')||'suseong'];
+  sheetXml = setCellString(sheetXml, 'A2', `${d.co.name}\n${d.co.addr}\n${d.co.tel}`);
 
-  // A2: 회사정보
-  sheetXml = setCellString(sheetXml, 'A2', `${co.name}
-${co.addr}
-${co.tel}`);
+  // 차량 정보
+  sheetXml = setCellString(sheetXml, 'B3', d.carType);
+  sheetXml = setCellString(sheetXml, 'E3', d.carNo);
+  sheetXml = setCellString(sheetXml, 'B4', d.memo);
 
-  // 차량 정보 (3~4행)
-  sheetXml = setCellString(sheetXml, 'B3', cVal('cCarType'));
-  sheetXml = setCellString(sheetXml, 'E3', cVal('cCarNo'));
-  sheetXml = setCellString(sheetXml, 'B4', cVal('cMemo'));
+  // 제1운전자
+  sheetXml = setCellString(sheetXml, 'B6',  d.n1);
+  sheetXml = setCellString(sheetXml, 'D6',  d.r1);
+  sheetXml = setCellString(sheetXml, 'F6',  d.t1);
+  sheetXml = setCellString(sheetXml, 'B7',  d.l1);
+  sheetXml = setCellString(sheetXml, 'E7',  d.lt1);
+  sheetXml = setCellString(sheetXml, 'B8',  d.a1);
 
-  // 제1운전자 (6~8행)
-  sheetXml = setCellString(sheetXml, 'B6', cVal('c1Name'));
-  sheetXml = setCellString(sheetXml, 'D6', cVal('c1Resi'));
-  sheetXml = setCellString(sheetXml, 'F6', cVal('c1Tel'));
-  sheetXml = setCellString(sheetXml, 'B7', cVal('c1LicNo'));
-  sheetXml = setCellString(sheetXml, 'E7', cVal('c1LicType'));
-  sheetXml = setCellString(sheetXml, 'B8', cVal('c1Addr'));
-
-  // 제2운전자 (10~12행)
-  if(driver2On){
-    sheetXml = setCellString(sheetXml, 'B10', cVal('c2Name'));
-    sheetXml = setCellString(sheetXml, 'D10', cVal('c2Resi'));
-    sheetXml = setCellString(sheetXml, 'F10', cVal('c2Tel'));
-    sheetXml = setCellString(sheetXml, 'B11', cVal('c2LicNo'));
-    sheetXml = setCellString(sheetXml, 'E11', cVal('c2LicType'));
-    sheetXml = setCellString(sheetXml, 'B12', cVal('c2Addr'));
+  // 제2운전자
+  if(d.driver2On){
+    sheetXml = setCellString(sheetXml, 'B10', d.n2);
+    sheetXml = setCellString(sheetXml, 'D10', d.r2);
+    sheetXml = setCellString(sheetXml, 'F10', d.t2);
+    sheetXml = setCellString(sheetXml, 'B11', d.l2);
+    sheetXml = setCellString(sheetXml, 'E11', d.lt2);
+    sheetXml = setCellString(sheetXml, 'B12', d.a2);
   } else {
-    sheetXml = setCellString(sheetXml, 'B10', '');
-    sheetXml = setCellString(sheetXml, 'D10', '');
-    sheetXml = setCellString(sheetXml, 'F10', '');
-    sheetXml = setCellString(sheetXml, 'B11', '');
-    sheetXml = setCellString(sheetXml, 'E11', '');
-    sheetXml = setCellString(sheetXml, 'B12', '');
+    for(const ref of ['B10','D10','F10','B11','E11','B12']){
+      sheetXml = setCellString(sheetXml, ref, '');
+    }
   }
 
-  // 대여기간
-  sheetXml = setCellString(sheetXml, 'B14', cVal('cStart'));
-  sheetXml = setCellString(sheetXml, 'E14', cVal('cEndPlan'));
-  sheetXml = setCellString(sheetXml, 'B15', cVal('cEnd'));
-  sheetXml = setCellString(sheetXml, 'E15', cVal('cDetail'));
-  sheetXml = setCellString(sheetXml, 'B16', cVal('cDeposit'));
-  sheetXml = setCellString(sheetXml, 'D16', cVal('cClaim'));
-  sheetXml = setCellString(sheetXml, 'F16', cVal('cExtra'));
-  sheetXml = setCellString(sheetXml, 'B17', cVal('cPayment'));
-  sheetXml = setCellString(sheetXml, 'B18', cVal('cDest'));
-  sheetXml = setCellString(sheetXml, 'E18', cVal('cNote'));
+  // 대여기간 / 금액 — normalizedData에서 직접 사용
+  sheetXml = setCellString(sheetXml, 'B14', d.start);
+  sheetXml = setCellString(sheetXml, 'E14', d.endPlan);
+  sheetXml = setCellString(sheetXml, 'B15', d.end);
+  sheetXml = setCellString(sheetXml, 'E15', d.detail);
+  sheetXml = setCellString(sheetXml, 'B16', d.deposit);
+  sheetXml = setCellString(sheetXml, 'D16', d.claim);
+  sheetXml = setCellString(sheetXml, 'F16', d.extra);
+  sheetXml = setCellString(sheetXml, 'B17', d.payment);
+  sheetXml = setCellString(sheetXml, 'B18', d.dest);
+  sheetXml = setCellString(sheetXml, 'E18', d.note);
 
   // 부속품/연료
-  const chk = b => b ? '☑' : '☐';
   const chkText = [
-    `${chk(cChk('cChkNavi'))} NAVIGATION`,
-    `${chk(cChk('cChkAux'))} AUX선`,
-    `${chk(cChk('cChkSpare'))} 예비타이어`,
-    `${chk(cChk('cChkCharger'))} 폰충전기`,
-    `${chk(cChk('cChkJacks'))} 작키공구`,
-    `${chk(cChk('cChkCover'))} 휠캡`
+    `${chk(d.chkNavi)} NAVIGATION`,
+    `${chk(d.chkAux)} AUX선`,
+    `${chk(d.chkSpare)} 예비타이어`,
+    `${chk(d.chkCharger)} 폰충전기`,
+    `${chk(d.chkJacks)} 작키공구`,
+    `${chk(d.chkCover)} 휠캡`
   ].join(' / ');
   sheetXml = setCellString(sheetXml, 'B20', chkText);
-  sheetXml = setCellString(sheetXml, 'B21', (cVal('cFuelOut')||'') + ' %');
-  sheetXml = setCellString(sheetXml, 'D21', (cVal('cFuelIn')||'') + ' %');
+  sheetXml = setCellString(sheetXml, 'B21', `${d.fuelOut||''} %`);
+  sheetXml = setCellString(sheetXml, 'D21', `${d.fuelIn||''} %`);
 
   // 서명란
-  sheetXml = setCellString(sheetXml, 'B32', cVal('c1Name'));
-  if(driver2On) sheetXml = setCellString(sheetXml, 'B33', cVal('c2Name'));
+  sheetXml = setCellString(sheetXml, 'B32', d.n1);
+  if(d.driver2On) sheetXml = setCellString(sheetXml, 'B33', d.n2);
 
-  // sheet1.xml 저장
   zip.file('xl/worksheets/sheet1.xml', sheetXml);
 
-  // 다운로드
   const blob = await zip.generateAsync({
     type:'blob',
     mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -10881,16 +10902,16 @@ ${co.tel}`);
   const a = document.createElement('a');
   a.href = url;
   const now = new Date();
-  const fname = `경일렌트카_계약서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${cVal('c1Name')||''}.xlsx`;
-  a.download = fname;
+  a.download = `경일렌트카_계약서_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${d.n1||''}.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 100);
 }
 
+/* 계약서 인쇄 — 미리보기를 갱신한 뒤 동일 HTML로 인쇄 */
 function cPrint(){
-  cRenderPreview();
+  cRenderPreview();  // 최신 데이터로 미리보기 갱신 후 동일 DOM 인쇄
   const html = document.getElementById('cPreview').innerHTML;
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>계약서 인쇄</title>
@@ -10902,6 +10923,32 @@ function cPrint(){
 function cInit(){
   cRenderPreview();
 }
+
+
+/* ═══════════════════════════════════════════════════
+   🔍 디버그 단축키 — Ctrl+Shift+D : 오늘 날짜 현황 출력
+   사용법: 콘솔에서 debugReservations('2026-05-24')
+           debugReservations('2026-05-22','2026-05-25')
+═══════════════════════════════════════════════════ */
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+    e.preventDefault();
+    const today = new Date();
+    const ds = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    if (typeof debugReservations === 'function') {
+      debugReservations(ds);
+      // 이번 주말도 출력
+      const fri = new Date(today);
+      const day = today.getDay();
+      if (day !== 5) fri.setDate(today.getDate() + (5 - (day === 0 ? -2 : day)));
+      const mon = new Date(fri); mon.setDate(fri.getDate() + 3);
+      const friStr = fri.getFullYear()+'-'+String(fri.getMonth()+1).padStart(2,'0')+'-'+String(fri.getDate()).padStart(2,'0');
+      const monStr = mon.getFullYear()+'-'+String(mon.getMonth()+1).padStart(2,'0')+'-'+String(mon.getDate()).padStart(2,'0');
+      debugReservations(friStr, monStr);
+    }
+    console.log('[디버그] debugReservations("YYYY-MM-DD") 로 특정 날짜 확인 가능');
+  }
+});
 </script>
 </body>
 </html>
