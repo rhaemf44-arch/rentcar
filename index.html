@@ -542,6 +542,15 @@ body.tv-mode{display:block;background:#0b1420}
 #tv-board .tv-sync[data-state="error"]{color:#ffd5a1}
 #tv-board .tv-sync[data-state="error"]:before{background:#ff9d77}
 #tv-board .tv-readonly{color:#c9d5e3;white-space:nowrap}
+#tv-board .tv-date-nav{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+#tv-board .tv-date-input{font-family:inherit;font-size:20px;font-weight:700;line-height:1.2;min-height:44px;width:180px;padding:8px 10px;border:1px solid #697f96;border-radius:10px;background:#142537;color:var(--tv-text);color-scheme:dark}
+#tv-board .tv-date-input:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#tv-board .tv-date-input::-webkit-calendar-picker-indicator{cursor:pointer}
+#tv-board .tv-today-button[aria-pressed="true"]{background:#164640;border-color:#6ee8ce;color:#befff1}
+#tv-board .tv-clock-label{font-size:13px;color:var(--tv-muted);margin-right:6px}
+#tv-board .tv-date-nav .tv-button{padding:8px 13px}
+@media(max-width:1100px){#tv-board .tv-status-line{flex-wrap:wrap;gap:10px}#tv-board .tv-date-nav{order:3;flex-basis:100%;justify-content:flex-start}#tv-board .tv-date-input{font-size:18px;width:172px}}
+@media(max-width:700px){#tv-board .tv-date-nav{gap:6px}#tv-board .tv-date-nav .tv-button{font-size:14px;padding:7px 9px}#tv-board .tv-date-input{font-size:16px;width:156px}}
 #tv-board .tv-lanes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;align-items:start;gap:20px;flex:1;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
 #tv-board .tv-lane{min-width:0;display:flex;flex-direction:column;gap:10px;align-self:start}
 #tv-board .tv-lane-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 8px;border-bottom:3px solid var(--tv-pickup);color:var(--tv-pickup)}
@@ -611,17 +620,17 @@ body.tv-mode{display:block;background:#0b1420}
 </style>
 </head>
 <body>
-<section id="tv-board" hidden aria-label="오늘의 배차와 반납 예정 현황판">
+<section id="tv-board" hidden aria-label="배차와 반납 예정 현황판">
   <div class="tv-board-inner">
     <header class="tv-header">
-      <div><div class="tv-brand">KY RENTCAR · 경일렌트카</div><h1 class="tv-title">오늘의 배차 · 반납 예정</h1></div>
+      <div><div class="tv-brand">KY RENTCAR · 경일렌트카</div><h1 class="tv-title" id="tv-title">오늘의 배차 · 반납 예정</h1></div>
       <div class="tv-header-right">
-        <div class="tv-clock-group"><div class="tv-date" id="tv-date"></div><div class="tv-clock" id="tv-clock"></div></div>
+        <div class="tv-clock-group"><div class="tv-date"><span class="tv-clock-label">현재</span><span id="tv-date"></span></div><div class="tv-clock" id="tv-clock"></div></div>
         <div class="tv-header-buttons"><button class="tv-button" id="tv-fullscreen" onclick="toggleTVFullscreen()">전체 화면</button><button class="tv-button" id="tv-exit" onclick="exitTVMode()">관리 화면</button></div>
       </div>
     </header>
-    <div class="tv-status-line"><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span><span class="tv-readonly">실시간 업무 현황</span></div>
-    <div class="tv-lanes" id="tv-lanes" tabindex="0" aria-label="오늘 전체 배차와 반납 목록">
+    <div class="tv-status-line"><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span><nav class="tv-date-nav" aria-label="TV 조회 날짜 선택"><button class="tv-button" id="tv-date-prev" onclick="shiftTVDate(-1)" aria-label="이전날">‹ 이전날</button><input class="tv-date-input" id="tv-date-input" type="date" min="0001-01-01" max="9999-12-31" aria-label="TV 조회 날짜" onchange="setTVDate(this.value)"><button class="tv-button" id="tv-date-next" onclick="shiftTVDate(1)" aria-label="다음날">다음날 ›</button><button class="tv-button tv-today-button" id="tv-date-today" onclick="showTVToday()" aria-pressed="true">오늘</button></nav><span class="tv-readonly">실시간 업무 현황</span></div>
+    <div class="tv-lanes" id="tv-lanes" tabindex="0" aria-label="선택 날짜 전체 배차와 반납 목록">
       <section id="tv-pickup-lane" class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">당일 배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
       <section id="tv-return-lane" class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납 예정</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
     </div>
@@ -3700,7 +3709,34 @@ function auditIgnoreRow(i){if(!reservationAuditState.rows[i])return;reservationA
 function clearReservationAudit(){reservationAuditState={rows:[],excludedRows:[],raw:'',fileName:'',messageCount:0,clusterCount:0,expenseCount:0,noiseCount:0,aiCount:0,claudeCount:0};const f=document.getElementById('audit-file');if(f)f.value='';document.getElementById('audit-file-name').textContent='파일을 선택해 주세요';document.getElementById('audit-progress').classList.remove('on');document.getElementById('audit-results').className='audit-empty';document.getElementById('audit-results').textContent='카카오톡 TXT 파일을 선택한 후 ‘검수 시작’을 누르세요.';document.getElementById('nav-audit').textContent='0';renderReservationAudit()}
 
 /* TV display preferences affect this device only; reservation records are read-only here. */
-let tvMode=false;
+let tvMode=false,tvSelectedDate='';
+function isTVDate(value){
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||value<'0001-01-01')return false;
+  const parsed=new Date(value+'T12:00:00Z');
+  return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value;
+}
+function tvSelectedDay(now=Date.now()){return tvSelectedDate||koreanNow(new Date(now)).slice(0,10)}
+function syncTVDateURL(){
+  try{
+    const url=new URL(window.location.href);
+    if(tvMode){url.searchParams.set('tv','1');if(tvSelectedDate)url.searchParams.set('tvDate',tvSelectedDate);else url.searchParams.delete('tvDate')}
+    else{url.searchParams.delete('tv');url.searchParams.delete('tvDate')}
+    window.history.replaceState(null,'',url.toString());
+  }catch(e){}
+}
+function setTVDate(value){
+  if(!isTVDate(value)){const input=document.getElementById('tv-date-input');if(input)input.value=tvSelectedDay();return false}
+  tvSelectedDate=value===todayStr()?'':value;
+  syncTVDateURL();renderTVBoard();
+  const lanes=document.getElementById('tv-lanes');if(lanes)lanes.scrollTop=0;
+  return true;
+}
+function shiftTVDate(delta){
+  if(delta!==-1&&delta!==1)return false;
+  const date=new Date(tvSelectedDay()+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+delta);
+  return setTVDate(date.toISOString().slice(0,10));
+}
+function showTVToday(){return setTVDate(todayStr())}
 function setTVMode(enabled){
   const board=document.getElementById('tv-board');if(!board)return;
   tvMode=!!enabled;
@@ -3708,11 +3744,7 @@ function setTVMode(enabled){
   document.body.classList.toggle('tv-mode',tvMode);
   board.hidden=!tvMode;
   try{localStorage.setItem('ky-tv-mode',tvMode?'1':'0')}catch(e){}
-  try{
-    const url=new URL(window.location.href);
-    if(tvMode)url.searchParams.set('tv','1');else url.searchParams.delete('tv');
-    window.history.replaceState(null,'',url.toString());
-  }catch(e){}
+  syncTVDateURL();
   setTVBoardActive(tvMode);
   if(tvMode){window.scrollTo({top:0});document.getElementById('tv-exit')?.focus()}
   else{go2('dashboard');document.getElementById('open-tv-mode')?.focus()}
@@ -3723,22 +3755,22 @@ function exitTVMode(){
 }
 function restoreTVMode(){
   let enabled=false;
-  try{const requested=new URL(window.location.href).searchParams.get('tv');enabled=requested===null?localStorage.getItem('ky-tv-mode')==='1':requested==='1'}catch(e){try{enabled=localStorage.getItem('ky-tv-mode')==='1'}catch(err){}}
+  try{const params=new URL(window.location.href).searchParams,requested=params.get('tv'),date=params.get('tvDate');tvSelectedDate=isTVDate(date)?date:'';enabled=requested===null?localStorage.getItem('ky-tv-mode')==='1':requested==='1'}catch(e){try{enabled=localStorage.getItem('ky-tv-mode')==='1'}catch(err){}}
   if(enabled)setTVMode(true);
 }
 document.addEventListener('keydown',e=>{if(tvMode&&e.key==='Escape'&&!document.fullscreenElement){e.preventDefault();exitTVMode()}});
 
 /* Read-only display. These functions do not write reservation records. */
-let tvBoardDay='',tvBoardTimer=null;
-function tvBoardGroups(records=data,now=Date.now()){
-  const today=koreanNow(new Date(now)).slice(0,10),live=records.filter(r=>!r.deletedAt&&r.status!=='cancelled');
-  const pickup=live.filter(r=>String(r.start||'').slice(0,10)===today);
-  const returns=live.filter(r=>r.status!=='done'&&String(r.end||'').slice(0,10)===today);
-  const ongoing=[]; // TV shows only today's departures and scheduled returns.
+let tvBoardDay='',tvBoardToday='',tvBoardTimer=null;
+function tvBoardGroups(records=data,now=Date.now(),selectedDay=tvSelectedDay(now)){
+  const today=koreanNow(new Date(now)).slice(0,10),day=isTVDate(selectedDay)?selectedDay:today,live=records.filter(r=>!r.deletedAt&&r.status!=='cancelled');
+  const pickup=live.filter(r=>String(r.start||'').slice(0,10)===day);
+  const returns=live.filter(r=>r.status!=='done'&&String(r.end||'').slice(0,10)===day);
+  const ongoing=[]; // TV shows only the selected day's departures and scheduled returns.
   const completed=(r,type)=>type==='pickup'?r.status==='active'||r.status==='done':r.status==='done';
   const order=(key,type)=>(a,b)=>Number(completed(a,type))-Number(completed(b,type))||(reservationTime(a[key])||Infinity)-(reservationTime(b[key])||Infinity)||String(a.id||'').localeCompare(String(b.id||''));
   pickup.sort(order('start','pickup'));returns.sort(order('end','return'));ongoing.sort(order('end','return'));
-  return{today,pickup,returns,ongoing};
+  return{today,day,pickup,returns,ongoing};
 }
 function tvVehicleDisplay(r){
   const plate=reservationVehicleId(r),raw=String(r.car||'');
@@ -3750,32 +3782,39 @@ function tvVehicleDisplay(r){
 function tvDisplayMemo(r){
   let memo=String(r.memo||'');
   if(/^[^\n]+\.hwp\s*·\s*\d+번\n/.test(memo)&&memo.includes('원문: '))memo=memo.split('\n').filter(line=>line.startsWith('확인: ')).map(line=>line.slice(4)).join(' · ');
-  return memo.split('\n').map(line=>line.replace(/고객명 미기재\s*[:：]\s*연락처로 구분/g,'').replace(/^[ ·;,]+|[ ·;,]+$/g,'').trim()).filter(Boolean).join('\n');
+  return memo.split('\n').map(line=>line.replace(/고객명 미기재\s*[:：]\s*연락처로 구분/g,'').replace(/\s*·\s*(?:·\s*)+/g,' · ').replace(/^[ ·;,]+|[ ·;,]+$/g,'').trim()).filter(Boolean).join('\n');
 }
 function tvTaskCard(r,type,now=Date.now()){
-  const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),today=koreanNow(new Date(now)).slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
+  const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
   const done=isReturn?r.status==='done':r.status==='active'||r.status==='done';
   const late=!isReturn&&valid&&time<now&&!done&&r.status!=='active';
   let status=isReturn?(r.status==='done'?'반납 완료':'반납 예정'):done?'배차 완료':'배차 대기';
   if(late)status='배차 확인';
   const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정'),displayMemo=tvDisplayMemo(r);
-  const dayLabel=valid&&day!==today?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
+  const dayLabel=valid&&day!==tvSelectedDay(now)?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
   return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-timeblock">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span><span class="tv-task-state">${esc(status)}</span></div><div class="tv-task-body"><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-details"><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(reservationCustomerName(r))}</span></div><div class="tv-task-detail tv-task-location"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div></div></div>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo)}</div>`:''}</article>`;
 }
 function renderTVBoard(){
   const board=document.getElementById('tv-board');if(!board||board.hidden)return;
   const groups=tvBoardGroups(),total=groups.pickup.length+groups.returns.length;
-  tvBoardDay=groups.today;
+  tvBoardDay=groups.day;
+  tvBoardToday=groups.today;
+  const isToday=groups.day===groups.today,dateLabel=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'short'}).format(new Date(groups.day+'T12:00:00+09:00'));
+  document.getElementById('tv-title').textContent=isToday?'오늘의 배차 · 반납 예정':`${dateLabel} 배차 · 반납 예정`;
+  document.getElementById('tv-date-input').value=groups.day;
+  document.getElementById('tv-date-today').setAttribute('aria-pressed',String(!tvSelectedDate));
+  document.getElementById('tv-date-prev').disabled=groups.day==='0001-01-01';
+  document.getElementById('tv-date-next').disabled=groups.day==='9999-12-31';
   board.dataset.layout=groups.pickup.length&&groups.returns.length?'split':'single';
   board.dataset.density=total>8?'compact':'comfortable';
   const lane=(id,rows,type)=>{
     const remaining=rows.filter(r=>type==='pickup'?!['active','done'].includes(r.status):r.status!=='done').length;
     document.getElementById('tv-'+id+'-count').textContent=type==='return'?`예정 ${rows.length}건`:`남은 ${remaining}건 · 전체 ${rows.length}건`;
     document.getElementById('tv-'+id+'-lane').classList.toggle('is-empty',rows.length===0);
-    document.getElementById('tv-'+id+'-cards').innerHTML=rows.length?rows.map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">오늘 ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다</div>`;
+    document.getElementById('tv-'+id+'-cards').innerHTML=rows.length?rows.map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">${isToday?'오늘':dateLabel} ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다</div>`;
   };
   lane('pickup',groups.pickup,'pickup');lane('return',groups.returns,'return');
-  document.getElementById('tv-page-info').textContent=`당일 배차 ${groups.pickup.length}건 · 반납 예정 ${groups.returns.length}건 · 전체 표시 · 시간순 · 미완료 우선`;
+  document.getElementById('tv-page-info').textContent=`${groups.day} · 당일 배차 ${groups.pickup.length}건 · 반납 예정 ${groups.returns.length}건 · 전체 표시 · 시간순 · 미완료 우선`;
   updateTVClock();
 }
 
@@ -3788,7 +3827,7 @@ function updateTVClock(){
   const syncEl=document.getElementById('tv-sync');syncEl.textContent=sync.message||'저장 상태 확인 중';syncEl.dataset.state=sync.status||'connecting';
   const full=document.getElementById('tv-fullscreen');full.textContent=document.fullscreenElement?'전체 화면 해제':'전체 화면';
 }
-function tickTVBoard(){const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();if(tvBoardDay!==todayStr())renderTVBoard()}
+function tickTVBoard(){const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();if(tvBoardDay!==tvSelectedDay()||tvBoardToday!==todayStr())renderTVBoard()}
 
 async function toggleTVFullscreen(){
   const board=document.getElementById('tv-board'),notice=document.getElementById('tv-notice');if(!board)return;
