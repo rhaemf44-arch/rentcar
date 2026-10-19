@@ -3726,15 +3726,20 @@ function tvVehicleDisplay(r){
   name=String(name).replace(/\s*\(\d{4}\)\s*$/,'').trim();
   return{plate,name:name||'차종 미기재'};
 }
+function tvDisplayMemo(r){
+  const memo=String(r.memo||'');
+  if(!/^[^\n]+\.hwp\s*·\s*\d+번\n/.test(memo)||!memo.includes('원문: '))return memo;
+  return memo.split('\n').filter(line=>line.startsWith('확인: ')).map(line=>line.slice(4)).join(' · ');
+}
 function tvTaskCard(r,type,now=Date.now()){
   const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),today=koreanNow(new Date(now)).slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
   const done=isReturn?r.status==='done':r.status==='active'||r.status==='done';
   const late=!isReturn&&valid&&time<now&&!done&&r.status!=='active';
   let status=isReturn?(r.status==='done'?'반납 완료':'반납 예정'):done?'배차 완료':'배차 대기';
   if(late)status='배차 확인';
-  const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정');
+  const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정'),displayMemo=tvDisplayMemo(r);
   const dayLabel=valid&&day!==today?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
-  return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-top"><div class="tv-time-wrap">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span></div><span class="tv-task-state">${esc(status)}</span></div><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(r.name||'고객명 미기재')}</span></div><div class="tv-task-detail"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div>${r.memo?`<div class="tv-task-memo"><b>메모</b>${esc(r.memo)}</div>`:''}</article>`;
+  return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-top"><div class="tv-time-wrap">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span></div><span class="tv-task-state">${esc(status)}</span></div><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(r.name||'고객명 미기재')}</span></div><div class="tv-task-detail"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo)}</div>`:''}</article>`;
 }
 function tvBoardPageCount(groups=tvBoardGroups(),capacity=tvBoardCapacity()){return Math.max(1,Math.ceil(groups.pickup.length/capacity),Math.ceil(groups.returns.length/capacity),Math.ceil(groups.ongoing.length/3))}
 function renderTVBoard(){
