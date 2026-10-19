@@ -518,78 +518,95 @@ body.tv-mode{display:block;background:#0b1420}
 
 @media(max-width:820px){.dashboard-periods button[data-period="upcoming"]{grid-column:1/-1}}
 
-/* TV board: read-only operations display. All selectors are scoped. */
-#tv-board[hidden],#tv-board .tv-ongoing[hidden]{display:none!important}
-#tv-board{--tv-bg:#07111e;--tv-panel:#101e2e;--tv-edge:#344559;--tv-text:#f7fafc;--tv-muted:#b9c7d7;--tv-pickup:#67e8dc;--tv-return:#ffca7a;position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:auto;font-family:inherit;line-height:1.35;color-scheme:dark}
+/* TV board: all today's work stays visible; no rotating pages. */
+#tv-board[hidden],#tv-board [hidden]{display:none!important}
+#tv-board{--tv-bg:#07111e;--tv-panel:#101e2e;--tv-edge:#344559;--tv-text:#f7fafc;--tv-muted:#b9c7d7;--tv-pickup:#67e8dc;--tv-return:#ffca7a;position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:hidden;font-family:inherit;line-height:1.35;color-scheme:dark}
 #tv-board *{box-sizing:border-box}
-#tv-board .tv-board-inner{min-height:100dvh;display:flex;flex-direction:column;padding:22px 28px 18px;gap:18px}
+#tv-board .tv-board-inner{height:100dvh;display:flex;flex-direction:column;padding:20px 26px 14px;gap:14px;min-height:0}
 #tv-board button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 #tv-board button:focus-visible{outline:3px solid #fff;outline-offset:4px}
 #tv-board .tv-header{display:flex;align-items:center;justify-content:space-between;gap:20px;flex:none}
-#tv-board .tv-brand{font-size:16px;font-weight:700;letter-spacing:.06em;color:var(--tv-muted);margin-bottom:4px}
+#tv-board .tv-brand{font-size:15px;font-weight:700;letter-spacing:.06em;color:var(--tv-muted);margin-bottom:4px}
 #tv-board .tv-title{margin:0;font-size:32px;font-weight:850;letter-spacing:-1px;line-height:1.2}
 #tv-board .tv-header-right{display:flex;align-items:center;justify-content:flex-end;gap:22px}
 #tv-board .tv-clock-group{text-align:right}
 #tv-board .tv-date{font-size:18px;color:var(--tv-muted);white-space:nowrap}
 #tv-board .tv-clock{font-size:40px;font-weight:800;line-height:1.05;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 #tv-board .tv-header-buttons{display:flex;gap:8px}
-#tv-board .tv-button{border:1px solid #526278;background:#142537;border-radius:10px;padding:10px 15px;color:var(--tv-text);min-height:46px;font-size:17px;font-weight:650;white-space:nowrap}
+#tv-board .tv-button{border:1px solid #526278;background:#142537;border-radius:10px;padding:10px 15px;color:var(--tv-text);min-height:44px;font-size:17px;font-weight:650;white-space:nowrap}
 #tv-board .tv-button:hover{background:#21394d}
-#tv-board .tv-button[aria-pressed="true"]{background:#d1fff6;color:#08271f;border-color:#d1fff6}
 #tv-board .tv-status-line{display:flex;align-items:center;gap:14px;justify-content:space-between;font-size:16px;color:var(--tv-muted);flex:none}
 #tv-board .tv-sync{display:flex;align-items:center;gap:8px;min-width:0}
 #tv-board .tv-sync:before{content:"";display:block;width:9px;height:9px;border-radius:50%;background:#e7bb66;flex:none}
-#tv-board .tv-sync[data-state="saved"]:before,#tv-board .tv-sync[data-state="synced"]:before{background:#69e4b4}
+#tv-board .tv-sync[data-state="saved"]:before{background:#69e4b4}
 #tv-board .tv-sync[data-state="error"]{color:#ffd5a1}
 #tv-board .tv-sync[data-state="error"]:before{background:#ff9d77}
 #tv-board .tv-readonly{color:#c9d5e3;white-space:nowrap}
-#tv-board .tv-lanes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;flex:1;min-width:0}
-#tv-board .tv-lane{min-width:0;display:flex;flex-direction:column;gap:12px}
-#tv-board .tv-lane-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 10px;border-bottom:3px solid var(--tv-pickup);color:var(--tv-pickup)}
+#tv-board .tv-lanes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;align-items:start;gap:20px;flex:1;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
+#tv-board .tv-lane{min-width:0;display:flex;flex-direction:column;gap:10px;align-self:start}
+#tv-board .tv-lane-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 8px;border-bottom:3px solid var(--tv-pickup);color:var(--tv-pickup)}
 #tv-board .tv-lane-return .tv-lane-head{border-color:var(--tv-return);color:var(--tv-return)}
-#tv-board .tv-lane-title{font-size:29px;font-weight:850;margin:0;letter-spacing:-.6px}
-#tv-board .tv-lane-total{font-size:19px;font-weight:600;white-space:nowrap}
-#tv-board .tv-cards{display:grid;grid-template-rows:repeat(var(--tv-rows,2),minmax(min-content,1fr));gap:12px;flex:1;min-width:0}
-#tv-board .tv-task{padding:15px 18px;border:1px solid var(--tv-edge);border-left:5px solid var(--tv-pickup);background:var(--tv-panel);border-radius:12px;min-width:0;display:flex;flex-direction:column;gap:7px}
+#tv-board .tv-lane-title{font-size:27px;font-weight:850;margin:0;letter-spacing:-.6px}
+#tv-board .tv-lane-total{font-size:19px;font-weight:650;white-space:nowrap}
+#tv-board .tv-cards{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;gap:10px;align-content:start;min-width:0}
+#tv-board .tv-task{padding:15px 16px;border:1px solid var(--tv-edge);border-left:5px solid var(--tv-pickup);background:var(--tv-panel);border-radius:11px;min-width:0;display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px 16px;align-items:start}
 #tv-board .tv-lane-return .tv-task{border-left-color:var(--tv-return)}
 #tv-board .tv-task.is-done{background:#101b28;border-color:#354151;border-left-color:#8294aa}
 #tv-board .tv-task.is-late{border-color:#f28f6e;border-left-color:#ffad86;background:#2b1b23}
-#tv-board .tv-task-top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
-#tv-board .tv-time-wrap{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-#tv-board .tv-task-time{font-size:42px;font-weight:850;letter-spacing:-1.4px;line-height:1.08;font-variant-numeric:tabular-nums;white-space:nowrap}
-#tv-board .tv-task-day{font-size:18px;font-weight:650;color:#ffccb5}
-#tv-board .tv-task-state{display:inline-flex;align-items:center;padding:5px 10px;border-radius:7px;background:#153c40;color:#b4fff6;font-size:19px;font-weight:800;white-space:nowrap}
+#tv-board .tv-task-timeblock{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0}
+#tv-board .tv-task-time{font-size:42px;font-weight:850;letter-spacing:-1.4px;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
+#tv-board .tv-task-day{font-size:17px;font-weight:650;color:#ffccb5}
+#tv-board .tv-task-state{display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;background:#153c40;color:#b4fff6;font-size:18px;font-weight:800;white-space:nowrap}
 #tv-board .tv-lane-return .tv-task-state{background:#3e3424;color:#ffe0ad}
 #tv-board .is-done .tv-task-state{background:#283746;color:#d1dce9}
 #tv-board .is-late .tv-task-state{background:#6b3029;color:#fff0db}
-#tv-board .tv-car-row{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap;min-width:0}
-#tv-board .tv-plate{font-size:32px;font-weight:850;letter-spacing:-.7px;line-height:1.15;white-space:nowrap;color:#fff}
+#tv-board .tv-task-body{display:flex;flex-direction:column;gap:8px;min-width:0}
+#tv-board .tv-car-row{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;min-width:0}
+#tv-board .tv-plate{font-size:32px;font-weight:850;letter-spacing:-.7px;line-height:1.1;white-space:nowrap;color:#fff}
 #tv-board .tv-car-name{font-size:22px;font-weight:650;color:#c7d5e6;overflow-wrap:anywhere;word-break:keep-all}
-#tv-board .tv-unassigned{color:#ffe09c;background:#45381e;border:1px solid #b9a05e;padding:4px 9px;border-radius:7px;font-size:25px;font-weight:850;white-space:nowrap}
-#tv-board .tv-task-detail{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;font-size:22px;line-height:1.4;min-width:0}
-#tv-board .tv-detail-label{font-size:17px;font-weight:600;color:#b1c2d5;padding-top:3px}
+#tv-board .tv-unassigned{color:#ffe09c;background:#45381e;border:1px solid #b9a05e;padding:3px 7px;border-radius:6px;font-size:25px;font-weight:850;white-space:nowrap}
+#tv-board .tv-task-details{display:flex;flex-wrap:wrap;gap:5px 18px;min-width:0}
+#tv-board .tv-task-detail{display:flex;align-items:baseline;gap:7px;font-size:22px;line-height:1.35;min-width:0;max-width:100%}
+#tv-board .tv-task-location{flex:1 1 220px}
+#tv-board .tv-detail-label{font-size:16px;font-weight:600;color:#b1c2d5;white-space:nowrap;flex:none}
 #tv-board .tv-detail-text{font-weight:650;overflow-wrap:anywhere;word-break:keep-all;min-width:0}
-#tv-board .tv-task-memo{font-size:18px;color:#d7e0ea;overflow-wrap:anywhere;word-break:keep-all;line-height:1.4;padding-top:3px;border-top:1px solid #344052}
+#tv-board .tv-task-memo{grid-column:1/-1;font-size:18px;color:#d7e0ea;overflow-wrap:anywhere;word-break:keep-all;line-height:1.35;padding-top:6px;border-top:1px solid #344052}
 #tv-board .tv-task-memo b{color:#f6deb1;font-weight:700;margin-right:6px}
-#tv-board .tv-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;grid-row:1/-1;border:1px dashed #43556a;border-radius:12px;color:#e4ecf5;text-align:center;padding:28px;font-size:24px;font-weight:700;background:#0d1a29}
-#tv-board .tv-empty small{display:block;font-size:18px;color:var(--tv-muted);font-weight:400;max-width:25em}
-#tv-board .tv-ongoing{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid #344559;padding-top:14px;flex:none;min-width:0}
-#tv-board .tv-ongoing-title{font-size:19px;font-weight:750;color:#c3d2e4;white-space:nowrap}
-#tv-board .tv-ongoing-items{display:flex;gap:9px;flex-wrap:wrap;min-width:0;flex:1}
-#tv-board .tv-ongoing-item{display:flex;align-items:baseline;gap:9px;border-radius:8px;background:#17283a;padding:7px 11px;min-width:0;flex-wrap:wrap}
-#tv-board .tv-ongoing-item strong{font-size:21px;font-weight:750;white-space:nowrap}
-#tv-board .tv-ongoing-item span{font-size:17px;color:#bbcee1;overflow-wrap:anywhere}
-#tv-board .tv-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;flex:none;padding-top:2px}
-#tv-board .tv-page-info{font-size:17px;color:#c6d2df;line-height:1.5}
-#tv-board .tv-pagination{display:flex;gap:8px;align-items:center}
-#tv-board .tv-page-button{min-width:49px;font-size:23px;padding:5px 12px}
-#tv-board .tv-page-button:disabled{opacity:.3;cursor:default}
-#tv-board .tv-notice{font-size:16px;color:#fce0a6;text-align:right}
-@media(min-width:1600px) and (min-height:950px){#tv-board .tv-board-inner{padding:25px 36px 20px;gap:20px}#tv-board .tv-task{padding:17px 22px;gap:9px}#tv-board .tv-task-time{font-size:46px}#tv-board .tv-plate{font-size:36px}#tv-board .tv-task-detail{font-size:24px}#tv-board .tv-car-name{font-size:23px}}
-@media(max-width:1100px){#tv-board .tv-board-inner{padding:16px 18px 14px;gap:13px}#tv-board .tv-title{font-size:27px}#tv-board .tv-header-right{gap:15px}#tv-board .tv-date{font-size:16px}#tv-board .tv-clock{font-size:34px}#tv-board .tv-header-buttons{flex-direction:column;gap:5px}#tv-board .tv-header-buttons .tv-button{font-size:15px;min-height:35px;padding:6px 10px}#tv-board .tv-lanes{gap:16px}#tv-board .tv-lane-title{font-size:26px}#tv-board .tv-lane-total{font-size:17px}#tv-board .tv-task{padding:13px 14px;gap:7px}#tv-board .tv-car-row{gap:7px 10px}#tv-board .tv-car-name{font-size:21px}#tv-board .tv-task-detail{grid-template-columns:37px minmax(0,1fr);font-size:22px;gap:7px}#tv-board .tv-detail-label{font-size:16px}#tv-board .tv-task-state{font-size:17px;padding:5px 8px}#tv-board .tv-ongoing{padding-top:10px;gap:9px}#tv-board .tv-ongoing-title{font-size:17px}#tv-board .tv-ongoing-item strong{font-size:19px}#tv-board .tv-ongoing-item span{font-size:16px}}
-@media(max-width:700px){#tv-board .tv-board-inner{padding:15px 12px;gap:15px}#tv-board .tv-header{align-items:flex-start;gap:12px}#tv-board .tv-brand{font-size:13px}#tv-board .tv-title{font-size:25px;max-width:9em}#tv-board .tv-header-right{flex-direction:column;align-items:flex-end;gap:9px}#tv-board .tv-header-buttons{flex-direction:row}#tv-board .tv-date{font-size:14px}#tv-board .tv-clock{font-size:33px}#tv-board .tv-status-line{font-size:13px;align-items:flex-start}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:22px}#tv-board .tv-cards{grid-template-rows:none;grid-auto-rows:auto}#tv-board .tv-lane-title{font-size:26px}#tv-board .tv-task{gap:9px}#tv-board .tv-plate{font-size:31px}#tv-board .tv-car-name{font-size:21px}#tv-board .tv-task-detail{font-size:21px}#tv-board .tv-footer{align-items:flex-start;flex-wrap:wrap}#tv-board .tv-pagination{margin-left:auto}#tv-board .tv-page-info{font-size:15px}#tv-board .tv-button{font-size:15px;padding:9px 11px}#tv-board .tv-ongoing-items{flex-basis:100%}#tv-board .tv-notice{text-align:left}}
-
-#tv-board [hidden]{display:none!important}
+#tv-board .tv-empty{font-size:20px;font-weight:650;color:#bdcddd;padding:12px 2px}
+#tv-board .tv-empty small{display:none}
+#tv-board .tv-lane.is-empty{grid-column:1/-1;order:2;flex-direction:row;align-items:center;gap:20px;border:1px solid #33475d;background:#0e1b2a;padding:12px 16px;border-radius:10px}
+#tv-board .tv-lane.is-empty .tv-lane-head{border:0;padding:0;gap:20px}
+#tv-board .tv-lane.is-empty .tv-lane-title{font-size:22px}
+#tv-board .tv-lane.is-empty .tv-lane-total{font-size:18px;color:#b9c7d7}
+#tv-board .tv-lane.is-empty .tv-cards{display:none}
+#tv-board[data-layout="single"] .tv-lane:not(.is-empty){grid-column:1/-1}
+#tv-board[data-layout="single"] .tv-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+#tv-board .tv-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;flex:none}
+#tv-board .tv-page-info{font-size:16px;color:#c6d2df;line-height:1.4}
+#tv-board .tv-notice{font-size:16px;color:#fce0a6}
+/* More work uses the full width in fixed grids, never hidden pages. */
+#tv-board[data-density="compact"] .tv-lanes{grid-template-columns:minmax(0,1fr);gap:14px}
+#tv-board[data-density="compact"] .tv-lane{gap:8px}
+#tv-board[data-density="compact"] .tv-lane-title{font-size:24px}
+#tv-board[data-density="compact"] .tv-lane-head{padding-bottom:6px;border-bottom-width:2px}
+#tv-board[data-density="compact"] .tv-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#tv-board[data-density="compact"] .tv-task{padding:10px 11px;grid-template-columns:81px minmax(0,1fr);gap:6px 10px;border-radius:8px;border-left-width:4px}
+#tv-board[data-density="compact"] .tv-task-timeblock{gap:6px}
+#tv-board[data-density="compact"] .tv-task-time{font-size:32px;letter-spacing:-.8px}
+#tv-board[data-density="compact"] .tv-task-state{font-size:15px;padding:3px 5px}
+#tv-board[data-density="compact"] .tv-task-body{gap:6px}
+#tv-board[data-density="compact"] .tv-plate{font-size:27px;letter-spacing:-.5px}
+#tv-board[data-density="compact"] .tv-car-name{font-size:19px}
+#tv-board[data-density="compact"] .tv-unassigned{font-size:21px}
+#tv-board[data-density="compact"] .tv-car-row{gap:4px 9px}
+#tv-board[data-density="compact"] .tv-task-details{gap:4px 13px}
+#tv-board[data-density="compact"] .tv-task-detail{font-size:20px;gap:5px}
+#tv-board[data-density="compact"] .tv-task-location{flex-basis:190px}
+#tv-board[data-density="compact"] .tv-detail-label{font-size:14px}
+#tv-board[data-density="compact"] .tv-task-memo{font-size:16px;padding-top:4px}
+@media(max-width:1500px){#tv-board[data-density="compact"] .tv-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){#tv-board .tv-board-inner{padding:15px 16px 12px;gap:11px}#tv-board .tv-title{font-size:27px}#tv-board .tv-header-right{gap:14px}#tv-board .tv-date{font-size:16px}#tv-board .tv-clock{font-size:34px}#tv-board .tv-header-buttons .tv-button{font-size:15px;min-height:39px;padding:7px 10px}#tv-board .tv-lanes{gap:14px}#tv-board .tv-lane-title{font-size:24px}#tv-board .tv-lane-total{font-size:17px}#tv-board .tv-task{padding:12px;grid-template-columns:86px minmax(0,1fr);gap:8px 11px}#tv-board .tv-task-time{font-size:34px}#tv-board .tv-plate{font-size:28px}#tv-board .tv-car-name{font-size:20px}#tv-board .tv-task-detail{font-size:20px}#tv-board .tv-task-state{font-size:16px;padding:4px 6px}#tv-board .tv-task-location{flex-basis:100%}}
+@media(max-width:700px){#tv-board .tv-board-inner{padding:13px 11px;gap:11px}#tv-board .tv-header{align-items:flex-start;gap:12px}#tv-board .tv-brand{font-size:12px}#tv-board .tv-title{font-size:24px;max-width:9em}#tv-board .tv-header-right{flex-direction:column;align-items:flex-end;gap:8px}#tv-board .tv-header-buttons{gap:5px}#tv-board .tv-date{font-size:14px}#tv-board .tv-clock{font-size:31px}#tv-board .tv-status-line{font-size:13px;align-items:flex-start}#tv-board .tv-readonly{white-space:normal;text-align:right}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:18px}#tv-board .tv-cards,#tv-board[data-layout="single"] .tv-cards,#tv-board[data-density="compact"] .tv-cards{grid-template-columns:minmax(0,1fr)}#tv-board .tv-task{padding:12px;gap:7px 10px}#tv-board .tv-lane.is-empty{padding:10px 12px}#tv-board .tv-lane.is-empty .tv-lane-head{width:100%;justify-content:space-between;gap:10px}#tv-board .tv-task-detail{font-size:19px}#tv-board .tv-page-info{font-size:13px}#tv-board .tv-button{font-size:14px;padding:7px 9px}#tv-board .tv-notice{font-size:14px}}
 
 </style>
 </head>
@@ -604,12 +621,11 @@ body.tv-mode{display:block;background:#0b1420}
       </div>
     </header>
     <div class="tv-status-line"><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span><span class="tv-readonly">실시간 업무 현황</span></div>
-    <div class="tv-lanes">
-      <section class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">당일 배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
-      <section class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납 예정</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
+    <div class="tv-lanes" id="tv-lanes" tabindex="0" aria-label="오늘 전체 배차와 반납 목록">
+      <section id="tv-pickup-lane" class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">당일 배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
+      <section id="tv-return-lane" class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납 예정</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
     </div>
-    <section class="tv-ongoing" id="tv-ongoing" aria-label="그 외 운행 중인 차량" hidden><span class="tv-ongoing-title" id="tv-ongoing-title"></span><div class="tv-ongoing-items" id="tv-ongoing-items"></div></section>
-    <footer class="tv-footer"><div><div class="tv-page-info" id="tv-page-info"></div><div class="tv-notice" id="tv-notice" role="status"></div></div><div class="tv-pagination"><button class="tv-button tv-page-button" id="tv-prev" aria-label="이전 업무 보기" onclick="tvPageStep(-1)">‹</button><button class="tv-button tv-page-button" id="tv-next" aria-label="다음 업무 보기" onclick="tvPageStep(1)">›</button><button class="tv-button" id="tv-auto" aria-pressed="false" onclick="toggleTVAutoPage()">자동 넘김 켜기</button></div></footer>
+    <footer class="tv-footer"><div class="tv-page-info" id="tv-page-info"></div><div class="tv-notice" id="tv-notice" role="status"></div></footer>
   </div>
 </section>
 
@@ -710,7 +726,7 @@ body.tv-mode{display:block;background:#0b1420}
           <div class="card-h"><h2>예약 등록</h2><span class="hint" id="edit-hint"></span></div>
           <div class="card-b">
             <div class="reservation-form-grid">
-              <div class="field reservation-row-name"><label for="f-name">고객명 / 소개처</label><input id="f-name" placeholder="고객명 또는 소개처 입력"></div>
+              <div class="field reservation-row-name"><label for="f-name">고객명 / 소개처</label><input id="f-name" placeholder="고객명 또는 소개처 입력 (선택)"></div>
               <div class="reservation-row-contact">
                 <div class="field"><label for="f-phone">연락처</label><input id="f-phone" placeholder="010-0000-0000"></div>
                 <div class="field"><label for="f-car">차량 / 번호</label><input id="f-car" list="vehicle-options" placeholder="차종 또는 차량번호 검색"><datalist id="vehicle-options"></datalist></div>
@@ -1950,7 +1966,7 @@ function mergeParserResults(local,aiRaw){
 }
 function applyParsedResult(r){
   const plate=resolvePlate(r.plate),car=(plate&&PLATE_MAP[plate]?PLATE_MAP[plate].n:r.car)||'';
-  set('f-name',r.name);set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
+  set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
   set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   document.getElementById('f-ins').value=['완전자차','일반면책'].includes(r.insurance)?r.insurance:'일반면책';
   populateFinanceForm(r);
@@ -2222,11 +2238,11 @@ function matchKakaoReservation(event){
     if(event.phone&&r.phone===event.phone)add(50,'전화번호');else if(event.phone&&r.phone&&r.phone!==event.phone)score-=50;
     if(es&&String(r.start||'').slice(0,10)===es)add(30,'시작일');else if(es&&r.start&&Math.abs(new Date(r.start)-new Date(event.start))>=86400000)score-=20;
     if(ep&&rp&&ep===rp)add(30,'차량번호');if(event.car&&String(r.car||'').includes(event.car.split(' ')[0]))add(15,'차량명');
-    if(ename&&r.name&&(ename.includes(r.name)||r.name.includes(event.customerName||event.sourceName)))add(15,'고객/소개처');
+    if(ename&&reservationCustomerName(r)&&(ename.includes(reservationCustomerName(r))||reservationCustomerName(r).includes(event.customerName||event.sourceName)))add(15,'고객/소개처');
     if(event.pickup&&r.pickup&&(event.pickup.includes(r.pickup)||r.pickup.includes(event.pickup)))add(10,'배차장소');return{reservationId:r.id,score,reasons}
   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
 }
-function kakaoCandidateSummaries(event){return matchKakaoReservation(event).map(m=>{const r=data.find(x=>x.id===m.reservationId);return{id:r.id,name:r.name,phone:r.phone,car:r.car,start:r.start,end:r.end,pickup:r.pickup,score:m.score,reasons:m.reasons}})}
+function kakaoCandidateSummaries(event){return matchKakaoReservation(event).map(m=>{const r=data.find(x=>x.id===m.reservationId);return{id:r.id,name:reservationCustomerName(r),phone:r.phone,car:r.car,start:r.start,end:r.end,pickup:r.pickup,score:m.score,reasons:m.reasons}})}
 function mergeKakaoAIResponse(local,ai){
   if(!ai||!Array.isArray(ai.reservations))return local;const merged={...local,...ai};
   merged.reservations=ai.reservations.map((r,i)=>{const l=local.reservations[i]||{},x={...l,...r};x.plate=resolvePlate(x.plate)||x.plate||'';x.warnings=[...new Set([...(l.warnings||[]),...(r.warnings||[])])];return x});return merged;
@@ -2267,17 +2283,17 @@ function renderKakaoAnalysis(messageCount=0,clusterCount=0){
   document.getElementById('kakao-analysis-summary').textContent=`메시지 ${messageCount||'-'}개 · 묶음 ${clusterCount||'-'}개 · 예약 후보 ${kakaoAnalysisState.filter(r=>r.event).length}개 · 지출/대화 제외 ${(counts.EXPENSE||0)+(counts.CHAT_NOISE||0)}개`;
   const rows=kakaoAnalysisState.map((r,i)=>{const e=r.event,t=r.response.clusterType,label=KAKAO_EVENT_LABELS[t]||t,w=(e?.warnings||r.response.warnings||[]).join(' · ');
     return `<tr style="opacity:${r.ignored?.55:1}"><td><input class="kakao-check" type="checkbox" ${e&&!r.ignored?'checked':''} ${!e?'disabled':''}></td><td><span class="kakao-event ${t==='EXPENSE'?'expense':t==='CHAT_NOISE'?'noise':''}">${esc(label)}</span><div class="hint">점수 ${r.cluster.candidateScore} · ${r.aiUsed?'AI 보정':'로컬 판정'}</div></td>
-      <td>${esc(e?[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' '):'-')}<br><small>${esc(e?.phone||'')}</small></td><td>${esc(e?[e.car,e.plate].filter(Boolean).join(' / '):'-')}</td>
+      <td>${esc(e?kakaoDisplayName(e):'')}<br><small>${esc(e?.phone||'')}</small></td><td>${esc(e?[e.car,e.plate].filter(Boolean).join(' / '):'-')}</td>
       <td>${e?`${esc(fmtShort(e.start))}<br>~ ${esc(fmtShort(e.end))}`:'-'}</td><td>${esc(e?.pickup||'-')}</td><td>${esc(e?.returnLocation||'-')}</td><td>${e?.total!=null?Number(e.total).toLocaleString()+'원':'-'}</td>
       <td>${esc(e?.confidence||r.response.clusterConfidence)}${w?`<div class="kakao-warnings">${esc(w)}</div>`:''}</td><td><div class="kakao-row-actions">${kakaoActionButtons(r,i)}</div></td></tr>`}).join('');
   document.getElementById('kakao-analysis-results').innerHTML=`<table class="kakao-table"><thead><tr><th>선택</th><th>판정</th><th>고객</th><th>차량</th><th>일정</th><th>배차</th><th>반차</th><th>금액</th><th>신뢰도</th><th>처리</th></tr></thead><tbody>${rows||'<tr><td colspan="10">분석 결과가 없습니다.</td></tr>'}</tbody></table>`;
 }
-function kakaoDisplayName(e){return [e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||'(미기재)'}
+function kakaoDisplayName(e){return reservationCustomerName({name:[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||e.name||''})}
 function kakaoCarField(e,existing=''){const p=resolvePlate(e.plate)||e.plate||'';let car=e.car||String(existing||'').replace(/\s*\(.+?\)/,'').trim();return [car,p?`(${p})`:''].filter(Boolean).join(' ')}
 function fillKakaoEventForm(e){clearForm();populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('paste');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);document.getElementById('f-ins').value=['일반면책','완전자차'].includes(e.insurance)?e.insurance:'일반면책';set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
 function chooseKakaoMatch(e){
   const matches=matchKakaoReservation(e).filter(m=>m.score>=50);if(!matches.length)return null;const top=matches[0],second=matches[1];if(top.score>=80&&(!second||top.score-second.score>=30))return data.find(r=>r.id===top.reservationId);
-  const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${r.name} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
+  const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${reservationCustomerName(r)} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
 }
 function saveKakaoHistory(reservationId,action,changedFields,before,after,sourceMessages){
   let h=[];try{h=JSON.parse(localStorage.getItem(KAKAO_HISTORY_STORE)||'[]')}catch(e){}h.push({id:uid(),reservationId,timestamp:new Date().toISOString(),action,changedFields,before,after,sourceMessages});if(h.length>500)h=h.slice(-500);localStorage.setItem(KAKAO_HISTORY_STORE,JSON.stringify(h));
@@ -2285,7 +2301,7 @@ function saveKakaoHistory(reservationId,action,changedFields,before,after,source
 function applyKakaoRow(i){
   const row=kakaoAnalysisState[i],e=row?.event;if(!e||row.ignored)return;if(e.confidence==='LOW'&&!confirm('신뢰도가 LOW입니다. 직접 확인 화면으로 이동할까요?'))return;
   if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);toast('폼에 입력했습니다. 확인 후 예약 저장을 누르세요');return}
-  const target=chooseKakaoMatch(e);if(!target){toast('연결할 기존 예약을 선택하지 않았습니다');return}if(!confirm(`${target.name} 예약에 ${e.action} 내용을 반영할까요?`))return;
+  const target=chooseKakaoMatch(e);if(!target){toast('연결할 기존 예약을 선택하지 않았습니다');return}if(!confirm(`${reservationCustomerName(target)} 예약에 ${e.action} 내용을 반영할까요?`))return;
   snapshot();const before=JSON.parse(JSON.stringify(target)),changed=[];const setField=(key,val)=>{if(val!==''&&val!=null&&target[key]!==val){target[key]=val;changed.push(key)}};
   if(e.action==='CANCEL'){setField('status','cancelled')}
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
@@ -2323,12 +2339,11 @@ function kakaoEventToReservation(e){
 function uploadKakaoRow(i){
   const row=kakaoAnalysisState[i],e=row?.event;if(!e||row.ignored)return;
   if(!(e.action==='CREATE'||e.action==='NEEDS_REVIEW')){toast('신규 예약만 바로 올릴 수 있습니다');return}
-  if(!e.name&&!e.customerName&&!e.sourceName){toast('고객명이 없어 올릴 수 없습니다 — 직접 수정하세요');return}
   const rec=kakaoEventToReservation(e);
   const invalid=validateReservation(rec);if(invalid){fillKakaoEventForm(e);toast(invalid);return}
   const dup=findKakaoConflict(rec);
-  const warn=dup?`\n\n⚠️ ${dup.name} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
-  if(!confirm(`아래 예약을 바로 등록할까요?${warn}\n\n${rec.name} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
+  const warn=dup?`\n\n⚠️ ${reservationCustomerName(dup)} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
+  if(!confirm(`아래 예약을 바로 등록할까요?${warn}\n\n${reservationCustomerName(rec)} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
   snapshot();data.unshift(rec);save();render();row.ignored=true;renderKakaoAnalysis();
   toast('예약을 등록했습니다');
 }
@@ -2336,7 +2351,7 @@ function findKakaoConflict(rec){return reservationConflicts(rec)[0]||null}
 
 function confirmBulkReservations(items,label){
   const invalid=items.map((item,index)=>({item,index,error:validateReservation(item.rec)})).filter(x=>x.error);
-  if(invalid.length){const first=invalid[0];toast(`${invalid.length}건 확인 필요 · ${first.index+1}번 ${first.item.rec.name||'예약'}: ${first.error} 일괄 등록하지 않았습니다.`);return false}
+  if(invalid.length){const first=invalid[0];toast(`${invalid.length}건 확인 필요 · ${first.index+1}번 ${reservationCustomerName(first.item.rec)}: ${first.error} 일괄 등록하지 않았습니다.`);return false}
   // Validate the entire batch before asking about conflicts or changing any record.
   // Ascending starts also detects short preparation gaps between new reservations.
   const checked=[...data];
@@ -2347,7 +2362,7 @@ function confirmBulkReservations(items,label){
   return confirm(`${label} ${items.length}건을 한 번에 등록할까요?`);
 }
 function uploadAllKakao(){
-  const targets=kakaoAnalysisState.filter(r=>r.event&&!r.ignored&&(r.event.action==='CREATE'||r.event.action==='NEEDS_REVIEW')&&(r.event.name||r.event.customerName||r.event.sourceName));
+  const targets=kakaoAnalysisState.filter(r=>r.event&&!r.ignored&&(r.event.action==='CREATE'||r.event.action==='NEEDS_REVIEW'));
   if(!targets.length){toast('바로 올릴 신규 예약이 없습니다');return}
   const items=targets.map(r=>({r,rec:kakaoEventToReservation(r.event)}));
   if(!confirmBulkReservations(items,'신규 예약'))return;
@@ -2485,8 +2500,8 @@ function renderReservationAudit(){
   if(!rows.length){out.className='audit-empty';out.innerHTML='검수 결과가 없습니다.';return}
   const body=visible.map((r,i)=>{
     const e=r.event,m=r.match?.top,matched=m?data.find(x=>x.id===m.reservationId):null,source=auditSourceText(r),realIndex=rows.indexOf(r);
-    const customer=[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||'(미기재)';
-    const matchText=matched?`${matched.name}<br><small>${esc(fmtShort(matched.start))} · ${esc(matched.car)} · ${m.score}점</small>`:'-';
+    const customer=kakaoDisplayName(e);
+    const matchText=matched?`${esc(reservationCustomerName(matched))}<br><small>${esc(fmtShort(matched.start))} · ${esc(matched.car)} · ${m.score}점</small>`:'-';
     const reason=m?(m.reasons||[]).join(' · '):'일치 후보 없음';
     const actions=r.auditStatus==='MISSING'
       ?`<button class="btn btn-gold" onclick="auditFillReservation(${realIndex})">폼에 등록</button><button class="btn btn-ghost" onclick="auditIgnoreRow(${realIndex})">무시</button>`
@@ -2576,8 +2591,16 @@ function reservationConflicts(r,records=data){
   if(!vehicle||r.status==='cancelled'||!Number.isFinite(start)||!Number.isFinite(end))return [];
   return records.filter(o=>o.id!==r.id&&!o.deletedAt&&o.status!=='cancelled'&&reservationVehicleId(o)===vehicle&&start<reservationTime(o.end)&&reservationTime(o.start)<end);
 }
+// Display-only treatment of known legacy placeholders; stored source records stay intact.
+function reservationCustomerName(record){
+  const raw=typeof record==='string'?record:String(record?.name??'');
+  const value=raw.trim();
+  if(!value)return '';
+  if(/^\(미기재\)$/.test(value))return '';
+  if(/^고객명\s+미기재(?:\s*·\s*\d{4}|\s*\(\s*연락처\s*끝\s*\d{4}\s*\))?$/.test(value))return '';
+  return raw;
+}
 function validateReservation(r){
-  if(!String(r.name||'').trim()||r.name==='(미기재)')return '고객명 또는 소개처를 입력하세요.';
   const start=reservationTime(r.start),end=reservationTime(r.end);
   if(!Number.isFinite(start)||!Number.isFinite(end))return '대여 시작과 반납 일시를 정확히 입력하세요.';
   if(end<=start)return '반납 일시는 대여 시작보다 늦어야 합니다.';
@@ -2588,7 +2611,7 @@ function validateReservation(r){
 }
 function confirmReservationWarnings(r,records=data){
   const conflicts=reservationConflicts(r,records);
-  if(conflicts.length)return confirm(`같은 차량의 일정이 ${conflicts.length}건 겹칩니다.\n${conflicts.map(o=>`${o.name||'예약'} · ${fmt(o.start)} ~ ${fmt(o.end)}`).join('\n')}\n\n중복을 확인하고 저장하시겠습니까?`);
+  if(conflicts.length)return confirm(`같은 차량의 일정이 ${conflicts.length}건 겹칩니다.\n${conflicts.map(o=>`${reservationCustomerName(o)} · ${fmt(o.start)} ~ ${fmt(o.end)}`).join('\n')}\n\n중복을 확인하고 저장하시겠습니까?`);
   const vehicle=reservationVehicleId(r);
   const tight=vehicle&&records.find(o=>o.id!==r.id&&o.status!=='cancelled'&&!o.deletedAt&&reservationVehicleId(o)===vehicle&&reservationTime(r.start)>=reservationTime(o.end)&&reservationTime(r.start)-reservationTime(o.end)<3600000);
   if(tight)return confirm('이 차량의 이전 반납과 다음 배차 사이가 1시간 미만입니다. 준비·이동 시간을 확인하고 저장하시겠습니까?');
@@ -2611,7 +2634,7 @@ function updateFinanceBalance(){
 }
 function reservationFormRecord(){
   const car=val('f-car'),pickup=val('f-pickup')||'사무실';
-  const candidate={name:val('f-name'),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
+  const candidate={name:reservationCustomerName({name:val('f-name')}),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
   candidate.vehicleId=reservationVehicleId({car});
   const selected=document.getElementById('f-car').dataset.fullPlate;
   if(selected&&PLATE_MAP[selected]&&car===`${PLATE_MAP[selected].n} (${selected.slice(-4)})`)candidate.vehicleId=selected;
@@ -2656,7 +2679,7 @@ function clearForm(){
 function editRes(id){
   const original=data.find(x=>x.id===id);if(!original)return;
   const r=normalizeReservationLocationRecord(original);clearForm();
-  set('f-name',r.name);set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
+  set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   set('f-ins',['일반면책','완전자차'].includes(r.ins)?r.ins:'');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
   const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
@@ -2667,7 +2690,7 @@ function editRes(id){
 function setReservationStatus(id,status){
   const r=data.find(x=>x.id===id);if(!r||!['wait','active','done','cancelled'].includes(status)||r.status===status)return;
   if(status==='active'&&!reservationVehicleId(r)){toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);return}
-  if(!confirm(`${r.name||'예약'} · ${status==='done'?'실제 반납을 확인했습니까?':status==='active'?'배차 완료로 변경할까요?':'상태를 변경할까요?'}`))return;
+  if(!confirm(`${reservationCustomerName(r)} · ${status==='done'?'실제 반납을 확인했습니까?':status==='active'?'배차 완료로 변경할까요?':'상태를 변경할까요?'}`))return;
   snapshot();r.status=status;r[status==='active'?'dispatchedAt':status==='done'?'returnedAt':'statusChangedAt']=new Date().toISOString();save();render();
 }
 function cycleStatus(id){const r=data.find(x=>x.id===id);if(!r)return;if(r.status==='cancelled'||r.status==='done'){editRes(id);return}setReservationStatus(id,r.status==='active'?'done':'active')}
@@ -2677,7 +2700,7 @@ function renderPast(){
   const el=document.getElementById('past-list');if(!el)return;
   const now=new Date();const q=(document.getElementById('past-search')?.value||'').toLowerCase();
   const rows=data.filter(r=>['done','cancelled'].includes(r.status)&&reservationTime(r.end)<Date.now())
-    .filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')+' '+(r.ret||'')).toLowerCase().includes(q))
+    .filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')+' '+(r.ret||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(b.start||'').localeCompare(String(a.start||'')));
   const total=data.filter(r=>['done','cancelled'].includes(r.status)&&reservationTime(r.end)<Date.now()).length;
   document.getElementById('nav-past').textContent=total;
@@ -2716,7 +2739,7 @@ function resCard(r){
   const mapUrl=destination?'https://map.kakao.com/?q='+encodeURIComponent(destination):'';
   const alerts=dashboardAttentionReasons(r);
   return `<article class="res ${today?'today':''} ${conflict?'conflict':''}">
-    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(r.name||'고객명 미기재')}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
+    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(reservationCustomerName(r))}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
     <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(r.ins||'미정')}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<details class="full res-memo"><summary>메모 보기</summary><div class="res-memo-content">${esc(r.memo)}</div></details>`:''}</div>
     ${alerts.length?`<div class="res-alert">${esc(alerts.join(' · '))}</div>`:''}
     <div class="res-actions">${phone?`<a class="res-action" href="tel:${esc(phone)}">전화</a>`:''}${mapUrl?`<a class="res-action" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">길찾기</a>`:''}${reservationActionButtons(r)}<button class="link" onclick="editRes(${id})">수정</button><button class="link del" onclick="delRes(${id})">삭제</button></div>
@@ -2734,7 +2757,7 @@ function resTable(rows){
   const body=rows.map(r=>{
     const today=(r.start||'').slice(0,10)===t,conflict=hasConflict(r),id=uiArg(r.id),plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'',carName=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
     const ed=(field,cls,val,type='')=>`<td class="${cls} editable" data-id="${esc(r.id)}" data-field="${field}" ${type?'data-type="'+type+'"':''} onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
-    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
+    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
   }).join('');
   return `<div class="res-table-wrap"><table class="res-table">${head}<tbody>${body}</tbody></table></div>`;
 }
@@ -2777,7 +2800,7 @@ function dashboardUpcomingRecord(r){
 function dashboardAttentionReasons(r){
   if(!dashboardOpenRecord(r))return[];
   const reasons=[];if(!r.start||!r.end)reasons.push('일정 미입력');else if(String(r.end)<=String(r.start))reasons.push('반납 시간 확인');
-  if(!r.name||r.name==='(미기재)'||!r.phone)reasons.push('고객정보 확인');
+  if(!r.phone)reasons.push('고객정보 확인');
   if(hasConflict(r))reasons.push('동일 차량 일정 중복');
   const now=typeof koreanNow==='function'?koreanNow():toLocalDT(new Date());
   const nowText=typeof now==='string'?now:toLocalDT(now);
@@ -2795,10 +2818,10 @@ function renderDashboard(){
     if(!dashboardMetricMatch(r))return false;
     if(dashboardMetric==='all'&&dashboardPeriod==='upcoming'&&!dashboardUpcomingRecord(r))return false;
     if(dashboardMetric==='all'&&range){if(r.status==='cancelled')return false;const start=String(r.start||'').slice(0,10),end=String(r.end||r.start||'').slice(0,10);const intersects=start&&start<=range[1]&&end>=range[0];if(!intersects&&!(dashboardPeriod==='today'&&r.status==='active'))return false}
-    if(q&&![r.name,r.car,r.phone,r.pickup,r.ret,r.memo].join(' ').toLowerCase().includes(q))return false;return true;
+    if(q&&![reservationCustomerName(r),r.car,r.phone,r.pickup,r.ret,r.memo].join(' ').toLowerCase().includes(q))return false;return true;
   });
   const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
-  rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||String(a.name||'').localeCompare(String(b.name||'')));
+  rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||reservationCustomerName(a).localeCompare(reservationCustomerName(b)));
   const periodLabels={upcoming:'예정 예약 · 운행중',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
   document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||(dashboardPeriod==='upcoming'?periodLabels.upcoming:periodLabels[dashboardPeriod]+' 업무');
   document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 예정 예약·운행 현황';
@@ -2843,12 +2866,12 @@ function paint(id,rows){
 function renderTrash(){
   const rows=typeof getDeletedReservations==='function'?getDeletedReservations():[];
   document.getElementById('trash-count').textContent=rows.length+'건';
-  document.getElementById('trash-list').innerHTML=rows.length?rows.map(r=>`<article class="trash-item"><div><b>${esc(r.name||'고객명 미기재')}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreReservation(${uiArg(r.id)})">복원</button></article>`).join(''):'<div class="empty">삭제한 예약이 없습니다.</div>';
+  document.getElementById('trash-list').innerHTML=rows.length?rows.map(r=>`<article class="trash-item"><div><b>${esc(reservationCustomerName(r))}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreReservation(${uiArg(r.id)})">복원</button></article>`).join(''):'<div class="empty">삭제한 예약이 없습니다.</div>';
   document.getElementById('nav-trash').textContent=rows.length;
   const recovery=typeof getLocalRecoveryReservations==='function'?getLocalRecoveryReservations():[];
   document.getElementById('local-recovery-panel').hidden=recovery.length===0;
   document.getElementById('local-recovery-count').textContent=recovery.length+'건';
-  document.getElementById('local-recovery-list').innerHTML=recovery.map(r=>`<article class="trash-item"><div><b>${esc(r.name||'고객명 미기재')}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreLocalRecovery(${uiArg(r.id)})">복원</button></article>`).join('');
+  document.getElementById('local-recovery-list').innerHTML=recovery.map(r=>`<article class="trash-item"><div><b>${esc(reservationCustomerName(r))}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreLocalRecovery(${uiArg(r.id)})">복원</button></article>`).join('');
 }
 window.addEventListener('reservation-trash-changed',()=>{const rows=typeof getDeletedReservations==='function'?getDeletedReservations():[];document.getElementById('nav-trash').textContent=rows.length;if(document.getElementById('view-trash').classList.contains('on'))renderTrash()});
 
@@ -2858,7 +2881,7 @@ function renderReservations(){
   const q=(document.getElementById('search2').value||'').toLowerCase();
   const now=new Date();
   const rows=data.filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())) // 미반납·미처리 예약은 예정시간이 지나도 유지
-    .filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q))
+    .filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
   if(effectiveViewMode()==='card'){el.innerHTML='<button class="btn btn-ghost" onclick="clearForm();openReservationPanel()" style="margin-bottom:12px">＋ 예약 추가</button>'+(rows.length?rows.map(resCard).join(''):'<div class="empty">표시할 예약이 없습니다.</div>');return}
   const t=todayStr();
@@ -2878,7 +2901,7 @@ function renderReservations(){
       <td class="editable" data-id="${esc(r.id)}" data-field="start" data-type="dt" onclick="startEdit(this)">${fmtShort(r.start)}</td>
       <td class="editable" data-id="${esc(r.id)}" data-field="end" data-type="dt" onclick="startEdit(this)">${fmtShort(r.end)}</td>
       ${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}
-      <td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
+      <td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
       ${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup||'사무실')}
       ${ed('balance','c-bal',reservationBalanceLabel(r))}
       <td>${statusMini(r.status)}</td>
@@ -2895,7 +2918,7 @@ function insertBetween(idx){
   const rows=[...data].filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
   // 검색 필터 반영
   const q=(document.getElementById('search2').value||'').toLowerCase();
-  const shown=rows.filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q));
+  const shown=rows.filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q));
   const before=idx>=0?shown[idx]:null;
   const after=idx>=0?shown[idx+1]:shown[0];
   let ds='';
@@ -3025,7 +3048,7 @@ function renderGantt(){
     cols.forEach(d=>{
       const ds=toLocalDT(d).slice(0,10);
       const hit=data.find(r=>r.status!=='cancelled'&&r.car&&(r.car.includes('('+p+')')||r.car.includes('('+p.slice(-4)+')'))&&r.start&&r.end&&new Date(r.start)<=new Date(ds+'T23:59')&&new Date(r.end)>=new Date(ds+'T00:00'));
-      if(hit){const who=esc(hit.name||'(미기재)');
+      if(hit){const who=esc(reservationCustomerName(hit));
         html+=`<td><div class="bar" title="클릭하여 이름 수정: ${who}" onclick="editGanttName('${hit.id}')">${who}</div></td>`}
       else html+='<td class="free">○</td>';
     });
@@ -3036,11 +3059,11 @@ function renderGantt(){
 // 간트 셀에서 임차인명 바로 수정
 function editGanttName(id){
   const r=data.find(x=>x.id===id);if(!r)return;
-  const cur=(r.name&&r.name!=='(미기재)')?r.name:'';
+  const cur=reservationCustomerName(r);
   const v=prompt('임차인명을 입력하세요',cur);
   if(v===null)return; // 취소
-  snapshot();r.name=v.trim()||'(미기재)';save();render();
-  toast('임차인명 수정: '+r.name);
+  snapshot();r.name=reservationCustomerName({name:v.trim()});save();render();
+  toast('임차인명 수정: '+reservationCustomerName(r));
 }
 let vehQuery='';
 function filterVeh(v){vehQuery=(v||'').toLowerCase();renderVehicles()}
@@ -3121,8 +3144,8 @@ function renderScheduleBoard(){
           const maxSpan=nDays-i;
           if(span>maxSpan)span=maxSpan;if(span<1)span=1;
           const st={wait:'',active:'active',done:'done'}[r.status]||'';
-          const label=esc(r.name||'(미기재)')+(r.phone?' / '+r.phone.replace(/(\d{3})-?\d{4}-?(\d{4})/,'$1-****-$2'):'');
-          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(r.name||'')} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="editRes(${uiArg(r.id)})">${label}</div>`;
+          const label=esc(reservationCustomerName(r))+(r.phone?' / '+r.phone.replace(/(\d{3})-?\d{4}-?(\d{4})/,'$1-****-$2'):'');
+          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(reservationCustomerName(r))} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="editRes(${uiArg(r.id)})">${label}</div>`;
         }
       });
       html+=`<div class="sb-cell ${cls}">${barHtml}</div>`;
@@ -3248,7 +3271,7 @@ function buildSheetRows(){
       대여예정일시:fmtSheetDT(r.start,first),
       반납예정일시:fmtSheetDT(r.end,false),
       차량:carName, 차량번호:plate,
-      임차인명:(r.name==='(미기재)'?'':r.name)||'',
+      임차인명:reservationCustomerName(r),
       임차인연락처:(r.phone||'').replace(/-/g,'.'),
       배차:r.pickup||'', 회차:r.ret||r.pickup||'사무실',
     });
@@ -3321,7 +3344,7 @@ function exportExcel(){
     const plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
     const carName=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
     return {대여예정일시:fmt(r.start)==='-'?'':fmt(r.start),반납예정일시:fmt(r.end)==='-'?'':fmt(r.end),
-      차량:carName,차량번호:plate,임차인명:r.name,임차인연락처:r.phone,배차:r.pickup,회차:r.ret||r.pickup||'사무실',
+      차량:carName,차량번호:plate,임차인명:reservationCustomerName(r),임차인연락처:r.phone,배차:r.pickup,회차:r.ret||r.pickup||'사무실',
       잔금:r.balance||'',보험:r.ins,무보험차상해:'불가',일수:r.days,상태:map[r.status]||r.status};
   });
   const ws=XLSX.utils.json_to_sheet(out);
@@ -3550,7 +3573,7 @@ function auditLocalVerdict(row){
   return'NEEDS_REVIEW';
 }
 function auditCandidateMatches(e){
-  return matchKakaoReservation(e).slice(0,5).map(m=>{const r=data.find(x=>x.id===m.reservationId)||{};return{id:r.id||'',score:m.score,reasons:m.reasons||[],name:r.name||'',phone:r.phone||'',car:r.car||'',start:r.start||'',end:r.end||'',pickup:r.pickup||'',ret:r.ret||r.returnLocation||r.pickup||'',status:r.status||'',memo:r.memo||''}});
+  return matchKakaoReservation(e).slice(0,5).map(m=>{const r=data.find(x=>x.id===m.reservationId)||{};return{id:r.id||'',score:m.score,reasons:m.reasons||[],name:reservationCustomerName(r),phone:r.phone||'',car:r.car||'',start:r.start||'',end:r.end||'',pickup:r.pickup||'',ret:r.ret||r.returnLocation||r.pickup||'',status:r.status||'',memo:r.memo||''}});
 }
 function auditFullSource(row){return(row.cluster?.messages||[]).map(m=>`[${m.sender}] [${m.time||''}] ${m.text}`).join('\n').slice(0,6000)}
 function auditBuildItem(row,index){
@@ -3629,9 +3652,9 @@ function renderReservationAudit(){
   const counts=v=>base.filter(r=>!r.ignored&&r.finalVerdict===v).length;document.getElementById('audit-msg-count').textContent=state.messageCount||0;document.getElementById('audit-candidate-count').textContent=base.length;
   document.getElementById('audit-ok-count').textContent=counts('MATCHED');document.getElementById('audit-missing-count').textContent=counts('LIKELY_MISSING')+counts('POSSIBLE_MISSING');document.getElementById('audit-related-count').textContent=base.filter(r=>AUDIT_RELATED_VERDICTS.has(r.finalVerdict)).length;document.getElementById('audit-check-count').textContent=counts('NEEDS_REVIEW')+counts('AI_DISAGREEMENT')+counts('INSUFFICIENT_INFORMATION');
   const out=document.getElementById('audit-results');if(!rows.length){out.className='audit-empty';out.innerHTML='검수 결과가 없습니다.';return}
-  const body=visible.map(r=>{const e=r.event||{},m=r.finalResult?.matchedReservationId?data.find(x=>x.id===r.finalResult.matchedReservationId):r.match?.top?data.find(x=>x.id===r.match.top.reservationId):null,realIndex=base.indexOf(r),customer=[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||'(미기재)',verdict=r.finalVerdict||'NEEDS_REVIEW',source=auditFullSource(r),reasons=r.finalResult?.reasons||r.openaiResult?.reasons||[],warnings=[...(e.warnings||[]),...(r.finalResult?.warnings||[])];
+  const body=visible.map(r=>{const e=r.event||{},m=r.finalResult?.matchedReservationId?data.find(x=>x.id===r.finalResult.matchedReservationId):r.match?.top?data.find(x=>x.id===r.match.top.reservationId):null,realIndex=base.indexOf(r),customer=kakaoDisplayName(e),verdict=r.finalVerdict||'NEEDS_REVIEW',source=auditFullSource(r),reasons=r.finalResult?.reasons||r.openaiResult?.reasons||[],warnings=[...(e.warnings||[]),...(r.finalResult?.warnings||[])];
     const actions=r.excluded?'<button class="btn btn-ghost" disabled>제외됨</button>':['LIKELY_MISSING','POSSIBLE_MISSING'].includes(verdict)?`<button class="btn btn-gold" onclick="auditUploadRow(${realIndex})" title="폼 안 거치고 바로 예약 저장">⬆ 바로 등록</button><button class="btn btn-ghost" onclick="auditFillReservation(${realIndex})">폼에서 확인</button><button class="btn btn-ghost" onclick="auditIgnoreRow(${realIndex})">무시</button>`:m?`<button class="btn btn-gold" onclick="auditOpenMatched(${realIndex})">기존 예약 열기</button><button class="btn btn-ghost" onclick="auditFillReservation(${realIndex})">내용 비교</button><button class="btn btn-ghost" onclick="auditIgnoreRow(${realIndex})">검수 완료</button>`:`<button class="btn btn-gold" onclick="auditFillReservation(${realIndex})">직접 확인</button><button class="btn btn-ghost" onclick="auditIgnoreRow(${realIndex})">무시</button>`;
-    const matched=m?`${esc(m.name||'-')}<br><small>${esc(fmtShort(m.start))} · ${esc(m.car||'-')}</small>`:'-';
+    const matched=m?`${esc(reservationCustomerName(m))}<br><small>${esc(fmtShort(m.start))} · ${esc(m.car||'-')}</small>`:'-';
     return`<tr><td><span class="audit-badge ${auditBadgeClass(verdict)}">${esc(auditStatusLabel(verdict))}</span><br>${auditConfidenceHtml(r.finalConfidence)}</td><td>${esc(r.cluster?.messages?.[0]?.chatDate||'-')}<br><small>${esc(r.cluster?.messages?.[0]?.sender||'')}</small></td><td>${esc(fmtShort(e.start))}<br>~ ${esc(fmtShort(e.end))}</td><td><b>${esc(customer)}</b><br><small>${esc(e.phone||'-')}</small></td><td>${esc([e.car,e.plate].filter(Boolean).join(' / ')||'-')}</td><td>${esc(e.pickup||'-')}<br><small>반차 ${esc(e.returnLocation||e.pickup||'-')}</small></td><td>${matched}</td><td class="audit-ai-cell">${esc(auditProviderText(r.claudeResult))}<small>${esc((r.claudeResult?.reasons||[]).slice(0,2).join(' · '))}</small></td><td><details><summary>근거·원문·AI 상세</summary><div class="audit-source">${esc(source)}</div><div class="audit-detail-grid">${auditJsonBox('로컬 분석',r.localEvent)}${auditJsonBox('Claude / 최종', {claude:r.claudeResult,final:r.finalResult,errors:r.aiErrors})}</div></details>${reasons.length?`<div class="hint">${esc(reasons.join(' · '))}</div>`:''}${warnings.length?`<div class="kakao-warnings">${esc([...new Set(warnings)].join(' · '))}</div>`:''}</td><td><div class="audit-actions">${actions}</div></td></tr>`}).join('');
   out.className='';out.innerHTML=`<table class="audit-table"><thead><tr><th>최종 판정</th><th>카톡 작성</th><th>예약 일정</th><th>고객</th><th>차량</th><th>배차/반차</th><th>기존 예약 후보</th><th>Claude 판정</th><th>판정 근거</th><th>처리</th></tr></thead><tbody>${body||'<tr><td colspan="10" class="audit-empty">조건에 맞는 결과가 없습니다.</td></tr>'}</tbody></table>`;
 }
@@ -3640,7 +3663,7 @@ function auditFillReservation(i){const row=reservationAuditState.rows[i];if(!row
 
 /* ===== 검수 이벤트 → 예약 레코드 (바로 등록용) ===== */
 function auditEventToReservation(e){
-  const name=[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||e.name||'';
+  const name=kakaoDisplayName(e);
   const plate=resolvePlate(e.plate)||e.plate||'';
   const car=[e.car||'',plate?`(${plate})`:''].filter(Boolean).join(' ');
   return normalizeReservationLocationRecord({
@@ -3653,18 +3676,17 @@ function auditEventToReservation(e){
 }
 function auditUploadRow(i){
   const row=reservationAuditState.rows[i],e=row?.event;if(!e){toast('등록할 예약 정보가 없습니다');return}
-  if(!e.customerName&&!e.sourceName&&!e.name){toast('고객명이 없어 등록할 수 없습니다 — 직접 확인하세요');return}
   const rec=auditEventToReservation(e);
   const invalid=validateReservation(rec);if(invalid){fillKakaoEventForm(e);toast(invalid);return}
   const dup=findKakaoConflict(rec);
-  const warn=dup?`\n\n⚠️ ${dup.name} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
-  if(!confirm(`누락 예약을 바로 등록할까요?${warn}\n\n${rec.name} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
+  const warn=dup?`\n\n⚠️ ${reservationCustomerName(dup)} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
+  if(!confirm(`누락 예약을 바로 등록할까요?${warn}\n\n${reservationCustomerName(rec)} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
   snapshot();data.unshift(rec);save();render();row.ignored=true;renderReservationAudit();
   const miss=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)).length;document.getElementById('nav-audit').textContent=miss;
   toast('예약을 등록했습니다');
 }
 function auditUploadAllMissing(){
-  const targets=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)&&r.event&&(r.event.customerName||r.event.sourceName||r.event.name));
+  const targets=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)&&r.event);
   if(!targets.length){toast('자동 등록할 누락 예약이 없습니다');return}
   const items=targets.map(r=>({r,rec:auditEventToReservation(r.event)}));
   if(!confirmBulkReservations(items,'누락 가능성 예약'))return;
@@ -3707,8 +3729,7 @@ function restoreTVMode(){
 document.addEventListener('keydown',e=>{if(tvMode&&e.key==='Escape'&&!document.fullscreenElement){e.preventDefault();exitTVMode()}});
 
 /* Read-only display. These functions do not write reservation records. */
-let tvBoardPage=0,tvBoardAuto=true,tvBoardLastTurn=Date.now(),tvBoardDay='',tvBoardTimer=null;
-function tvBoardCapacity(){return window.innerHeight<850?1:window.innerHeight>=1250&&window.innerWidth>1100?3:2}
+let tvBoardDay='',tvBoardTimer=null;
 function tvBoardGroups(records=data,now=Date.now()){
   const today=koreanNow(new Date(now)).slice(0,10),live=records.filter(r=>!r.deletedAt&&r.status!=='cancelled');
   const pickup=live.filter(r=>String(r.start||'').slice(0,10)===today);
@@ -3727,9 +3748,9 @@ function tvVehicleDisplay(r){
   return{plate,name:name||'차종 미기재'};
 }
 function tvDisplayMemo(r){
-  const memo=String(r.memo||'');
-  if(!/^[^\n]+\.hwp\s*·\s*\d+번\n/.test(memo)||!memo.includes('원문: '))return memo;
-  return memo.split('\n').filter(line=>line.startsWith('확인: ')).map(line=>line.slice(4)).join(' · ');
+  let memo=String(r.memo||'');
+  if(/^[^\n]+\.hwp\s*·\s*\d+번\n/.test(memo)&&memo.includes('원문: '))memo=memo.split('\n').filter(line=>line.startsWith('확인: ')).map(line=>line.slice(4)).join(' · ');
+  return memo.split('\n').map(line=>line.replace(/고객명 미기재\s*[:：]\s*연락처로 구분/g,'').replace(/^[ ·;,]+|[ ·;,]+$/g,'').trim()).filter(Boolean).join('\n');
 }
 function tvTaskCard(r,type,now=Date.now()){
   const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),today=koreanNow(new Date(now)).slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
@@ -3739,32 +3760,25 @@ function tvTaskCard(r,type,now=Date.now()){
   if(late)status='배차 확인';
   const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정'),displayMemo=tvDisplayMemo(r);
   const dayLabel=valid&&day!==today?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
-  return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-top"><div class="tv-time-wrap">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span></div><span class="tv-task-state">${esc(status)}</span></div><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(r.name||'고객명 미기재')}</span></div><div class="tv-task-detail"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo)}</div>`:''}</article>`;
+  return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-timeblock">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span><span class="tv-task-state">${esc(status)}</span></div><div class="tv-task-body"><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-details"><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(reservationCustomerName(r))}</span></div><div class="tv-task-detail tv-task-location"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div></div></div>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo)}</div>`:''}</article>`;
 }
-function tvBoardPageCount(groups=tvBoardGroups(),capacity=tvBoardCapacity()){return Math.max(1,Math.ceil(groups.pickup.length/capacity),Math.ceil(groups.returns.length/capacity),Math.ceil(groups.ongoing.length/3))}
 function renderTVBoard(){
   const board=document.getElementById('tv-board');if(!board||board.hidden)return;
-  const groups=tvBoardGroups(),capacity=tvBoardCapacity(),pageCount=tvBoardPageCount(groups,capacity);
-  if(tvBoardDay!==groups.today){tvBoardDay=groups.today;tvBoardPage=0}
-  tvBoardPage=((tvBoardPage%pageCount)+pageCount)%pageCount;
+  const groups=tvBoardGroups(),total=groups.pickup.length+groups.returns.length;
+  tvBoardDay=groups.today;
+  board.dataset.layout=groups.pickup.length&&groups.returns.length?'split':'single';
+  board.dataset.density=total>8?'compact':'comfortable';
   const lane=(id,rows,type)=>{
-    const pages=Math.max(1,Math.ceil(rows.length/capacity)),page=tvBoardPage%pages,remaining=rows.filter(r=>type==='pickup'?!['active','done'].includes(r.status):r.status!=='done').length;
+    const remaining=rows.filter(r=>type==='pickup'?!['active','done'].includes(r.status):r.status!=='done').length;
     document.getElementById('tv-'+id+'-count').textContent=type==='return'?`예정 ${rows.length}건`:`남은 ${remaining}건 · 전체 ${rows.length}건`;
-    const cards=document.getElementById('tv-'+id+'-cards');cards.style.setProperty('--tv-rows',Math.min(capacity,Math.max(1,rows.length)));
-    cards.innerHTML=rows.length?rows.slice(page*capacity,(page+1)*capacity).map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">오늘 ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다<small>${type==='pickup'?'오늘 배차하는 예약만 표시됩니다.':'오늘 반납 예정인 차량만 표시됩니다.'}</small></div>`;
-    return `${type==='pickup'?'배차':'반납'} ${page+1}/${pages}`;
+    document.getElementById('tv-'+id+'-lane').classList.toggle('is-empty',rows.length===0);
+    document.getElementById('tv-'+id+'-cards').innerHTML=rows.length?rows.map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">오늘 ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다</div>`;
   };
-  const pageLabels=[lane('pickup',groups.pickup,'pickup'),lane('return',groups.returns,'return')];
-  const ongoing=document.getElementById('tv-ongoing');ongoing.hidden=!groups.ongoing.length;
-  document.getElementById('tv-ongoing-title').textContent=`그 외 운행 중 ${groups.ongoing.length}대`;
-  const ongoingPages=Math.max(1,Math.ceil(groups.ongoing.length/3)),ongoingPage=tvBoardPage%ongoingPages;
-  document.getElementById('tv-ongoing-items').innerHTML=groups.ongoing.slice(ongoingPage*3,(ongoingPage+1)*3).map(r=>{const v=tvVehicleDisplay(r),end=String(r.end||''),endLabel=Number.isFinite(reservationTime(end))?`${Number(end.slice(5,7))}/${Number(end.slice(8,10))} ${end.slice(11,16)} 반납`:'반납 일시 확인';return `<div class="tv-ongoing-item"><strong>${esc(v.plate||'차량 미배정')}</strong><span>${esc(v.name)} · ${esc(endLabel)}</span></div>`}).join('');
-  if(ongoingPages>1)pageLabels.push(`운행 중 ${ongoingPage+1}/${ongoingPages}`);
-  document.getElementById('tv-page-info').textContent=pageLabels.join(' · ')+' · 시간순 · 미완료 우선';
-  document.getElementById('tv-prev').disabled=pageCount===1;document.getElementById('tv-next').disabled=pageCount===1;
-  const auto=document.getElementById('tv-auto');auto.setAttribute('aria-pressed',String(tvBoardAuto));auto.textContent=tvBoardAuto?'자동 넘김 중 · 20초':'자동 넘김 켜기';
+  lane('pickup',groups.pickup,'pickup');lane('return',groups.returns,'return');
+  document.getElementById('tv-page-info').textContent=`당일 배차 ${groups.pickup.length}건 · 반납 예정 ${groups.returns.length}건 · 전체 표시 · 시간순 · 미완료 우선`;
   updateTVClock();
 }
+
 function updateTVClock(){
   const board=document.getElementById('tv-board');if(!board||board.hidden)return;
   const now=new Date();
@@ -3774,18 +3788,17 @@ function updateTVClock(){
   const syncEl=document.getElementById('tv-sync');syncEl.textContent=sync.message||'저장 상태 확인 중';syncEl.dataset.state=sync.status||'connecting';
   const full=document.getElementById('tv-fullscreen');full.textContent=document.fullscreenElement?'전체 화면 해제':'전체 화면';
 }
-function tvPageStep(step){const count=tvBoardPageCount();tvBoardPage=(tvBoardPage+step+count)%count;tvBoardLastTurn=Date.now();renderTVBoard()}
-function toggleTVAutoPage(){tvBoardAuto=!tvBoardAuto;tvBoardLastTurn=Date.now();try{localStorage.setItem('ky-tv-auto',String(tvBoardAuto))}catch(e){}renderTVBoard()}
-function tickTVBoard(){const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();if(tvBoardAuto&&Date.now()-tvBoardLastTurn>=20000&&tvBoardPageCount()>1){tvBoardPage++;tvBoardLastTurn=Date.now();renderTVBoard()}else if(tvBoardDay!==todayStr()){renderTVBoard()}}
+function tickTVBoard(){const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();if(tvBoardDay!==todayStr())renderTVBoard()}
+
 async function toggleTVFullscreen(){
   const board=document.getElementById('tv-board'),notice=document.getElementById('tv-notice');if(!board)return;
   try{if(document.fullscreenElement&&document.exitFullscreen)await document.exitFullscreen();else if(board.requestFullscreen)await board.requestFullscreen();else if(board.webkitRequestFullscreen)board.webkitRequestFullscreen();else throw new Error('unavailable');notice.textContent=''}catch(e){notice.textContent='이 기기에서는 현재 화면 크기로 표시합니다.'}updateTVClock();
 }
 function setTVBoardActive(active){
   if(tvBoardTimer!==null){clearInterval(tvBoardTimer);tvBoardTimer=null}
-  if(active){tvBoardLastTurn=Date.now();renderTVBoard();tvBoardTimer=setInterval(tickTVBoard,1000)}
+  if(active){renderTVBoard();tvBoardTimer=setInterval(tickTVBoard,1000)}
 }
-try{const savedTVAuto=localStorage.getItem('ky-tv-auto');if(savedTVAuto!==null)tvBoardAuto=savedTVAuto==='true'}catch(e){}
+
 
 /* ===== 자동 익명 로그인 ===== */
 function doLogin(){
@@ -3908,6 +3921,7 @@ function normalizeJSONPasteRecord(raw,index){
   const normalized=normalizeReservationLocationRecord(r);
   // Location normalization may add old payment notes; preserve the supplied source memo exactly.
   normalized.memo=r.memo;
+  normalized.name=reservationCustomerName(normalized);
   const invalid=validateReservation(normalized);if(invalid)errors.push(invalid);
   return{record:normalized,errors:[...new Set(errors)]};
 }
@@ -3956,7 +3970,7 @@ function renderJSONPastePlan(plan){
   const money=v=>v==null?'미정':Number(v).toLocaleString('ko-KR')+'원';
   const rowHTML=plan.rows.map(row=>{
     const r=row.record||{},warning=[row.conflicts.length?`차량 일정 ${row.conflicts.length}건 겹침`:'',row.tight?'준비시간 1시간 미만':''].filter(Boolean).join(' · ');
-    return`<tr><td>${row.index}</td><td><span class="json-paste-tag ${row.status}">${row.status==='new'?'추가 대상':row.status==='duplicate'?'중복 제외':'오류 제외'}</span><small>${esc(row.reason)}</small>${warning?`<small class="json-paste-warning">${esc(warning)}</small>`:''}</td><td>${esc(r.name||'-')}<small>${esc(r.phone||'연락처 미기재')}</small></td><td>${esc(r.car||'-')}</td><td>${esc(r.start||'-')}<small>~ ${esc(r.end||'-')}</small></td><td>총 ${esc(money(r.total))}<small>입금 ${esc(money(r.paid))}</small><small>잔금 ${esc(money(r.balance))}</small></td><td>${esc(r.ins||'보험 미기재')}<small>${esc(r.paymentMethod||'결제수단 미기재')}</small></td><td>배차 ${esc(r.pickup||'-')}<small>반납 ${esc(r.ret||'-')}</small></td><td><details><summary>메모·ID 확인</summary><div class="json-paste-memo">${esc(r.memo||'메모 없음')}</div><small>${esc(r.id||'ID 없음')}</small></details></td></tr>`;
+    return`<tr><td>${row.index}</td><td><span class="json-paste-tag ${row.status}">${row.status==='new'?'추가 대상':row.status==='duplicate'?'중복 제외':'오류 제외'}</span><small>${esc(row.reason)}</small>${warning?`<small class="json-paste-warning">${esc(warning)}</small>`:''}</td><td>${esc(reservationCustomerName(r))}<small>${esc(r.phone||'연락처 미기재')}</small></td><td>${esc(r.car||'-')}</td><td>${esc(r.start||'-')}<small>~ ${esc(r.end||'-')}</small></td><td>총 ${esc(money(r.total))}<small>입금 ${esc(money(r.paid))}</small><small>잔금 ${esc(money(r.balance))}</small></td><td>${esc(r.ins||'보험 미기재')}<small>${esc(r.paymentMethod||'결제수단 미기재')}</small></td><td>배차 ${esc(r.pickup||'-')}<small>반납 ${esc(r.ret||'-')}</small></td><td><details><summary>메모·ID 확인</summary><div class="json-paste-memo">${esc(r.memo||'메모 없음')}</div><small>${esc(r.id||'ID 없음')}</small></details></td></tr>`;
   }).join('');
   document.getElementById('json-paste-preview').innerHTML=`<div class="json-paste-table-wrap"><table class="json-paste-table"><thead><tr><th>행</th><th>검증</th><th>고객</th><th>차량</th><th>대여·반납</th><th>금액</th><th>보험·결제</th><th>장소</th><th>원문 메모</th></tr></thead><tbody>${rowHTML}</tbody></table></div>`;
   const button=document.getElementById('json-paste-commit');button.disabled=!plan.newRecords.length||jsonPasteCommitting;button.textContent=`검증통과 ${plan.newRecords.length}건 추가`;
