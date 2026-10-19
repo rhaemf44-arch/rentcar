@@ -518,14 +518,14 @@ body.tv-mode{display:block;background:#0b1420}
 
 @media(max-width:820px){.dashboard-periods button[data-period="upcoming"]{grid-column:1/-1}}
 
-/* Dashboard: the existing reservation form stays visible next to the list. */
-#view-dashboard .dashboard-workspace{display:grid;grid-template-columns:minmax(420px,440px) minmax(0,1fr);gap:22px;align-items:start;min-width:0}
+/* Reservation entry is a dedicated screen; browsing stays in reservation management. */
+#view-dashboard .dashboard-workspace{display:grid;grid-template-columns:minmax(0,1fr);width:100%;max-width:1060px;margin:0 auto;min-width:0}
 #view-dashboard .dashboard-workspace>*{min-width:0}
 #view-dashboard #reservation-panel{position:relative;inset:auto;width:100%;height:auto;max-height:none;z-index:auto;background:#fff;border:1px solid #d8dce3;border-radius:16px;box-shadow:0 2px 8px #17263d08;display:block;overflow:hidden;scroll-margin-top:100px}
 #reservation-panel .reservation-panel-head{display:block;padding:20px 20px 16px;border-bottom:0;background:#fff}
 #reservation-panel .reservation-panel-head h2{font-size:22px;font-weight:800}
 #reservation-panel .reservation-panel-head p{margin-top:6px;font-size:13px;color:#64748b;line-height:1.5}
-#reservation-panel .reservation-input-tabs{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;padding:0 16px 16px;border-bottom:1px solid var(--line)}
+#reservation-panel .reservation-input-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 24px 20px;border-bottom:1px solid var(--line)}
 #reservation-panel .reservation-input-tabs button{min-width:0;min-height:44px;padding:10px 8px;border:1px solid #d8dce3;border-radius:9px;background:#f6f7f9;font-family:inherit;font-size:14px;font-weight:700;line-height:1.4;color:#475569;cursor:pointer}
 #reservation-panel .reservation-input-tabs button[aria-selected="true"]{color:#fff;background:#17263d;border-color:#17263d}
 #reservation-panel .reservation-input-tabs button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
@@ -537,17 +537,17 @@ body.tv-mode{display:block;background:#0b1420}
 #reservation-panel .card-h h2{font-size:14px;color:#475569}
 #reservation-panel .card-h .hint{width:100%;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 #reservation-panel .card-b{padding:16px 18px 18px}
-#reservation-panel .reservation-form-grid{gap:12px}
-#reservation-panel label{font-size:12px;font-weight:600;color:#475569;line-height:1.5}
-#reservation-panel input,#reservation-panel select,#reservation-panel textarea{font-size:15px;min-height:43px;padding:10px 11px;scroll-margin-top:110px}
+#reservation-panel .reservation-form-grid{gap:18px}
+#reservation-panel label{font-size:14px;font-weight:600;color:#475569;line-height:1.5}
+#reservation-panel input,#reservation-panel select,#reservation-panel textarea{font-size:16px;min-height:48px;padding:12px;scroll-margin-top:110px}
 #reservation-panel .reservation-row-contact,#reservation-panel .reservation-row-location{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-#reservation-panel .reservation-row-date{grid-template-columns:1fr;gap:12px}
+#reservation-panel .reservation-row-date{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #reservation-panel .reservation-row-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 #reservation-panel input[type="datetime-local"]{font-size:15px}
 #reservation-panel .reservation-actions{position:static;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin-top:4px;padding:10px 0 0;border-top:1px solid var(--line);background:#fff}
 #reservation-panel .reservation-actions .btn{min-height:46px;font-size:15px}
 #reservation-panel #balance-help{font-size:11px;color:#64748b;line-height:1.5}
-#reservation-panel .parser-panel #raw{min-height:270px;line-height:1.6}
+#reservation-panel .parser-panel #raw{min-height:360px;line-height:1.6}
 #reservation-panel .parse-note{font-size:12px;line-height:1.6}
 #reservation-panel .parser-review-button{margin-top:14px;min-height:44px;font-size:14px}
 #reservation-panel .parser-test-details{display:none}
@@ -561,7 +561,7 @@ body.tv-mode{display:block;background:#0b1420}
 #view-dashboard .dashboard-workspace .res-info .full{grid-column:1/-1}
 #view-dashboard .dashboard-workspace .dashboard-periods button{font-size:16px;padding:11px 13px;min-height:46px}
 #view-dashboard .dashboard-workspace .dashboard-filterline{flex-wrap:wrap}
-@media(max-width:1240px){#view-dashboard .dashboard-workspace{grid-template-columns:1fr}#view-dashboard #reservation-panel{max-width:none}#reservation-panel .reservation-row-date{grid-template-columns:repeat(2,minmax(0,1fr))}#reservation-panel .reservation-input-tabs{max-width:520px}#reservation-panel .reservation-panel-body{max-width:900px}#reservation-panel .parser-panel #raw{min-height:190px}}
+@media(min-width:641px){#reservation-panel .reservation-panel-head{padding:24px 28px 20px}#reservation-panel .card-b{padding:22px 28px 28px}#reservation-panel .card-h{padding:20px 28px 0}}
 @media(max-width:640px){#view-dashboard .dashboard-workspace{gap:18px}#reservation-panel .reservation-panel-head{padding:18px 16px 14px}#reservation-panel .card-b{padding:16px}#reservation-panel .reservation-row-contact,#reservation-panel .reservation-row-date,#reservation-panel .reservation-row-location{grid-template-columns:1fr}#reservation-panel .reservation-row-meta{grid-template-columns:repeat(2,minmax(0,1fr))}#reservation-panel input,#reservation-panel select,#reservation-panel textarea{font-size:16px;min-height:46px}#view-dashboard .dashboard-workspace .dashboard-schedule>.card-h,#view-dashboard .dashboard-workspace .dashboard-schedule>.card-b{padding:16px}#view-dashboard .dashboard-workspace .dashboard-periods button{font-size:15px;padding:10px 6px}#view-dashboard .dashboard-workspace .res-info{grid-template-columns:1fr}}
 
 /* TV board: all today's work stays visible; no rotating pages. */
@@ -701,7 +701,8 @@ body.tv-mode{display:block;background:#0b1420}
     <div><b>KY MOBILITY</b><span>Reservation</span></div>
   </div>
   <nav class="nav" id="nav">
-    <a class="on" data-v="dashboard" onclick="go(this)"><span class="ico">▦</span>대시보드</a>
+    <a class="on" data-v="dashboard" onclick="go(this)"><span class="ico">▦</span>예약 입력</a>
+    <a href="?tv=1" id="open-tv-mode" onclick="event.preventDefault();setTVMode(true)"><span class="ico">▣</span>TV 화면</a>
     <a data-v="reservations" onclick="go(this)"><span class="ico">▤</span>예약 관리<span class="cnt" id="nav-res">0</span></a>
     <a data-v="schedule" onclick="go(this)"><span class="ico">▧</span>일정표</a>
     <a data-v="gantt" onclick="go(this)"><span class="ico">▬</span>주말 가용성</a>
@@ -727,7 +728,7 @@ body.tv-mode{display:block;background:#0b1420}
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:14px">
       <button class="menu-btn" onclick="openNav()">☰</button>
-      <h1 id="page-title">대시보드</h1>
+      <h1 id="page-title">예약 입력</h1>
     </div>
     <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><div class="meta">
       <div>내부 예약 관리 시스템</div>
@@ -737,24 +738,13 @@ body.tv-mode{display:block;background:#0b1420}
 
   <div class="content">
 
-    <section class="stats" aria-label="예약 업무 현황">
-      <button class="stat accent" data-metric="pickup" onclick="setDashboardMetric('pickup')" aria-pressed="false"><div class="k">오늘 배차</div><div class="v" id="s-today">0<small>건</small></div><span class="sub">오늘 출발하는 예약</span></button>
-      <button class="stat" data-metric="return" onclick="setDashboardMetric('return')" aria-pressed="false"><div class="k">오늘 반납</div><div class="v" id="s-return">0<small>건</small></div><span class="sub">오늘 돌아오는 차량</span></button>
-      <button class="stat" data-metric="active" onclick="setDashboardMetric('active')" aria-pressed="false"><div class="k">운행중</div><div class="v" id="s-active">0<small>대</small></div><span class="sub">배차 완료한 예약</span></button>
-      <button class="stat" data-metric="unpaid" onclick="setDashboardMetric('unpaid')" aria-pressed="false"><div class="k">미수금</div><div class="v money" id="s-unpaid">0<small>원</small></div><span class="sub" id="s-unpaid-count">금액 확인 중</span></button>
-      <button class="stat" data-metric="unassigned" onclick="setDashboardMetric('unassigned')" aria-pressed="false"><div class="k">차량 미배정</div><div class="v" id="s-unassigned">0<small>건</small></div><span class="sub">배차 전 번호 확인</span></button>
-      <button class="stat" data-metric="attention" onclick="setDashboardMetric('attention')" aria-pressed="false"><div class="k">확인 필요</div><div class="v danger" id="s-flag">0<small>건</small></div><span class="sub">일정 중복·지연·정보 누락</span></button>
-    </section>
+
 
     <!-- ===== 대시보드 / 예약관리 ===== -->
     <div class="view on" id="view-dashboard">
-      <div class="dashboard-welcome">
-        <div><h2>예약 현황</h2><p id="dashboard-date">예정 예약과 운행중인 차량을 확인하세요.</p></div>
-        <div class="dashboard-primary-actions"><button class="btn btn-tv" id="open-tv-mode" onclick="setTVMode(true)">▣ TV 크게 보기</button><button class="btn btn-ghost" onclick="openReservationPanel('paste')">카톡 붙여넣기</button><button class="btn btn-gold" onclick="clearForm();openReservationPanel('manual')">＋ 예약 추가</button></div>
-      </div>
       <div class="dashboard-workspace">
       <section class="reservation-panel" id="reservation-panel" role="region" aria-labelledby="reservation-panel-title">
-        <div class="reservation-panel-head"><div><h2 id="reservation-panel-title">예약 입력</h2><p>예약 내용을 입력하고 저장하세요.</p></div></div>
+        <div class="reservation-panel-head"><div><h2 id="reservation-panel-title">예약 입력</h2><p id="dashboard-date">예약 내용을 입력하고 저장하세요.</p></div></div>
         <div class="reservation-input-tabs" role="tablist" aria-label="예약 입력 방법">
           <button id="reservation-tab-manual" type="button" role="tab" aria-controls="reservation-form-tabpanel" aria-selected="true" tabindex="0" onclick="setReservationInputTab('manual')" onkeydown="handleReservationTabKey(event,'manual')">직접 입력</button>
           <button id="reservation-tab-paste" type="button" role="tab" aria-controls="reservation-parser-tabpanel" aria-selected="false" tabindex="-1" onclick="setReservationInputTab('paste')" onkeydown="handleReservationTabKey(event,'paste')">카톡·문자 붙여넣기</button>
@@ -829,9 +819,25 @@ body.tv-mode{display:block;background:#0b1420}
         </div></div>
       </section>
 
+
+      </div>
+    </div>
+
+    <div class="view" id="view-trash"><section class="card"><div class="card-h"><h2>삭제한 예약</h2><span class="hint" id="trash-count"></span></div><div class="card-b"><p class="trash-summary">삭제한 예약을 확인하고 복원할 수 있습니다. 복원하면 기존 예약 목록에 다시 표시됩니다.</p><div class="trash-list" id="trash-list"></div></div></section><section class="card" id="local-recovery-panel" hidden><div class="card-h"><h2>기기에 보관된 이전 예약</h2><span class="hint" id="local-recovery-count"></span></div><div class="card-b"><p class="trash-summary">현재 서버 목록에는 없는 이전 기록입니다. 필요한 예약인지 확인한 뒤 복원하세요.</p><div class="trash-list" id="local-recovery-list"></div></div></section></div>
+
+    <!-- ===== 예약 관리(전용 큰 목록) ===== -->
+    <div class="view" id="view-reservations">
+    <section class="stats" aria-label="예약 업무 현황">
+      <button class="stat accent" data-metric="pickup" onclick="setDashboardMetric('pickup')" aria-pressed="false"><div class="k">오늘 배차</div><div class="v" id="s-today">0<small>건</small></div><span class="sub">오늘 출발하는 예약</span></button>
+      <button class="stat" data-metric="return" onclick="setDashboardMetric('return')" aria-pressed="false"><div class="k">오늘 반납</div><div class="v" id="s-return">0<small>건</small></div><span class="sub">오늘 돌아오는 차량</span></button>
+      <button class="stat" data-metric="active" onclick="setDashboardMetric('active')" aria-pressed="false"><div class="k">운행중</div><div class="v" id="s-active">0<small>대</small></div><span class="sub">배차 완료한 예약</span></button>
+      <button class="stat" data-metric="unpaid" onclick="setDashboardMetric('unpaid')" aria-pressed="false"><div class="k">미수금</div><div class="v money" id="s-unpaid">0<small>원</small></div><span class="sub" id="s-unpaid-count">금액 확인 중</span></button>
+      <button class="stat" data-metric="unassigned" onclick="setDashboardMetric('unassigned')" aria-pressed="false"><div class="k">차량 미배정</div><div class="v" id="s-unassigned">0<small>건</small></div><span class="sub">배차 전 번호 확인</span></button>
+      <button class="stat" data-metric="attention" onclick="setDashboardMetric('attention')" aria-pressed="false"><div class="k">확인 필요</div><div class="v danger" id="s-flag">0<small>건</small></div><span class="sub">일정 중복·지연·정보 누락</span></button>
+    </section>
       <section class="card dashboard-schedule">
         <div class="card-h"><h2 id="dashboard-list-title">예정 예약 · 운행중</h2>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" onclick="clearForm();openReservationPanel('manual')">＋ 예약 추가</button>
             <button class="btn btn-ghost btn-sm" onclick="undo()" id="undo-btn">되돌리기</button>
             <button class="btn btn-ghost btn-sm" onclick="exportExcel()">엑셀</button>
           </div>
@@ -845,7 +851,7 @@ body.tv-mode{display:block;background:#0b1420}
               <button data-period="week" onclick="setDashboardPeriod('week')">이번 주</button>
               <button data-period="all" onclick="setDashboardPeriod('all')">전체</button>
             </div>
-            <input class="dashboard-search" type="search" id="search" aria-label="예약 검색" placeholder="이름·차량번호·연락처·장소 검색" oninput="renderDashboard()">
+            <input class="dashboard-search" type="search" id="search" aria-label="예약 검색" placeholder="이름·차량번호·연락처·장소 검색" oninput="renderReservationList()">
             <div class="view-toggle" aria-label="목록 보기 방식">
               <button data-vm="auto" onclick="setViewMode('auto')">자동</button>
               <button data-vm="table" onclick="setViewMode('table')">표</button>
@@ -856,22 +862,6 @@ body.tv-mode{display:block;background:#0b1420}
           <div class="schedule-table-wrap"><div class="res-list" id="list"></div></div>
         </div>
       </section>
-      </div>
-    </div>
-
-    <div class="view" id="view-trash"><section class="card"><div class="card-h"><h2>삭제한 예약</h2><span class="hint" id="trash-count"></span></div><div class="card-b"><p class="trash-summary">삭제한 예약을 확인하고 복원할 수 있습니다. 복원하면 기존 예약 목록에 다시 표시됩니다.</p><div class="trash-list" id="trash-list"></div></div></section><section class="card" id="local-recovery-panel" hidden><div class="card-h"><h2>기기에 보관된 이전 예약</h2><span class="hint" id="local-recovery-count"></span></div><div class="card-b"><p class="trash-summary">현재 서버 목록에는 없는 이전 기록입니다. 필요한 예약인지 확인한 뒤 복원하세요.</p><div class="trash-list" id="local-recovery-list"></div></div></section></div>
-
-    <!-- ===== 예약 관리(전용 큰 목록) ===== -->
-    <div class="view" id="view-reservations">
-      <div class="card">
-        <div class="card-h"><h2>전체 예약</h2>
-          <button class="btn btn-ghost btn-sm" onclick="exportExcel()">엑셀 내보내기</button>
-        </div>
-        <div class="card-b">
-          <div class="toolbar"><input type="search" id="search2" placeholder="검색" oninput="render()"></div>
-          <div class="res-list" id="list2" style="max-height:none"></div>
-        </div>
-      </div>
     </div>
 
     <!-- ===== 일정표 (차종별 탭) ===== -->
@@ -2921,11 +2911,15 @@ function dashboardAttentionReasons(r){
   if(r.status==='wait'&&r.start&&String(r.start)<nowText)reasons.push('배차 확인 필요');
   return reasons;
 }
-function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';renderDashboard();updateDashboardStats()}
-function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=dashboardMetric==='all'?'upcoming':['pickup','return'].includes(dashboardMetric)?'today':'all';go2('dashboard')}
+function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';renderReservationList();updateDashboardStats()}
+function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=dashboardMetric==='all'?'upcoming':['pickup','return'].includes(dashboardMetric)?'today':'all';go2('reservations')}
 function resetDashboardFilters(){dashboardPeriod='upcoming';dashboardMetric='all';document.getElementById('search').value='';render()}
 function dashboardMetricMatch(r){if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();if(dashboardMetric==='active')return r.status==='active';if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;if(dashboardMetric==='unassigned')return dashboardOpenRecord(r)&&!reservationVehicleId(r);if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;return true}
 function renderDashboard(){
+  document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 예약 내용을 입력하고 저장하세요.';
+  refreshReservationVehicleOptions();
+}
+function reservationListRows(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase(),range=dashboardRange();
   let rows=data.filter(r=>{
     if(!dashboardMetricMatch(r))return false;
@@ -2935,14 +2929,17 @@ function renderDashboard(){
   });
   const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
   rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||reservationCustomerName(a).localeCompare(reservationCustomerName(b)));
+  return rows;
+}
+function renderReservationList(){
+  const rows=reservationListRows(),range=dashboardRange(),q=(document.getElementById('search').value||'').trim();
   const periodLabels={upcoming:'예정 예약 · 운행중',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
   document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||(dashboardPeriod==='upcoming'?periodLabels.upcoming:periodLabels[dashboardPeriod]+' 업무');
-  document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 예정 예약·운행 현황';
   document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${dashboardPeriod==='today'&&dashboardMetric==='all'?' · 운행중 포함':''}${dashboardPeriod==='upcoming'&&dashboardMetric==='all'?' · 고객·차량·배차·반납 일정':''}`;
   document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='upcoming'&&dashboardMetric==='all'&&!q;
   document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('on',b.dataset.period===dashboardPeriod));
   document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.vm===viewMode));
-  paint('list',rows);
+  paintReservationList(rows);
 }
 function updateDashboardStats(){
   const live=data.filter(r=>r.status!=='cancelled'),t=todayStr(),unpaid=live.filter(r=>reservationBalance(r)>0),unknown=live.filter(r=>dashboardOpenRecord(r)&&reservationBalance(r)===null).length;
@@ -2989,14 +2986,11 @@ function renderTrash(){
 window.addEventListener('reservation-trash-changed',()=>{const rows=typeof getDeletedReservations==='function'?getDeletedReservations():[];document.getElementById('nav-trash').textContent=rows.length;if(document.getElementById('view-trash').classList.contains('on'))renderTrash()});
 
 /* ===== 예약 관리: 행 사이사이 삽입 버튼 ===== */
-function renderReservations(){
-  const el=document.getElementById('list2');if(!el)return;
-  const q=(document.getElementById('search2').value||'').toLowerCase();
-  const now=new Date();
-  const rows=data.filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())) // 미반납·미처리 예약은 예정시간이 지나도 유지
-    .filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q))
-    .sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
-  if(effectiveViewMode()==='card'){el.innerHTML='<button class="btn btn-ghost" onclick="clearForm();openReservationPanel()" style="margin-bottom:12px">＋ 예약 추가</button>'+(rows.length?rows.map(resCard).join(''):'<div class="empty">표시할 예약이 없습니다.</div>');return}
+function renderReservations(){renderReservationList()}
+function paintReservationList(rows){
+  const el=document.getElementById('list');if(!el)return;
+  if(viewMode==='auto'||effectiveViewMode()==='card'){paint('list',rows);return}
+  el.classList.remove('dashboard-card-grid');
   const t=todayStr();
   const insBtn=(idx,label)=>`<tr class="ins-row"><td colspan="11"><button class="ins-btn" onclick="insertBetween(${idx})">＋ ${label}</button></td></tr>`;
   const head=`<thead><tr>
@@ -3028,10 +3022,7 @@ function renderReservations(){
 }
 // idx번째 예약 뒤에 삽입 (idx=-1이면 맨 앞). 앞뒤 날짜 중간값으로 폼 준비
 function insertBetween(idx){
-  const rows=[...data].filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
-  // 검색 필터 반영
-  const q=(document.getElementById('search2').value||'').toLowerCase();
-  const shown=rows.filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q));
+  const shown=reservationListRows();
   const before=idx>=0?shown[idx]:null;
   const after=idx>=0?shown[idx+1]:shown[0];
   let ds='';
@@ -3468,7 +3459,7 @@ function exportExcel(){
 }
 
 /* ===== 네비게이션 ===== */
-const TITLES={dashboard:'대시보드',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
+const TITLES={dashboard:'예약 입력',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
 function go(el){document.querySelectorAll('#nav a').forEach(a=>a.classList.remove('on'));el.classList.add('on');go2(el.dataset.v);closeNav()}
 function go2(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-'+v).classList.add('on');
   document.getElementById('page-title').textContent=TITLES[v]||v;
