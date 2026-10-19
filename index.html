@@ -588,10 +588,10 @@ body.tv-mode{display:block;background:#0b1420}
 </style>
 </head>
 <body>
-<section id="tv-board" hidden aria-label="오늘의 배차와 반납 현황판">
+<section id="tv-board" hidden aria-label="오늘의 배차와 반납 예정 현황판">
   <div class="tv-board-inner">
     <header class="tv-header">
-      <div><div class="tv-brand">KY RENTCAR · 경일렌트카</div><h1 class="tv-title">오늘의 배차 · 반납</h1></div>
+      <div><div class="tv-brand">KY RENTCAR · 경일렌트카</div><h1 class="tv-title">오늘의 배차 · 반납 예정</h1></div>
       <div class="tv-header-right">
         <div class="tv-clock-group"><div class="tv-date" id="tv-date"></div><div class="tv-clock" id="tv-clock"></div></div>
         <div class="tv-header-buttons"><button class="tv-button" id="tv-fullscreen" onclick="toggleTVFullscreen()">전체 화면</button><button class="tv-button" id="tv-exit" onclick="exitTVMode()">관리 화면</button></div>
@@ -599,8 +599,8 @@ body.tv-mode{display:block;background:#0b1420}
     </header>
     <div class="tv-status-line"><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span><span class="tv-readonly">실시간 업무 현황</span></div>
     <div class="tv-lanes">
-      <section class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
-      <section class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
+      <section class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">당일 배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
+      <section class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납 예정</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
     </div>
     <section class="tv-ongoing" id="tv-ongoing" aria-label="그 외 운행 중인 차량" hidden><span class="tv-ongoing-title" id="tv-ongoing-title"></span><div class="tv-ongoing-items" id="tv-ongoing-items"></div></section>
     <footer class="tv-footer"><div><div class="tv-page-info" id="tv-page-info"></div><div class="tv-notice" id="tv-notice" role="status"></div></div><div class="tv-pagination"><button class="tv-button tv-page-button" id="tv-prev" aria-label="이전 업무 보기" onclick="tvPageStep(-1)">‹</button><button class="tv-button tv-page-button" id="tv-next" aria-label="다음 업무 보기" onclick="tvPageStep(1)">›</button><button class="tv-button" id="tv-auto" aria-pressed="false" onclick="toggleTVAutoPage()">자동 넘김 켜기</button></div></footer>
@@ -3697,8 +3697,8 @@ function tvBoardCapacity(){return window.innerHeight<850?1:window.innerHeight>=1
 function tvBoardGroups(records=data,now=Date.now()){
   const today=koreanNow(new Date(now)).slice(0,10),live=records.filter(r=>!r.deletedAt&&r.status!=='cancelled');
   const pickup=live.filter(r=>String(r.start||'').slice(0,10)===today);
-  const returns=live.filter(r=>String(r.end||'').slice(0,10)===today||(r.status==='active'&&reservationTime(r.end)<now));
-  const ongoing=live.filter(r=>r.status==='active'&&!returns.includes(r));
+  const returns=live.filter(r=>r.status!=='done'&&String(r.end||'').slice(0,10)===today);
+  const ongoing=[]; // TV shows only today's departures and scheduled returns.
   const completed=(r,type)=>type==='pickup'?r.status==='active'||r.status==='done':r.status==='done';
   const order=(key,type)=>(a,b)=>Number(completed(a,type))-Number(completed(b,type))||(reservationTime(a[key])||Infinity)-(reservationTime(b[key])||Infinity)||String(a.id||'').localeCompare(String(b.id||''));
   pickup.sort(order('start','pickup'));returns.sort(order('end','return'));ongoing.sort(order('end','return'));
@@ -3714,9 +3714,9 @@ function tvVehicleDisplay(r){
 function tvTaskCard(r,type,now=Date.now()){
   const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),today=koreanNow(new Date(now)).slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
   const done=isReturn?r.status==='done':r.status==='active'||r.status==='done';
-  const late=valid&&time<now&&!done&&(isReturn?r.status==='active':r.status!=='active');
-  let status=isReturn?(r.status==='done'?'반납 완료':r.status==='active'?'반납 예정':'배차 전'):done?'배차 완료':'배차 대기';
-  if(late)status=isReturn?'반납 지연':'배차 확인';
+  const late=!isReturn&&valid&&time<now&&!done&&r.status!=='active';
+  let status=isReturn?(r.status==='done'?'반납 완료':'반납 예정'):done?'배차 완료':'배차 대기';
+  if(late)status='배차 확인';
   const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정');
   const dayLabel=valid&&day!==today?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
   return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-top"><div class="tv-time-wrap">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span></div><span class="tv-task-state">${esc(status)}</span></div><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(r.name||'고객명 미기재')}</span></div><div class="tv-task-detail"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div>${r.memo?`<div class="tv-task-memo"><b>메모</b>${esc(r.memo)}</div>`:''}</article>`;
@@ -3729,9 +3729,9 @@ function renderTVBoard(){
   tvBoardPage=((tvBoardPage%pageCount)+pageCount)%pageCount;
   const lane=(id,rows,type)=>{
     const pages=Math.max(1,Math.ceil(rows.length/capacity)),page=tvBoardPage%pages,remaining=rows.filter(r=>type==='pickup'?!['active','done'].includes(r.status):r.status!=='done').length;
-    document.getElementById('tv-'+id+'-count').textContent=`남은 ${remaining}건 · 전체 ${rows.length}건`;
+    document.getElementById('tv-'+id+'-count').textContent=type==='return'?`예정 ${rows.length}건`:`남은 ${remaining}건 · 전체 ${rows.length}건`;
     const cards=document.getElementById('tv-'+id+'-cards');cards.style.setProperty('--tv-rows',Math.min(capacity,Math.max(1,rows.length)));
-    cards.innerHTML=rows.length?rows.slice(page*capacity,(page+1)*capacity).map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">오늘 ${type==='pickup'?'배차':'반납'} 일정이 없습니다<small>${type==='pickup'?'등록된 배차 일정이 이곳에 표시됩니다.':'반납 예정과 지연된 운행 차량이 이곳에 표시됩니다.'}</small></div>`;
+    cards.innerHTML=rows.length?rows.slice(page*capacity,(page+1)*capacity).map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">오늘 ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다<small>${type==='pickup'?'오늘 배차하는 예약만 표시됩니다.':'오늘 반납 예정인 차량만 표시됩니다.'}</small></div>`;
     return `${type==='pickup'?'배차':'반납'} ${page+1}/${pages}`;
   };
   const pageLabels=[lane('pickup',groups.pickup,'pickup'),lane('return',groups.returns,'return')];
