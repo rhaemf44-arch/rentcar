@@ -965,7 +965,7 @@ function storageBusinessRecord(r){if(!r)return null;const c=storageCopy(r);delet
 function setSyncState(status,message){
   if(!_localDurable){status='error';message=Object.keys(_pendingWrites).length?'기기 저장 실패 · 미전송 변경 있음 · 창을 닫지 말고 백업하세요':'기기 저장 실패 · 창을 닫지 말고 백업하세요'}
   _syncState={status,message,pending:Object.keys(_pendingWrites).length,localDurable:_localDurable};
-  const el=document.getElementById('sync-status');if(el){el.textContent=message;el.dataset.state=status;el.title=message;el.setAttribute('role','status')}
+  const el=document.getElementById('sync-state');if(el){el.textContent=message;el.dataset.state=status;el.title=message;el.setAttribute('role','status')}
   if(typeof window!=='undefined'&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('reservation-sync-state',{detail:{..._syncState}}));
 }
 function getReservationSyncState(){return{..._syncState}}
