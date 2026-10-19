@@ -430,6 +430,27 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
 @media(max-width:1250px){.audit-mode-grid{grid-template-columns:1fr}.audit-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.audit-summary{grid-template-columns:repeat(2,1fr)}.audit-detail-grid{grid-template-columns:1fr}}
 
+
+/* ===== Operations dashboard ===== */
+body{background-image:none;background-color:#f4f5f7}
+input::placeholder,textarea::placeholder{color:#8a909a}
+.topbar{background:rgba(255,255,255,.96)}
+.topbar-actions{display:flex;align-items:center;gap:14px}.sync-state{font-size:11px;color:var(--ivory-dim);max-width:250px;line-height:1.5}
+.stats{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+button.stat{font-family:inherit;text-align:left;color:inherit;cursor:pointer;min-height:112px;transition:border-color .15s,box-shadow .15s}
+button.stat:hover,button.stat[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 3px 14px rgba(184,137,43,.10)}
+button.stat[aria-pressed="true"]{background:#fffbf1}.stat .k{font-size:12px;letter-spacing:0}.stat .sub{display:block;margin-top:7px;font-size:11px;color:var(--ivory-dim);line-height:1.35}.stat .v.money{font-size:21px}.stat .v.danger{color:var(--danger)}
+.dashboard-welcome{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}.dashboard-welcome h2{font-size:23px;letter-spacing:-.6px}.dashboard-welcome p{font-size:13px;line-height:1.5;margin-top:7px;color:var(--ivory-dim)}.dashboard-primary-actions{display:flex;gap:9px;flex-shrink:0}.dashboard-primary-actions .btn{min-height:44px}
+.dashboard-schedule{margin-top:0}.dashboard-schedule .card-h{gap:10px;flex-wrap:wrap}.dashboard-schedule .card-h h2{font-size:16px}.dashboard-schedule .toolbar{gap:12px}.dashboard-schedule .res-list{max-height:none}.dashboard-schedule .res-table-wrap{max-height:70vh}.dashboard-schedule table.res-table{min-width:1030px}table.res-table th,table.res-table td{padding:12px 10px}table.res-table td.c-memo{min-width:130px;max-width:240px}.c-bal{font-variant-numeric:tabular-nums;font-weight:650}.rowact button{min-width:34px;min-height:34px}.rowact button.status-action{font-size:11px;background:var(--gold-soft);border-radius:7px;padding:5px 8px;white-space:nowrap}
+.dashboard-periods{display:flex;gap:6px;flex-wrap:wrap}.dashboard-periods button{border:1px solid transparent;background:#f3f4f6;border-radius:9px;padding:9px 15px;font:600 13px/1.4 inherit;color:var(--ivory-dim);cursor:pointer;min-height:40px}.dashboard-periods button.on{background:var(--gold-soft);color:#926816;border-color:rgba(184,137,43,.32)}
+.dashboard-filterline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 16px;font-size:12px;color:var(--ivory-dim)}.dashboard-filterline b{color:var(--ivory)}.filter-reset{border:0;background:none;color:#926816;font:600 12px inherit;cursor:pointer;padding:7px 0}.dashboard-search{flex:1 1 260px!important;min-width:160px!important}.view-toggle button{min-height:40px;padding:8px 12px}.view-toggle{margin-left:0;flex-shrink:0}
+.res-top{align-items:flex-start}.res-name{font-size:16px;line-height:1.5}.res-name .plate{display:block;margin-left:0;margin-top:2px;font-size:12px}.res-info{gap:9px 14px;line-height:1.5}.res-info .full{grid-column:1/-1}.res-info .label{font-size:11px;color:var(--ivory-dim);display:block;margin-bottom:2px}.res-info b{font-weight:550}.res-money{display:flex;justify-content:space-between;border-radius:8px;padding:9px 11px;background:#f7f8fa;font-size:12px}.res-money strong{color:#a06413;font-size:14px}.res-alert{font-size:11px;color:var(--danger);margin-top:8px;line-height:1.5}.res-actions{flex-wrap:wrap;align-items:center;gap:8px}.res-action{display:inline-flex;justify-content:center;align-items:center;min-height:42px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:#fff;color:var(--ivory);font:600 12px/1.3 inherit;text-decoration:none;cursor:pointer}.res-action.primary{background:var(--gold-soft);border-color:rgba(184,137,43,.3);color:#8e661c}.res-actions .link{min-height:38px;padding:8px}.res-status{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.reservation-panel[hidden],.reservation-scrim[hidden]{display:none!important}.reservation-scrim{position:fixed;inset:0;background:rgba(20,25,40,.32);z-index:69}.reservation-panel{position:fixed;inset:18px 20px 18px auto;width:min(1280px,calc(100vw - 40px));max-height:calc(100dvh - 36px);z-index:70;background:#f5f6f8;border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 70px rgba(20,25,40,.18);display:flex;flex-direction:column;overflow:hidden}.reservation-panel-head{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:#fff;border-bottom:1px solid var(--line);gap:12px}.reservation-panel-head h2{font-size:18px}.reservation-panel-head p{font-size:12px;color:var(--ivory-dim);margin-top:4px}.reservation-close{min-height:42px;min-width:56px}.reservation-panel-body{overflow:auto;overscroll-behavior:contain;padding:20px;min-height:0}.reservation-panel .dashboard-input-layout{grid-template-columns:minmax(310px,.85fr) minmax(0,1.3fr);gap:16px}.reservation-panel .reservation-row-contact,.reservation-panel .reservation-row-date,.reservation-panel .reservation-row-location{grid-template-columns:repeat(2,minmax(0,1fr))}.reservation-panel .reservation-row-meta{grid-template-columns:repeat(3,minmax(0,1fr))}.reservation-panel .reservation-actions{grid-template-columns:minmax(0,1fr) auto}.reservation-panel .parser-panel #raw{min-height:300px}.reservation-panel .card-h{padding:14px 18px}.reservation-panel .card-b{padding:18px}.reservation-panel .parse-note{font-size:12px}.reservation-panel-open{overflow:hidden}.reservation-panel .parser-test-details{display:none}.reservation-panel .reservation-actions{position:sticky;bottom:-18px;padding:12px 0 4px;background:#fff;z-index:2}.reservation-panel .reservation-actions .btn{min-height:46px}
+.trash-summary{font-size:13px;color:var(--ivory-dim);line-height:1.6;margin-bottom:16px}.trash-list{display:grid;gap:10px}.trash-item{display:flex;align-items:center;justify-content:space-between;padding:15px;border:1px solid var(--line);border-radius:11px;gap:16px}.trash-item b{font-size:14px}.trash-item p{font-size:12px;line-height:1.6;margin-top:4px;color:var(--ivory-dim)}
+@media(max-width:1180px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-welcome{align-items:flex-start}.reservation-panel .dashboard-input-layout{grid-template-columns:1fr 1.3fr}.reservation-panel .reservation-row-meta{grid-template-columns:1fr 1fr}}
+@media(max-width:820px){.topbar-actions{gap:8px}.sync-state{font-size:10px;max-width:190px}.dashboard-welcome{flex-direction:column;gap:14px}.dashboard-welcome h2{font-size:21px}.dashboard-primary-actions{width:100%}.dashboard-primary-actions .btn{flex:1}.stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.stat .v{font-size:23px}.stat .v.money{font-size:18px}.stat .k{font-size:11px}button.stat{padding:12px 10px;min-height:110px}.stat .sub{font-size:10px}.dashboard-periods{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.dashboard-periods button{padding:9px 5px}.dashboard-filterline{align-items:flex-start}.dashboard-schedule .card-b{padding:13px}.dashboard-search{font-size:14px!important}.dashboard-schedule .toolbar{gap:9px}.view-toggle button{padding:8px 10px}.res-info{grid-template-columns:1fr 1fr;font-size:13px}.res{padding:15px}.res-actions .res-action{flex:1;min-width:80px}.res-status .badge{font-size:10px;padding:4px 7px}.reservation-panel{inset:0;width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.reservation-panel-head{padding:14px 16px}.reservation-panel-body{padding:12px}.reservation-panel .dashboard-input-layout{grid-template-columns:1fr}.reservation-panel .parser-panel #raw{min-height:180px}.reservation-panel .reservation-row-contact,.reservation-panel .reservation-row-date,.reservation-panel .reservation-row-location{grid-template-columns:1fr}.reservation-panel .card-b{padding:15px}.reservation-panel .reservation-row-meta{grid-template-columns:1fr 1fr}.reservation-panel .reservation-actions{bottom:-15px}.trash-item{align-items:flex-start}.res-list{max-height:none}.res-table-wrap{max-height:none}}
+@media(max-width:360px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.res-info{grid-template-columns:1fr}.res-info .full{grid-column:auto}.reservation-panel .reservation-row-meta{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -455,6 +476,7 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
     <a data-v="schedule" onclick="go(this)"><span class="ico">▧</span>일정표</a>
     <a data-v="gantt" onclick="go(this)"><span class="ico">▬</span>주말 가용성</a>
     <a data-v="schedule-board" onclick="go(this)"><span class="ico">▤</span>차량 스케줄</a>
+    <a data-v="trash" onclick="go(this)"><span class="ico">↶</span>휴지통<span class="cnt" id="nav-trash">0</span></a>
     <a data-v="past" onclick="go(this)"><span class="ico">◷</span>지난 예약<span class="cnt" id="nav-past">0</span></a>
     <a data-v="audit" onclick="go(this)"><span class="ico">✓</span>예약 누락 검수<span class="cnt" id="nav-audit">0</span></a>
     <a data-v="vehicles" onclick="go(this)"><span class="ico">🚐</span>차량 관리<span class="cnt" id="nav-vehicles">66</span></a>
@@ -476,36 +498,43 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
       <button class="menu-btn" onclick="openNav()">☰</button>
       <h1 id="page-title">대시보드</h1>
     </div>
-    <div class="meta">
+    <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><div class="meta">
       <div>내부 예약 관리 시스템</div>
       <div id="clock">—</div>
-    </div>
+    </div></div>
   </div>
 
   <div class="content">
 
-    <!-- 상단 통계 (공통) -->
-    <section class="stats">
-      <div class="stat"><div class="k">전체 예약</div><div class="v" id="s-total">0<small>건</small></div></div>
-      <div class="stat accent"><div class="k">오늘 출고</div><div class="v" id="s-today">0<small>건</small></div></div>
-      <div class="stat"><div class="k">운행중</div><div class="v" id="s-active">0<small>건</small></div></div>
-      <div class="stat"><div class="k">대기</div><div class="v" id="s-wait">0<small>건</small></div></div>
-      <div class="stat"><div class="k">확인 필요</div><div class="v" id="s-flag">0<small>건</small></div></div>
+    <section class="stats" aria-label="예약 업무 현황">
+      <button class="stat accent" data-metric="pickup" onclick="setDashboardMetric('pickup')" aria-pressed="false"><div class="k">오늘 배차</div><div class="v" id="s-today">0<small>건</small></div><span class="sub">오늘 출발하는 예약</span></button>
+      <button class="stat" data-metric="return" onclick="setDashboardMetric('return')" aria-pressed="false"><div class="k">오늘 반납</div><div class="v" id="s-return">0<small>건</small></div><span class="sub">오늘 돌아오는 차량</span></button>
+      <button class="stat" data-metric="active" onclick="setDashboardMetric('active')" aria-pressed="false"><div class="k">운행중</div><div class="v" id="s-active">0<small>대</small></div><span class="sub">배차 완료한 예약</span></button>
+      <button class="stat" data-metric="unpaid" onclick="setDashboardMetric('unpaid')" aria-pressed="false"><div class="k">미수금</div><div class="v money" id="s-unpaid">0<small>원</small></div><span class="sub" id="s-unpaid-count">금액 확인 중</span></button>
+      <button class="stat" data-metric="unassigned" onclick="setDashboardMetric('unassigned')" aria-pressed="false"><div class="k">차량 미배정</div><div class="v" id="s-unassigned">0<small>건</small></div><span class="sub">배차 전 번호 확인</span></button>
+      <button class="stat" data-metric="attention" onclick="setDashboardMetric('attention')" aria-pressed="false"><div class="k">확인 필요</div><div class="v danger" id="s-flag">0<small>건</small></div><span class="sub">일정 중복·지연·정보 누락</span></button>
     </section>
 
     <!-- ===== 대시보드 / 예약관리 ===== -->
     <div class="view on" id="view-dashboard">
-      <div class="dashboard-input-layout">
+      <div class="dashboard-welcome">
+        <div><h2>오늘의 배차와 반납</h2><p id="dashboard-date">업무 일정을 확인하고 예약을 관리하세요.</p></div>
+        <div class="dashboard-primary-actions"><button class="btn btn-ghost" onclick="openReservationPanel('paste')">카톡 붙여넣기</button><button class="btn btn-gold" onclick="clearForm();openReservationPanel('manual')">＋ 예약 추가</button></div>
+      </div>
+      <div class="reservation-scrim" id="reservation-scrim" hidden onclick="closeReservationPanel()"></div>
+      <section class="reservation-panel" id="reservation-panel" role="dialog" aria-modal="true" aria-labelledby="reservation-panel-title" hidden>
+        <div class="reservation-panel-head"><div><h2 id="reservation-panel-title">예약 입력</h2><p>원문과 입력 내용을 확인한 뒤 저장하세요.</p></div><button class="btn btn-ghost reservation-close" onclick="closeReservationPanel()" aria-label="예약 입력 닫기">닫기</button></div>
+        <div class="reservation-panel-body"><div class="dashboard-input-layout">
         <section class="card parser-panel">
           <div class="card-h"><h2>카카오 · 문자 자동 입력</h2><span class="hint">붙여넣기 → 입력</span></div>
           <div class="card-b">
-            <textarea id="raw" placeholder="예약 문자/카톡을 그대로 붙여넣으세요.&#10;예) 블루렌트카 유화랑 콜 010-1234-5678 카니발 12/24~12/26 3일 자포"></textarea>
+            <textarea id="raw" placeholder="예약 문자나 카카오톡 원문을 여기에 붙여넣으세요. 자동 입력 후 고객명, 일정, 차량과 금액을 확인하세요."></textarea>
             <div class="parse-actions parser-primary-actions">
               <button class="btn btn-gold" id="smart-parse-btn" onclick="smartParse()">자동 입력</button>
               <button class="btn btn-ghost" onclick="clearRawInput()">지우기</button>
             </div>
             <div class="ai-status" id="ai-parse-status"></div>
-            <div class="parse-note">A형(구조화)·B형(반구조)·C형(축약) 자동감지. 콜/소개→"고객", 자포/자별, 계약금·잔금·완납, 배차/회차 태그(카모아·콜·신차·전날·배달·지점), PLATE_MAP 66대 매칭. 무보험차상해는 항상 불가.</div>
+            <div class="parse-note">날짜·차량·금액이 정확한지 확인하세요. 원문에 없는 정보는 직접 입력한 뒤 저장할 수 있습니다.</div>
             <details class="parser-test-details" id="parser-test-details">
               <summary>로컬 테스트 결과</summary>
               <div id="parser-test-result"></div>
@@ -521,32 +550,39 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
           <div class="card-h"><h2>예약 등록</h2><span class="hint" id="edit-hint"></span></div>
           <div class="card-b">
             <div class="reservation-form-grid">
-              <div class="field reservation-row-name"><label>고객명 / 소개처</label><input id="f-name" placeholder="블루렌트카 고객 유화랑"></div>
+              <div class="field reservation-row-name"><label for="f-name">고객명 / 소개처</label><input id="f-name" placeholder="고객명 또는 소개처 입력"></div>
               <div class="reservation-row-contact">
-                <div class="field"><label>연락처</label><input id="f-phone" placeholder="010-0000-0000"></div>
-                <div class="field"><label>차량 / 번호</label><input id="f-car" placeholder="차량번호 입력 시 차량관리 차종으로 자동변환"></div>
+                <div class="field"><label for="f-phone">연락처</label><input id="f-phone" placeholder="010-0000-0000"></div>
+                <div class="field"><label for="f-car">차량 / 번호</label><input id="f-car" list="vehicle-options" placeholder="차종 또는 차량번호 검색"><datalist id="vehicle-options"></datalist></div>
               </div>
               <div class="reservation-row-date">
-                <div class="field"><label>대여 시작</label><input id="f-start" type="datetime-local"></div>
-                <div class="field"><label>반납 일시</label><input id="f-end" type="datetime-local"></div>
+                <div class="field"><label for="f-start">대여 시작</label><input id="f-start" type="datetime-local"></div>
+                <div class="field"><label for="f-end">반납 일시</label><input id="f-end" type="datetime-local"></div>
               </div>
               <div class="reservation-row-meta">
-                <div class="field"><label>일수</label><input id="f-days" type="number" min="1" placeholder="3"></div>
+                <div class="field"><label for="f-days">일수</label><input id="f-days" type="number" min="1" placeholder="3"></div>
                 <div class="field"><label>보험</label>
-                  <select id="f-ins"><option value="">미정</option><option value="자포">자포(포함)</option><option value="자별">자별(별도)</option><option value="완전자차">완전자차</option><option value="일반면책">일반면책</option></select>
+                  <select id="f-ins"><option value="">미정</option><option value="일반면책" selected>일반면책</option><option value="완전자차">완전면책</option></select>
                 </div>
                 <div class="field"><label>상태</label>
                   <select id="f-status"><option value="wait">대기</option><option value="active">운행중</option><option value="done">완료</option><option value="cancelled">취소</option></select>
                 </div>
               </div>
               <div class="reservation-row-location">
-                <div class="field"><label>배차 위치</label><input id="f-pickup" placeholder="사무실"></div>
+                <div class="field"><label for="f-pickup">배차 위치</label><input id="f-pickup" placeholder="사무실"></div>
                 <div class="field"><label>회차 위치 <span style="font-weight:400;color:var(--ivory-dim);font-size:11px">(비우면 배차와 동일)</span></label><input id="f-return" placeholder="배차와 동일"></div>
               </div>
               <div class="reservation-row-location">
-                <div class="field"><label>잔금</label><input id="f-balance" placeholder="예: 30만원 / 완납"></div>
-                <div class="field reservation-row-memo"><label>금액 / 메모</label><input id="f-memo" placeholder="자포 총액 · 완납 등"></div>
+                <div class="field"><label for="f-ins-price">보험료 포함 여부</label><select id="f-ins-price"><option value="">미정</option><option value="included">포함 (자포)</option><option value="excluded">별도 (자별)</option></select></div>
+                <div class="field"><label for="f-payment">결제수단</label><select id="f-payment"><option value="">미정</option><option>계좌이체</option><option>카드</option><option>현금</option><option>현장결제</option><option>기타</option></select></div>
               </div>
+              <div class="reservation-row-meta">
+                <div class="field"><label for="f-total">총금액 (원)</label><input id="f-total" inputmode="decimal" placeholder="예: 300,000" oninput="updateFinanceBalance()"></div>
+                <div class="field"><label for="f-paid">입금액 (원)</label><input id="f-paid" inputmode="decimal" placeholder="미입금은 0" oninput="updateFinanceBalance()"></div>
+                <div class="field"><label for="f-balance">잔금 (원)</label><input id="f-balance" inputmode="decimal" placeholder="미확인은 공란"></div>
+              </div>
+              <p class="hint" id="balance-help">총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.</p>
+              <div class="field reservation-row-memo"><label for="f-memo">메모</label><textarea id="f-memo" rows="2" placeholder="추가 요청·운영 메모"></textarea></div>
               <div class="reservation-actions">
                 <button class="btn btn-gold btn-block" onclick="saveRes()" id="save-btn">예약 저장</button>
                 <button class="btn btn-ghost btn-sm" onclick="clearForm()">초기화</button>
@@ -554,34 +590,38 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
             </div>
           </div>
         </section>
-      </div>
+        </div></div>
+      </section>
 
       <section class="card dashboard-schedule">
-        <div class="card-h"><h2>예약 현황</h2>
+        <div class="card-h"><h2 id="dashboard-list-title">오늘 업무</h2>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="loadSeed()" id="seed-btn">표 불러오기</button>
             <button class="btn btn-ghost btn-sm" onclick="undo()" id="undo-btn">되돌리기</button>
             <button class="btn btn-ghost btn-sm" onclick="exportExcel()">엑셀</button>
           </div>
         </div>
         <div class="card-b">
           <div class="toolbar">
-            <input type="search" id="search" placeholder="이름·차량·번호·배차 검색" oninput="render()">
-            <div class="seg" id="filter">
-              <button class="on" data-f="all" onclick="setFilter(this)">전체</button>
-              <button data-f="today" onclick="setFilter(this)">오늘</button>
-              <button data-f="wait" onclick="setFilter(this)">대기</button>
-              <button data-f="active" onclick="setFilter(this)">운행중</button>
+            <div class="dashboard-periods" id="filter" aria-label="조회 기간">
+              <button class="on" data-period="today" onclick="setDashboardPeriod('today')">오늘</button>
+              <button data-period="tomorrow" onclick="setDashboardPeriod('tomorrow')">내일</button>
+              <button data-period="week" onclick="setDashboardPeriod('week')">이번 주</button>
+              <button data-period="all" onclick="setDashboardPeriod('all')">전체</button>
             </div>
-            <div class="view-toggle">
-              <button class="on" data-vm="table" onclick="setViewMode('table')">표</button>
+            <input class="dashboard-search" type="search" id="search" aria-label="예약 검색" placeholder="이름·차량번호·연락처·장소 검색" oninput="renderDashboard()">
+            <div class="view-toggle" aria-label="목록 보기 방식">
+              <button data-vm="auto" onclick="setViewMode('auto')">자동</button>
+              <button data-vm="table" onclick="setViewMode('table')">표</button>
               <button data-vm="card" onclick="setViewMode('card')">카드</button>
             </div>
           </div>
+          <div class="dashboard-filterline"><span id="dashboard-result-summary"></span><button class="filter-reset" id="dashboard-filter-reset" onclick="resetDashboardFilters()" hidden>필터 초기화</button></div>
           <div class="schedule-table-wrap"><div class="res-list" id="list"></div></div>
         </div>
       </section>
     </div>
+
+    <div class="view" id="view-trash"><section class="card"><div class="card-h"><h2>삭제한 예약</h2><span class="hint" id="trash-count"></span></div><div class="card-b"><p class="trash-summary">삭제한 예약을 확인하고 복원할 수 있습니다. 복원하면 기존 예약 목록에 다시 표시됩니다.</p><div class="trash-list" id="trash-list"></div></div></section><section class="card" id="local-recovery-panel" hidden><div class="card-h"><h2>기기에 보관된 이전 예약</h2><span class="hint" id="local-recovery-count"></span></div><div class="card-b"><p class="trash-summary">현재 서버 목록에는 없는 이전 기록입니다. 필요한 예약인지 확인한 뒤 복원하세요.</p><div class="trash-list" id="local-recovery-list"></div></div></section></div>
 
     <!-- ===== 예약 관리(전용 큰 목록) ===== -->
     <div class="view" id="view-reservations">
@@ -906,78 +946,196 @@ function resetPlateMap(){
 }
 const VANS=['쏠라티','스타리아','스타렉스','카니발'];
 
-const SEED_RESERVATIONS=[{"id": "seed000", "name": "(미기재)", "phone": "010-6489-5486", "car": "올뉴카니발 (8168)", "start": "2026-07-06T14:00", "end": "2026-07-08T21:00", "days": "", "ins": "자포", "status": "wait", "pickup": "사무실 / 16현금자포", "ret": "사무실", "memo": ""}, {"id": "seed001", "name": "한국언론진흥원", "phone": "053-763-2116", "car": "K5 (1758)", "start": "2026-07-07T11:00", "end": "2026-07-08T11:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "남구 중앙대로200 2층 가스가득 / 배차9카드", "ret": "반차6카드", "memo": ""}, {"id": "seed002", "name": "(미기재)", "phone": "", "car": "K5 (1500)", "start": "2026-07-07T12:00", "end": "", "days": "", "ins": "일반면책", "status": "wait", "pickup": "사무실", "ret": "사무실", "memo": ""}, {"id": "seed003", "name": "(미기재)", "phone": "", "car": "소나타대차 (1042/1807)", "start": "2026-07-08T10:00", "end": "", "days": "", "ins": "일반면책", "status": "wait", "pickup": "효목점 블루핸즈", "ret": "사무실", "memo": ""}, {"id": "seed004", "name": "김길남", "phone": "010-4709-7271", "car": "카니발4.5세 7인승 (1868)", "start": "2026-07-09T10:30", "end": "2026-07-10T17:30", "days": "", "ins": "일반면책", "status": "wait", "pickup": "동대구지점 / 카모아", "ret": "사무실", "memo": ""}, {"id": "seed005", "name": "(미기재)", "phone": "010-2522-7875", "car": "스타리아11인승 (1190)", "start": "2026-07-10T08:00", "end": "2026-07-10T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "효성타운 109동 / 15자포 전날배차", "ret": "사무실", "memo": ""}, {"id": "seed006", "name": "강성영", "phone": "010-3527-5034", "car": "쏠라티 (1304)", "start": "2026-07-10T08:00", "end": "2026-07-12T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "동대구지점 / 75자포", "ret": "계15 잔60", "memo": ""}, {"id": "seed007", "name": "강동구", "phone": "010-3825-3881", "car": "쏠라티 (차없음)", "start": "2026-07-10T20:00", "end": "2026-07-11T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "들안로60길17 102동 / 30자포", "ret": "사무실", "memo": ""}, {"id": "seed008", "name": "진중열", "phone": "010-2076-1631", "car": "스타리아11인하브 (3477)", "start": "2026-07-10T20:00", "end": "2026-07-11T22:00", "days": "", "ins": "자포", "status": "wait", "pickup": "사무실 완납 17자포", "ret": "사무실", "memo": ""}, {"id": "seed009", "name": "(미기재)", "phone": "010-4506-0345", "car": "스타리아11인승 (1190)", "start": "2026-07-10T20:00", "end": "2026-07-11T19:00", "days": "", "ins": "자포", "status": "wait", "pickup": "옥포읍 금계길66 신교카프라자 15자포", "ret": "사무실", "memo": ""}, {"id": "seed010", "name": "박동규", "phone": "010-4827-3337", "car": "쏠라티-신차 (3478)", "start": "2026-07-11T07:00", "end": "2026-07-12T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "동대구지점 / 55자포", "ret": "계15 잔40", "memo": ""}, {"id": "seed011", "name": "이재현04년생", "phone": "010-6689-8256", "car": "올뉴카니발 (8168)", "start": "2026-07-11T08:00", "end": "2026-07-12T21:30", "days": "", "ins": "완전자차", "status": "wait", "pickup": "조암남로27길14 신라트리움 / 완전자차", "ret": "완납", "memo": ""}, {"id": "seed012", "name": "유화랑고객", "phone": "010-2595-9930", "car": "쏠라티 (1265)", "start": "2026-07-11T08:00", "end": "2026-07-12T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "칠성동2가538-13 금류아파트 50자포", "ret": "사무실", "memo": ""}, {"id": "seed013", "name": "유화랑", "phone": "", "car": "스타리아9인승 (3369)", "start": "2026-07-12T08:00", "end": "2026-07-12T20:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "407,000 세금계산서 완납 / 유화랑기사건", "ret": "사무실", "memo": ""}, {"id": "seed014", "name": "박소영", "phone": "010-7183-3148", "car": "카니발4.5 HEV (4407)", "start": "2026-07-13T11:00", "end": "2026-07-14T21:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "한실로 117 302동 1705호", "ret": "계약금5 잔금34", "memo": ""}, {"id": "seed015", "name": "일심재활원", "phone": "010-6231-1908", "car": "신카2대", "start": "2026-07-15T09:00", "end": "2026-07-15T20:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "문카30", "ret": "사무실", "memo": ""}, {"id": "seed016", "name": "(미기재)", "phone": "010-3510-2518", "car": "카니발4.5세9인승 (1448)", "start": "2026-07-16T20:00", "end": "2026-07-19T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "동구 국채보상로165길30 강변아파트 / 45현자포", "ret": "사무실", "memo": ""}, {"id": "seed017", "name": "8명탑승", "phone": "010-2513-3071", "car": "스타리아9-11인승 (3369/1099)", "start": "2026-07-17T07:00", "end": "2026-07-17T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "15자포", "ret": "사무실", "memo": ""}, {"id": "seed018", "name": "이상준", "phone": "010-4670-1353", "car": "카니발4.5세9하브 (4604)", "start": "2026-07-17T08:00", "end": "2026-07-19T18:00", "days": "", "ins": "완전자차", "status": "wait", "pickup": "명덕로241 완전자차 완납", "ret": "사무실", "memo": ""}, {"id": "seed019", "name": "이원재", "phone": "010-3555-2283", "car": "올뉴카니발 (8168)", "start": "2026-07-17T09:00", "end": "2026-07-19T17:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "봉덕 사무실 카모아", "ret": "사무실", "memo": ""}, {"id": "seed020", "name": "김준영", "phone": "010-3383-7488", "car": "카니발4.5하브 (4604)", "start": "2026-07-17T09:30", "end": "2026-07-18T19:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "카모아 맞이주차장", "ret": "사무실", "memo": ""}, {"id": "seed021", "name": "신차 배차", "phone": "010-7520-8001", "car": "쏠라티 (1304)", "start": "2026-07-17T20:00", "end": "2026-07-20T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "75자포 사무실", "ret": "계10 잔65", "memo": ""}, {"id": "seed022", "name": "(미기재)", "phone": "010-6635-6685", "car": "카니발7-9하브 (2904)", "start": "2026-07-17T20:00", "end": "2026-07-19T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "만촌우방2차 6명탑승 30자포 / 세금계산서 하연부별", "ret": "사무실", "memo": ""}, {"id": "seed023", "name": "김병주", "phone": "010-9578-7383", "car": "스타리아9인하브 (4415)", "start": "2026-07-18T08:00", "end": "2026-07-19T08:00", "days": "", "ins": "완전자차", "status": "wait", "pickup": "범어자이102동 / 완전자차 / 19자포완납", "ret": "사무실", "memo": ""}, {"id": "seed024", "name": "김동은", "phone": "010-9365-1915", "car": "카니발9인승 (4407/4604)", "start": "2026-07-24T07:00", "end": "2026-07-25T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "30자포 전날배차", "ret": "사무실", "memo": ""}, {"id": "seed025", "name": "김태진", "phone": "010-8028-2201", "car": "올뉴카니발 (8168)", "start": "2026-07-25T12:00", "end": "2026-07-26T14:00", "days": "", "ins": "완전자차", "status": "wait", "pickup": "동대구지점 / 완전자차", "ret": "완납182,000", "memo": ""}, {"id": "seed026", "name": "류재열", "phone": "010-5808-8225", "car": "카니발4.5 9인승 (1448)", "start": "2026-07-27T09:00", "end": "2026-07-29T21:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "북구 학남로17길 12-3 / 일반자차", "ret": "40자포완납", "memo": ""}, {"id": "seed027", "name": "(미기재)", "phone": "010-5488-6006", "car": "중형-가계약", "start": "2026-07-27T10:00", "end": "2026-07-29T10:00", "days": "", "ins": "자포", "status": "wait", "pickup": "사무실 / 17자포현금", "ret": "사무실", "memo": ""}, {"id": "seed028", "name": "배기현", "phone": "010-9359-2556", "car": "쏠라티 (3478)", "start": "2026-07-29T20:00", "end": "2026-08-02T14:00", "days": "", "ins": "자포", "status": "wait", "pickup": "침산코오로하늘채 / 90자포 / 시간추가시10만", "ret": "계15 잔75 4일사용", "memo": ""}, {"id": "seed029", "name": "달서구관광카", "phone": "010-6556-9221", "car": "스타리아11인승", "start": "2026-07-30T07:00", "end": "2026-08-02T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "신차로 40자포", "ret": "사무실", "memo": ""}, {"id": "seed030", "name": "김상윤", "phone": "010-4650-4348", "car": "카니발4.5 9인승 (1448)", "start": "2026-08-01T09:00", "end": "2026-08-02T18:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "다사읍 죽곡리25-6 / 카모아", "ret": "사무실", "memo": ""}, {"id": "seed031", "name": "안우진", "phone": "010-5717-5212", "car": "올뉴카니발 (8168)", "start": "2026-08-01T13:00", "end": "2026-08-02T13:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "경북대IT 1호관 옆 학생주차장 / 카모아", "ret": "사무실", "memo": ""}, {"id": "seed032", "name": "최종화", "phone": "010-7309-7389", "car": "쏠라티 (3478변경X)", "start": "2026-08-03T07:00", "end": "2026-08-06T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "봉덕사무실 / 80만원 자포-완납", "ret": "사무실", "memo": ""}, {"id": "seed033", "name": "옥민", "phone": "010-8947-3122", "car": "카니발9인승하브", "start": "2026-08-03T09:30", "end": "2026-08-04T19:00", "days": "", "ins": "완전자차", "status": "wait", "pickup": "검단로115 완전자차", "ret": "32완납", "memo": ""}, {"id": "seed034", "name": "일심재활원", "phone": "010-9335-4908", "car": "스타리아2대", "start": "2026-08-13T08:00", "end": "2026-08-14T20:00", "days": "", "ins": "완전자차", "status": "wait", "pickup": "문카 84만원 결제예정 / 스타리아 인승확인 (완전자차시 18추가 면책30) / 스타리아 1대당 28만원", "ret": "사무실", "memo": ""}, {"id": "seed035", "name": "일심재활원", "phone": "010-9335-4908", "car": "카니발1대", "start": "2026-08-13T08:00", "end": "2026-08-14T20:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "카니발 1대 28만원", "ret": "사무실", "memo": ""}, {"id": "seed036", "name": "조예담", "phone": "010-7538-7525", "car": "카니발4세대 (2543)", "start": "2026-08-17T07:00", "end": "2026-08-18T19:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "동대구지점 완납 97년생", "ret": "사무실", "memo": ""}, {"id": "seed037", "name": "김찬희", "phone": "010-9986-9576", "car": "올뉴카니발 (8168)", "start": "2026-08-17T07:00", "end": "2026-08-18T19:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "동대구지점 완납 04년생", "ret": "사무실", "memo": ""}, {"id": "seed038", "name": "엄서정", "phone": "010-7243-7472", "car": "카니발4세대 (2521)", "start": "2026-08-18T09:00", "end": "2026-08-20T20:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "대구역힐스센트럴 467,000", "ret": "계약금50,000받음", "memo": ""}, {"id": "seed039", "name": "제주고지숙", "phone": "010-8661-7333", "car": "제주-배구팀 (쏠라티)", "start": "2026-08-21T10:00", "end": "2026-08-23T18:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "대구공항 / 주유포함70(현) / 카드77만", "ret": "사무실", "memo": ""}, {"id": "seed040", "name": "사장님", "phone": "", "car": "쏠라티 (1265)", "start": "2026-08-31T07:00", "end": "2026-09-01T20:00", "days": "", "ins": "자포", "status": "wait", "pickup": "삼정회 50자포", "ret": "사무실", "memo": ""}, {"id": "seed041", "name": "(미기재)", "phone": "010-4464-9003", "car": "카니발4.5하브9인 (4604/4407)", "start": "2026-09-24T08:00", "end": "2026-09-27T20:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "안심역코오롱하늘채", "ret": "잔50", "memo": ""}, {"id": "seed042", "name": "이원주", "phone": "010-6505-4598", "car": "카니발4.5세대", "start": "2026-09-25T08:00", "end": "2026-09-26T21:00", "days": "", "ins": "일반면책", "status": "wait", "pickup": "입석로2길2 102호 / 일반자차", "ret": "계10 잔20", "memo": ""}];
+const SEED_RESERVATIONS=[];
 const STORE='ky_reservations_v2';
+const STORAGE_STATE='ky_reservation_sync_v3';
 let data=[]; let filter='all'; let schedTab='all'; let editId=null; let undoStack=[];
+let trashData=[],localRecoveryData=[];
 let _firestoreReady=false; let _unsubFirestore=null; let _currentUser=null;
 const RESERVATIONS_COL='reservations';
-
-/* ===== Firestore 실시간 리스너 ===== */
-function startFirestoreSync(){
-  if(_unsubFirestore)_unsubFirestore();
-  _unsubFirestore=db.collection(RESERVATIONS_COL).onSnapshot(snap=>{
-    _firestoreReady=true;
-    const newData=[];
-    snap.forEach(doc=>newData.push(doc.data()));
-    newData.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-    data=newData.map(normalizeReservationLocationRecord);
-    try{localStorage.setItem(STORE,JSON.stringify(data))}catch(e){}
-    render();
-  },err=>{
-    console.error('Firestore 리스너 오류:',err);
-    toast('서버 연결 오류 — 오프라인 데이터 사용 중');
-    _firestoreReady=false;
-  });
+let _serverRecords=new Map(),_savedActive=new Map(),_pendingWrites=Object.create(null),_snapshotBefore=null;
+let _syncFlushing=false,_syncRetryTimer=null,_loadedLocalRecords=[],_firstServerSnapshot=true,_undoing=false;
+let _localDurable=true;
+let _syncState={status:'connecting',message:'서버 연결 확인 중',pending:0};
+const storageCopy=value=>JSON.parse(JSON.stringify(value));
+const storageEqual=(a,b)=>{if(a===b)return true;if(a===null||b===null||typeof a!=='object'||typeof b!=='object')return false;const ak=Object.keys(a),bk=Object.keys(b);return ak.length===bk.length&&ak.every(k=>Object.prototype.hasOwnProperty.call(b,k)&&storageEqual(a[k],b[k]))};
+const storageValidRecord=r=>r&&typeof r.id==='string'&&r.id.length>0&&!r.id.includes('/');
+const storageRecordsMap=rows=>new Map(rows.filter(storageValidRecord).map(r=>[r.id,storageCopy(r)]));
+function storageBusinessRecord(r){if(!r)return null;const c=storageCopy(r);delete c._mutationId;delete c.updatedAt;delete c.updatedBy;return c}
+function setSyncState(status,message){
+  if(!_localDurable){status='error';message=Object.keys(_pendingWrites).length?'기기 저장 실패 · 미전송 변경 있음 · 창을 닫지 말고 백업하세요':'기기 저장 실패 · 창을 닫지 말고 백업하세요'}
+  _syncState={status,message,pending:Object.keys(_pendingWrites).length,localDurable:_localDurable};
+  const el=document.getElementById('sync-status');if(el){el.textContent=message;el.dataset.state=status;el.title=message;el.setAttribute('role','status')}
+  if(typeof window!=='undefined'&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('reservation-sync-state',{detail:{..._syncState}}));
 }
-
-/* ===== load: Firestore 우선, localStorage 폴백 ===== */
-function load(){
-  try{data=JSON.parse(localStorage.getItem(STORE))||[]}catch(e){data=[]}
-  if(!data.length&&typeof SEED_RESERVATIONS!=='undefined')data=JSON.parse(JSON.stringify(SEED_RESERVATIONS));
-  const before=JSON.stringify(data);data=data.map(normalizeReservationLocationRecord);if(JSON.stringify(data)!==before)saveLocal();
-}
-
-/* ===== save: Firestore + localStorage 이중 저장 ===== */
-function save(){
-  saveLocal();
-  if(!_firestoreReady)return;
-  /* Firestore에 개별 문서 단위로 저장 (전체 덮어쓰기 방지) */
-  const batch=db.batch();
-  const ids=new Set(data.map(r=>r.id));
-  data.forEach(r=>{
-    batch.set(db.collection(RESERVATIONS_COL).doc(r.id),r);
-  });
-  batch.commit().catch(err=>{
-    console.error('Firestore 저장 오류:',err);
-    toast('서버 저장 실패 — 로컬에는 저장됨');
-  });
-}
+function getReservationSyncState(){return{..._syncState}}
+function getDeletedReservations(){return storageCopy(trashData)}
+function getLocalRecoveryReservations(){return storageCopy(localRecoveryData)}
 function saveLocal(){
-  try{localStorage.setItem(STORE,JSON.stringify(data))}catch(e){
-    toast('⚠️ 로컬 저장 실패 — 용량 부족');
-    console.error('localStorage 저장 실패:',e);
-  }
+  try{
+    // One durable envelope keeps pending operations, visible data and undo history consistent after a reload.
+    localStorage.setItem(STORAGE_STATE,JSON.stringify({version:3,records:[...data,...trashData],pending:_pendingWrites,undo:undoStack,recovery:localRecoveryData}));
+    _localDurable=true;
+    try{localStorage.setItem(STORE,JSON.stringify(data))}catch(e){/* Compatibility cache only. The envelope above is authoritative. */}
+    return true;
+  }catch(e){_localDurable=false;setSyncState('error','기기 저장 실패 · 창을 닫지 말고 백업하세요');toast('저장 공간이 부족합니다. JSON 백업을 내려받아 주세요');return false}
 }
-
-/* ===== 단일 레코드 Firestore 삭제 ===== */
-function deleteFromFirestore(id){
-  if(!_firestoreReady)return;
-  db.collection(RESERVATIONS_COL).doc(id).delete().catch(err=>{
-    console.error('Firestore 삭제 오류:',err);
+function storageRender(){
+  // Keep the focused inline input and its record object alive during another device's update.
+  if(typeof editingCell==='undefined'||!editingCell)render();
+  if(typeof window!=='undefined'&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('reservation-trash-changed',{detail:{count:trashData.length,recoveryCount:localRecoveryData.length}}));
+}
+function storageApplyRecords(records){
+  const existing=new Map([...data,...trashData].map(r=>[r.id,r])),active=[],trash=[];
+  records.forEach(raw=>{
+    if(!storageValidRecord(raw))return;
+    const normalized=normalizeReservationLocationRecord(storageCopy(raw));
+    const r=existing.get(raw.id)||{};Object.keys(r).forEach(k=>{if(!(k in normalized))delete r[k]});Object.assign(r,normalized);
+    (r.deletedAt?trash:active).push(r);
+  });
+  active.sort((a,b)=>(a.start||'').localeCompare(b.start||''));trash.sort((a,b)=>(b.deletedAt||'').localeCompare(a.deletedAt||''));
+  data=active;trashData=trash;_savedActive=storageRecordsMap(data);
+}
+function storageMergedRecords(){
+  const merged=new Map(_serverRecords);
+  Object.values(_pendingWrites).forEach(op=>merged.set(op.id,{...(merged.get(op.id)||op.record||{}),...op.patch,id:op.id}));
+  return merged;
+}
+function load(){
+  let state=null;try{state=JSON.parse(localStorage.getItem(STORAGE_STATE)||'null')}catch(e){}
+  let records=[];
+  if(state&&state.version===3&&Array.isArray(state.records)){
+    records=state.records;_pendingWrites=Object.create(null);
+    Object.entries(state.pending||{}).forEach(([id,op])=>{if(storageValidRecord({id})&&op&&op.id===id&&op.patch&&typeof op.patch==='object')_pendingWrites[id]=op});
+    undoStack=Array.isArray(state.undo)?state.undo.slice(-20):[];localRecoveryData=Array.isArray(state.recovery)?state.recovery:[];
+  }else{try{const old=JSON.parse(localStorage.getItem(STORE)||'[]');records=Array.isArray(old)?old:[]}catch(e){records=[]}}
+  records=records.filter(storageValidRecord);_loadedLocalRecords=storageCopy(records);_serverRecords=storageRecordsMap(records);
+  storageApplyRecords(storageMergedRecords());saveLocal();
+  setSyncState(Object.keys(_pendingWrites).length?'pending':'connecting',Object.keys(_pendingWrites).length?'기기에 보관됨 · 서버 전송 대기':'서버 연결 확인 중');
+}
+function startFirestoreSync(){
+  if(_unsubFirestore)_unsubFirestore();_firstServerSnapshot=true;
+  _unsubFirestore=db.collection(RESERVATIONS_COL).onSnapshot({includeMetadataChanges:true},snap=>{
+    const remote=new Map();snap.forEach(doc=>{const r=doc.data();if(r&&typeof r==='object')remote.set(doc.id,{...r,id:doc.id})});
+    const fromCache=!!snap.metadata?.fromCache;
+    _serverRecords=remote;
+    if(_firstServerSnapshot&&!fromCache){
+      _firstServerSnapshot=false;
+      if(!remote.size){
+        // Only a confirmed empty server may receive the old local collection automatically.
+        _loadedLocalRecords.forEach(r=>{if(!_pendingWrites[r.id])storageQueueRecord(r,r)});
+      }else{
+        const recovery=storageRecordsMap(localRecoveryData);
+        _loadedLocalRecords.forEach(r=>{if(!remote.has(r.id)&&!_pendingWrites[r.id]&&!r.deletedAt)recovery.set(r.id,r)});
+        localRecoveryData=[...recovery.values()];
+      }
+      _loadedLocalRecords=[];
+    }
+    // Cached startup snapshots must not discard legacy local-only records before the server answers.
+    if(_firstServerSnapshot)_loadedLocalRecords.forEach(r=>{if(!_serverRecords.has(r.id))_serverRecords.set(r.id,r)});
+    _firestoreReady=!fromCache;
+    storageApplyRecords(storageMergedRecords());saveLocal();storageRender();
+    if(Object.keys(_pendingWrites).length){setSyncState('pending',fromCache?'오프라인 · 변경사항을 기기에 보관 중':'서버 전송 대기');if(_firestoreReady)flushReservationWrites()}
+    else setSyncState(fromCache?'offline':'saved',fromCache?'오프라인 · 마지막 저장 자료 표시 중':'서버 저장 완료');
+  },err=>{
+    _firestoreReady=false;setSyncState('error','서버 연결 실패 · 변경사항은 기기에 보관');
+    console.error('Firestore 연결 오류:',err.code||'unknown');
   });
 }
-
-/* ===== 기존 localStorage → Firestore 1회 마이그레이션 ===== */
-async function migrateToFirestore(){
-  if(!_firestoreReady||!data.length)return;
-  const snap=await db.collection(RESERVATIONS_COL).limit(1).get();
-  if(!snap.empty)return; // 이미 데이터 있으면 스킵
-  const batch=db.batch();
-  data.forEach(r=>{
-    batch.set(db.collection(RESERVATIONS_COL).doc(r.id),r);
+function storageQueueRecord(record,patch){
+  const prior=_pendingWrites[record.id],token=uid();
+  _pendingWrites[record.id]={id:record.id,record:storageCopy(record),patch:{...(prior?.patch||{}),...storageCopy(patch),id:record.id,_mutationId:token},token,queuedAt:new Date().toISOString()};
+}
+function storageChangedFields(before,after){
+  const patch={};Object.keys(after).forEach(k=>{if(!storageEqual(before?.[k],after[k]))patch[k]=after[k]});
+  // Firestore merge cannot remove fields accidentally omitted by older form code.
+  return patch;
+}
+function save(){
+  const beforeAll=new Map([..._savedActive,...trashData.map(r=>[r.id,storageCopy(r)])]);
+  const current=storageRecordsMap(data),changes=[],now=new Date().toISOString();
+  current.forEach((record,id)=>{
+    const before=beforeAll.get(id)||null,patch=storageChangedFields(before,record);
+    if(!Object.keys(patch).length)return;
+    record={...(before||{}),...record,deletedAt:null,updatedAt:now,updatedBy:_currentUser?.uid||'offline'};
+    Object.assign(patch,{deletedAt:null,updatedAt:record.updatedAt,updatedBy:record.updatedBy});
+    storageQueueRecord(record,patch);changes.push({id,before:before?storageCopy(before):null,after:storageCopy(record)});
   });
-  await batch.commit();
-  toast('기존 예약 '+data.length+'건을 서버에 업로드했습니다');
+  _savedActive.forEach((before,id)=>{
+    if(current.has(id))return;
+    const record={...before,deletedAt:now,updatedAt:now,updatedBy:_currentUser?.uid||'offline'};
+    storageQueueRecord(record,{deletedAt:now,updatedAt:now,updatedBy:record.updatedBy});changes.push({id,before:storageCopy(before),after:storageCopy(record)});
+  });
+  if(changes.length&&_snapshotBefore&&!_undoing){undoStack.push({at:now,changes});undoStack=undoStack.slice(-20)}
+  _snapshotBefore=null;
+  storageApplyRecords(storageMergedRecords());
+  const durable=saveLocal();
+  if(Object.keys(_pendingWrites).length&&durable)setSyncState('pending',_firestoreReady?'저장 중…':'기기에 저장됨 · 서버 전송 대기');
+  if(_firestoreReady)flushReservationWrites();
+  return durable;
+}
+async function flushReservationWrites(){
+  if(_syncFlushing||!_firestoreReady)return;
+  _syncFlushing=true;
+  try{
+    while(_firestoreReady&&Object.keys(_pendingWrites).length){
+      const op=storageCopy(Object.values(_pendingWrites)[0]);setSyncState('saving',`서버 저장 중 · ${Object.keys(_pendingWrites).length}건`);
+      try{
+        await db.collection(RESERVATIONS_COL).doc(op.id).set(op.patch,{merge:true});
+        // Merge acknowledged fields into the latest snapshot, never replace another record.
+        _serverRecords.set(op.id,{...(_serverRecords.get(op.id)||op.record),...op.patch,id:op.id});
+        if(_pendingWrites[op.id]?.token===op.token)delete _pendingWrites[op.id];
+        storageApplyRecords(storageMergedRecords());saveLocal();
+      }catch(err){
+        setSyncState('error','서버 저장 실패 · 기기에 보관됨 · 다시 시도');console.error('Firestore 저장 오류:',err.code||'unknown');
+        if(!['permission-denied','unauthenticated','invalid-argument'].includes(err.code)&&!_syncRetryTimer)_syncRetryTimer=setTimeout(()=>{_syncRetryTimer=null;retryReservationSync()},15000);
+        return;
+      }
+    }
+    setSyncState(Object.keys(_pendingWrites).length?'pending':'saved',Object.keys(_pendingWrites).length?'기기에 저장됨 · 서버 전송 대기':'서버 저장 완료');storageRender();
+  }finally{_syncFlushing=false}
+}
+function retryReservationSync(){saveLocal();if(_syncRetryTimer){clearTimeout(_syncRetryTimer);_syncRetryTimer=null}if(!_firestoreReady&&_currentUser)startFirestoreSync();else flushReservationWrites()}
+if(typeof window!=='undefined')window.addEventListener('online',retryReservationSync);
+// Retained entry points for older callers. Deletes now remain recoverable on every device.
+function deleteFromFirestore(id){const r=data.find(x=>x.id===id);if(r){snapshot();data=data.filter(x=>x.id!==id);save()}}
+async function migrateToFirestore(){/* Migration is handled after the first confirmed server snapshot. */}
+function snapshot(){_snapshotBefore=true}
+function undo(){
+  if(!undoStack.length){toast('되돌릴 내역이 없습니다');return}
+  const item=undoStack.pop(),changes=item?.changes;if(!Array.isArray(changes)){saveLocal();toast('이전 형식의 기록은 복원할 수 없습니다');return}
+  let applied=0,skipped=0;const all=storageRecordsMap([...data,...trashData]);_undoing=true;
+  changes.forEach(change=>{
+    const current=all.get(change.id);if(!current){skipped++;return}
+    if(!change.before){
+      if(!storageEqual(storageBusinessRecord(current),storageBusinessRecord(change.after))){skipped++;return}
+      all.set(change.id,{...current,deletedAt:new Date().toISOString()});applied++;return;
+    }
+    const before=change.before,after=change.after;let touched=false;
+    for(const key of new Set([...Object.keys(before),...Object.keys(after)])){
+      if(['id','_mutationId','updatedAt','updatedBy'].includes(key)||storageEqual(before[key],after[key]))continue;
+      if(!storageEqual(current[key],after[key])){skipped++;continue}
+      current[key]=before[key]===undefined?null:storageCopy(before[key]);touched=true;
+    }
+    if(touched){all.set(change.id,current);applied++}
+  });
+  // Feed only the affected records through the same durable queue, preserving other devices' updates.
+  all.forEach((record,id)=>{
+    const old=[...data,...trashData].find(r=>r.id===id);const patch=storageChangedFields(old,record);
+    if(Object.keys(patch).length){record.updatedAt=new Date().toISOString();record.updatedBy=_currentUser?.uid||'offline';Object.assign(patch,{updatedAt:record.updatedAt,updatedBy:record.updatedBy});storageQueueRecord(record,patch)}
+  });
+  _undoing=false;_snapshotBefore=null;storageApplyRecords(storageMergedRecords());saveLocal();storageRender();
+  setSyncState('pending','되돌리기 저장 대기');if(_firestoreReady)flushReservationWrites();
+  toast(skipped?`${applied}건 되돌림 · 이후 변경된 항목은 유지했습니다`:applied?'되돌렸습니다':'되돌릴 변경사항이 없습니다');
+}
+function restoreReservation(id){
+  const r=trashData.find(x=>x.id===id);if(!r)return;
+  snapshot();data.push({...storageCopy(r),deletedAt:null});save();storageRender();toast('예약을 복원했습니다');
+}
+function restoreLocalRecovery(id){
+  const r=localRecoveryData.find(x=>x.id===id);if(!r)return;
+  if(data.some(x=>x.id===id)||trashData.some(x=>x.id===id)){toast('같은 예약이 이미 있습니다');return}
+  snapshot();data.push({...storageCopy(r),deletedAt:null});localRecoveryData=localRecoveryData.filter(x=>x.id!==id);save();storageRender();toast('기기 보관 예약을 복원했습니다');
 }
 
 /* ===== JSON 백업 내보내기/가져오기 ===== */
@@ -1014,14 +1172,12 @@ function importJSON(){
 }
 
 function loadSeed(){if(confirm('예약현황표 43건을 불러올까요? (현재 예약은 유지되고 중복 id는 덮어씀)')){SEED_RESERVATIONS.map(normalizeReservationLocationRecord).forEach(s=>{const i=data.findIndex(x=>x.id===s.id);if(i>=0)data[i]=s;else data.push(s)});save();render();toast('예약현황표 '+SEED_RESERVATIONS.length+'건 불러옴')}}
-function clearAll(){if(confirm('모든 예약을 삭제할까요? (되돌릴 수 없음)')){snapshot();const oldIds=data.map(r=>r.id);data=[];save();if(_firestoreReady){const batch=db.batch();oldIds.forEach(id=>batch.delete(db.collection(RESERVATIONS_COL).doc(id)));batch.commit().catch(e=>console.error(e))}render();toast('전체 삭제됨')}}
-function snapshot(){undoStack.push(JSON.stringify(data));if(undoStack.length>10)undoStack.shift()}
-function undo(){if(!undoStack.length){toast('되돌릴 내역이 없습니다');return}data=JSON.parse(undoStack.pop());save();render();toast('되돌렸습니다')}
+function clearAll(){if(!data.length){toast('삭제할 예약이 없습니다');return}if(confirm('모든 예약을 휴지통으로 이동할까요? 휴지통에서 복원할 수 있습니다.')){snapshot();data=[];save();storageRender();toast('모든 예약을 휴지통으로 이동했습니다')}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000)}
 function rawEl(){return document.getElementById('raw')}
 function val(id){return document.getElementById(id).value.trim()}
-function todayStr(){return new Date().toISOString().slice(0,10)}
+function todayStr(){return koreanNow().slice(0,10)}
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function toLocalDT(d){const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`}
 function carBase(car){for(const v of VANS)if((car||'').includes(v))return v==='올뉴카니발'?'카니발':v;return '승용'}
@@ -1066,7 +1222,8 @@ function plateGroup(plate){
 }
 
 /* ===== 파싱 (3형식 자동감지 + 강화) ===== */
-function toManwon(s){if(s==null)return null;const d=String(s).replace(/[^\d]/g,'');if(!d)return null;const n=+d;return n<1000?n*10000:n}
+function toManwon(s){if(s==null||String(s).trim()==='')return null;const text=String(s).replace(/[,\s]/g,'');if(/만|원/.test(text))return moneyNumber(text);if(!/^\d+(?:\.\d+)?$/.test(text))return null;const n=Number(text);return n<1000?Math.round(n*10000):n}
+
 function normPhone(s){const d=(s||'').replace(/\D/g,'');return d.length===11?`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`:(s||'').trim()}
 
 function detectFormat(raw){
@@ -1109,9 +1266,9 @@ function importedRuleKV(raw){
 function importedTo24(h,ampm){h=Number(h);if(ampm==='오후'&&h<12)h+=12;if(ampm==='오전'&&h===12)h=0;return h}
 function importedDT(y,mo,d,h=0,mi=0){const x=new Date(Number(y),Number(mo)-1,Number(d),Number(h),Number(mi)||0);return isNaN(x)?'':toLocalDT(x)}
 function importedSingleDT(str,year){
-  str=String(str||'');let m=str.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})[^0-9]*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)/);
+  str=String(str||'');let m=str.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})[^0-9]*?(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)/);
   if(m)return importedDT(m[1],m[2],m[3],importedTo24(m[5],m[4]),m[6]||m[7]||0);
-  m=str.match(/(\d{1,2})[.\/-](\d{1,2})[^0-9]*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)/);
+  m=str.match(/(\d{1,2})[.\/-](\d{1,2})[^0-9]*?(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)/);
   if(m)return importedDT(year,m[1],m[2],importedTo24(m[4],m[3]),m[5]||m[6]||0);
   return '';
 }
@@ -1482,6 +1639,9 @@ function vehicleFromNumberInput(value){
   const compact=raw.replace(/\s/g,'');
   let plate='';
   if(PLATE_MAP[compact])plate=compact;
+  const full=compact.match(/\d{2,3}[가-힣]\d{4}/g)||[];
+  if(full.length===1){if(PLATE_MAP[full[0]])plate=full[0];else return{matched:false,value:raw,plate:'',reason:'not-found'}}
+  if(full.length>1)return{matched:false,value:raw,plate:'',reason:'duplicate'};
   if(!plate){
     const last4=(compact.match(/(\d{4})\)?$/)||[])[1]||'';
     if(last4){
@@ -1492,7 +1652,7 @@ function vehicleFromNumberInput(value){
   }
   if(!plate||!PLATE_MAP[plate])return{matched:false,value:raw,plate:'',reason:'not-found'};
   const info=PLATE_MAP[plate];
-  return{matched:true,plate,last4:plate.slice(-4),value:`${info.n} (${plate.slice(-4)})`,info};
+  return{matched:true,plate,last4:plate.slice(-4),value:`${info.n} (${Object.keys(PLATE_MAP).filter(k=>k.endsWith(plate.slice(-4))).length>1?plate:plate.slice(-4)})`,info};
 }
 function applyVehicleNumberInput(options={}){
   const input=document.getElementById('f-car');if(!input)return false;
@@ -1512,6 +1672,7 @@ function setupVehicleNumberAutoFill(){
   const input=document.getElementById('f-car');if(!input||input.dataset.vehicleAutoFill==='1')return;
   input.dataset.vehicleAutoFill='1';
   input.addEventListener('input',()=>{
+    delete input.dataset.fullPlate;
     const v=input.value.trim();
     if(/^\(?\d{4}\)?$/.test(v)||/^\d{2,3}[가-힣]\d{4}$/.test(v))applyVehicleNumberInput({notify:false});
   });
@@ -1579,9 +1740,9 @@ function setupPickupReturnSync(){
   });
 }
 function validPhone(v){return /^01[016789]-?\d{3,4}-?\d{4}$/.test(String(v||''))}
-function validDatePair(a,b){return !!(a&&b&&!isNaN(new Date(a))&&!isNaN(new Date(b))&&new Date(b)>=new Date(a))}
+function validDatePair(a,b){const start=reservationTime(a),end=reservationTime(b);return Number.isFinite(start)&&Number.isFinite(end)&&end>start}
 function moreSpecific(a,b){a=String(a||'').trim();b=String(b||'').trim();return b.length>a.length?b:a}
-function moneyText(label,v){return Number.isFinite(Number(v))?`${label} ${Number(v).toLocaleString()}원`:''}
+function moneyText(label,v){const amount=moneyNumber(v);return amount!==null?`${label} ${amount.toLocaleString()}원`:''}
 function buildFinancialMemo(r,existing=''){
   return [moneyText('총액',r.total),moneyText('계약금',r.deposit),moneyText('잔금',r.balance),r.payment_method]
     .filter(v=>v&&!String(existing).includes(v)).join(' · ');
@@ -1630,7 +1791,8 @@ function applyParsedResult(r){
   const plate=resolvePlate(r.plate),car=(plate&&PLATE_MAP[plate]?PLATE_MAP[plate].n:r.car)||'';
   set('f-name',r.name);set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
   set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
-  document.getElementById('f-ins').value=INSURANCE_VALUES.includes(r.insurance)?r.insurance:'';
+  document.getElementById('f-ins').value=['완전자차','일반면책'].includes(r.insurance)?r.insurance:'일반면책';
+  populateFinanceForm(r);
   set('f-memo',[r.memo,buildFinancialMemo(r,r.memo)].filter(Boolean).join(' · '));
   applyLocationPairToForm(r.pickup,r.return_location);
 }
@@ -1689,7 +1851,7 @@ async function smartParse(){
     showParseStatus(local,{error:friendlyAIError(e),elapsed:performance.now()-started});toast('기존 파서 결과를 적용했습니다')}
   finally{setAIParsing(false)}
 }
-function set(id,v){document.getElementById(id).value=v||''}
+function set(id,v){document.getElementById(id).value=v??''}
 
 /* ===== 카카오톡 예약 이벤트 분석기 ===== */
 const KAKAO_AI_SCORE_MIN=7,KAKAO_REVIEW_SCORE_MIN=4,KAKAO_CLUSTER_SAME_SENDER_MIN=10,KAKAO_CLUSTER_MAX_GAP_MIN=30;
@@ -1951,7 +2113,7 @@ function renderKakaoAnalysis(messageCount=0,clusterCount=0){
 }
 function kakaoDisplayName(e){return [e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||'(미기재)'}
 function kakaoCarField(e,existing=''){const p=resolvePlate(e.plate)||e.plate||'';let car=e.car||String(existing||'').replace(/\s*\(.+?\)/,'').trim();return [car,p?`(${p})`:''].filter(Boolean).join(' ')}
-function fillKakaoEventForm(e){set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);document.getElementById('f-ins').value=e.insurance||'';set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
+function fillKakaoEventForm(e){clearForm();populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('paste');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);document.getElementById('f-ins').value=['일반면책','완전자차'].includes(e.insurance)?e.insurance:'일반면책';set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
 function chooseKakaoMatch(e){
   const matches=matchKakaoReservation(e).filter(m=>m.score>=50);if(!matches.length)return null;const top=matches[0],second=matches[1];if(top.score>=80&&(!second||top.score-second.score>=30))return data.find(r=>r.id===top.reservationId);
   const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${r.name} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
@@ -1968,8 +2130,10 @@ function applyKakaoRow(i){
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
   if(e.action==='UPDATE'){if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance'))setField('ins',e.insurance)}
   if(['UPDATE','LOCATION_UPDATE'].includes(e.action)){if(e.pickup)setField('pickup',e.pickup);if(e.returnLocation)setField('ret',e.returnLocation)}
-  if(e.action==='PAYMENT_UPDATE'){if(e.deposit!=null)setField('deposit',e.deposit);if(e.balance!=null)setField('balance',e.balance);if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
+  if(e.action==='PAYMENT_UPDATE'){if(e.total!=null)setField('total',e.total);if(e.deposit!=null){setField('deposit',e.deposit);setField('paid',e.deposit)}if(e.balance!=null){setField('balance',e.balance);if(moneyNumber(target.total)!==null)setField('paid',Math.max(0,moneyNumber(target.total)-e.balance));else setField('paid',null)}if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
   const extra=[e.memo,...(e.operationNotes||[]),buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod}),e.paymentStatus?`결제상태 ${e.paymentStatus}`:''].filter(Boolean).join(' · ');if(extra&&!String(target.memo||'').includes(extra))setField('memo',[target.memo,extra].filter(Boolean).join(' · '));
+  if(changed.includes('car'))setField('vehicleId',reservationVehicleId({car:target.car}));
+  const invalid=validateReservation(target);if(invalid){data[data.findIndex(x=>x.id===target.id)]=before;toast(invalid);return}if(!confirmReservationWarnings(target)){data[data.findIndex(x=>x.id===target.id)]=before;return}
   saveKakaoHistory(target.id,e.action,changed,before,JSON.parse(JSON.stringify(target)),row.cluster.messages.map(m=>m.text.slice(0,120)));save();render();row.ignored=true;renderKakaoAnalysis();toast('예약에 반영하고 변경 이력을 저장했습니다');
 }
 function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
@@ -1989,6 +2153,7 @@ function kakaoEventToReservation(e){
     status:'wait',
     pickup:e.pickup||'사무실',
     ret:e.returnLocation||e.pickup||'사무실',
+    total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
   });
@@ -1999,26 +2164,35 @@ function uploadKakaoRow(i){
   if(!(e.action==='CREATE'||e.action==='NEEDS_REVIEW')){toast('신규 예약만 바로 올릴 수 있습니다');return}
   if(!e.name&&!e.customerName&&!e.sourceName){toast('고객명이 없어 올릴 수 없습니다 — 직접 수정하세요');return}
   const rec=kakaoEventToReservation(e);
+  const invalid=validateReservation(rec);if(invalid){fillKakaoEventForm(e);toast(invalid);return}
   const dup=findKakaoConflict(rec);
   const warn=dup?`\n\n⚠️ ${dup.name} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
   if(!confirm(`아래 예약을 바로 등록할까요?${warn}\n\n${rec.name} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
   snapshot();data.unshift(rec);save();render();row.ignored=true;renderKakaoAnalysis();
   toast('예약을 등록했습니다');
 }
-function findKakaoConflict(rec){
-  if(!rec.start||!rec.end)return null;const plate=(String(rec.car||'').match(/\((\d{4})\)/)||[])[1];if(!plate)return null;
-  const s=new Date(rec.start),en=new Date(rec.end);
-  return data.find(r=>{if(r.id===rec.id||r.status==='cancelled')return false;const p=(String(r.car||'').match(/\((\d{4})\)/)||[])[1];if(p!==plate||!r.start||!r.end)return false;const rs=new Date(r.start),re=new Date(r.end);return s<re&&rs<en})||null;
+function findKakaoConflict(rec){return reservationConflicts(rec)[0]||null}
+
+function confirmBulkReservations(items,label){
+  const invalid=items.map((item,index)=>({item,index,error:validateReservation(item.rec)})).filter(x=>x.error);
+  if(invalid.length){const first=invalid[0];toast(`${invalid.length}건 확인 필요 · ${first.index+1}번 ${first.item.rec.name||'예약'}: ${first.error} 일괄 등록하지 않았습니다.`);return false}
+  // Validate the entire batch before asking about conflicts or changing any record.
+  // Ascending starts also detects short preparation gaps between new reservations.
+  const checked=[...data];
+  for(const item of [...items].sort((a,b)=>String(a.rec.start).localeCompare(String(b.rec.start)))){
+    if(!confirmReservationWarnings(item.rec,checked))return false;
+    checked.push(item.rec);
+  }
+  return confirm(`${label} ${items.length}건을 한 번에 등록할까요?`);
 }
 function uploadAllKakao(){
   const targets=kakaoAnalysisState.filter(r=>r.event&&!r.ignored&&(r.event.action==='CREATE'||r.event.action==='NEEDS_REVIEW')&&(r.event.name||r.event.customerName||r.event.sourceName));
   if(!targets.length){toast('바로 올릴 신규 예약이 없습니다');return}
-  const conflicts=targets.map(r=>{const rec=kakaoEventToReservation(r.event);return{r,rec,dup:findKakaoConflict(rec)}});
-  const dupCount=conflicts.filter(c=>c.dup).length;
-  const msg=`신규 예약 ${targets.length}건을 한 번에 등록할까요?`+(dupCount?`\n\n⚠️ 이 중 ${dupCount}건은 차량·시간이 겹칩니다.`:'');
-  if(!confirm(msg))return;
-  snapshot();let n=0;conflicts.forEach(c=>{data.unshift(c.rec);c.r.ignored=true;n++});save();render();renderKakaoAnalysis();
-  toast(`${n}건을 등록했습니다`);
+  const items=targets.map(r=>({r,rec:kakaoEventToReservation(r.event)}));
+  if(!confirmBulkReservations(items,'신규 예약'))return;
+  snapshot();data.unshift(...items.map(x=>x.rec));const durable=save();
+  items.forEach(x=>{x.r.ignored=true});render();renderKakaoAnalysis();
+  toast(durable?`${items.length}건을 기기에 등록했습니다. 상단에서 서버 저장 상태를 확인하세요.`:'기기 저장 실패 · 창을 닫지 말고 JSON 백업을 내려받아 주세요.');
 }
 
 
@@ -2198,114 +2372,207 @@ function clearReservationAudit(){
 
 
 /* ===== 저장/편집 ===== */
-function saveRes(){
-  // 입력 직후 포커스를 옮기지 않고 저장해도 차량번호를 차종명으로 변환한다.
-  applyVehicleNumberInput({notify:false});
-  const pickup=val('f-pickup')||'사무실';
-  let ret=val('f-return').trim()||pickup; // 회차 위치 비면 배차지와 동일
-  const r=normalizeReservationLocationRecord({id:editId||uid(),name:val('f-name'),phone:val('f-phone'),car:val('f-car'),
-    start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),
-    status:val('f-status'),pickup,ret,memo:val('f-memo'),balance:val('f-balance').trim()});
-  if(!r.name){toast('고객명을 입력하세요');return}
-  snapshot();
-  if(editId){const i=data.findIndex(x=>x.id===editId);data[i]=r;toast('수정되었습니다')}
-  else{data.unshift(r);toast('예약이 등록되었습니다')}
-  save();clearForm();render();
+/* ===== 예약 입력 검증 · 한국 시간 · 정산 ===== */
+function koreanNow(value=new Date()){
+  const p=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(value);
+  const get=k=>p.find(x=>x.type===k).value;
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
 }
-function clearForm(){['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance'].forEach(i=>set(i,''));
-  document.getElementById('f-ins').value='자포';document.getElementById('f-status').value='wait';
-  returnLocationManuallyEdited=false;previousPickupValue='';
-  editId=null;document.getElementById('save-btn').textContent='예약 저장';document.getElementById('edit-hint').textContent='';const status=document.getElementById('ai-parse-status');status.textContent='';status.classList.remove('on');}
-function editRes(id){const original=data.find(x=>x.id===id);if(!original)return;const r=normalizeReservationLocationRecord(original);
-  set('f-name',r.name);set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);
-  set('f-days',r.days);document.getElementById('f-ins').value=r.ins||'자포';document.getElementById('f-status').value=r.status||'wait';
-  set('f-memo',r.memo);set('f-balance',r.balance||'');applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});
-  editId=id;document.getElementById('save-btn').textContent='수정 저장';document.getElementById('edit-hint').textContent='수정 중';
-  go2('dashboard');window.scrollTo({top:0,behavior:'smooth'});}
-function delRes(id){if(!confirm('이 예약을 삭제할까요?'))return;snapshot();data=data.filter(x=>x.id!==id);save();deleteFromFirestore(id);render();toast('삭제되었습니다')}
+function reservationTime(value){
+  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(value||'')))return NaN;
+  const time=Date.parse(value+':00+09:00');
+  return Number.isFinite(time)&&koreanNow(new Date(time))===value?time:NaN;
+}
+function moneyNumber(value){
+  if(value==null||String(value).trim()==='')return null;
+  if(typeof value==='number')return Number.isFinite(value)&&value>=0?Math.round(value):null;
+  const s=String(value).replace(/[,\s]/g,'');
+  if(s==='완납')return 0;
+  if(/^\d+(?:\.\d+)?만(?:원)?$/.test(s))return Math.round(parseFloat(s)*10000);
+  const m=s.match(/^(\d+)만(\d+)(?:원)?$/);if(m)return Number(m[1])*10000+Number(m[2]);
+  if(/^\d+(?:원)?$/.test(s))return Number(s.replace('원',''));
+  return null;
+}
+function reservationBalance(r){
+  const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
+  if(total!==null&&paid!==null)return Math.max(0,total-paid);
+  return moneyNumber(r.balance);
+}
+function reservationVehicleId(r){
+  const explicit=String(r.vehicleId||'').replace(/\s/g,'');
+  if(explicit&&PLATE_MAP[explicit])return explicit;
+  const car=String(r.car||'').replace(/\s/g,'');
+  const full=car.match(/\d{2,3}[가-힣]\d{4}/g)||[];
+  if(full.length===1)return full[0];
+  if(full.length>1)return '';
+  const par=(car.match(/\(([^)]+)\)/)||[])[1]||car;
+  if(!/^\d{4}$/.test(par))return '';
+  const hits=Object.keys(PLATE_MAP).filter(k=>k.endsWith(par));
+  return hits.length===1?hits[0]:'';
+}
+function reservationConflicts(r,records=data){
+  const vehicle=reservationVehicleId(r),start=reservationTime(r.start),end=reservationTime(r.end);
+  if(!vehicle||r.status==='cancelled'||!Number.isFinite(start)||!Number.isFinite(end))return [];
+  return records.filter(o=>o.id!==r.id&&!o.deletedAt&&o.status!=='cancelled'&&reservationVehicleId(o)===vehicle&&start<reservationTime(o.end)&&reservationTime(o.start)<end);
+}
+function validateReservation(r){
+  if(!String(r.name||'').trim()||r.name==='(미기재)')return '고객명 또는 소개처를 입력하세요.';
+  const start=reservationTime(r.start),end=reservationTime(r.end);
+  if(!Number.isFinite(start)||!Number.isFinite(end))return '대여 시작과 반납 일시를 정확히 입력하세요.';
+  if(end<=start)return '반납 일시는 대여 시작보다 늦어야 합니다.';
+  if(!String(r.car||'').trim())return '차종을 입력하세요. 차량번호는 나중에 배정할 수 있습니다.';
+  const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
+  if(total!==null&&paid!==null&&paid>total)return '입금액이 총금액보다 큽니다. 금액을 확인하세요.';
+  return '';
+}
+function confirmReservationWarnings(r,records=data){
+  const conflicts=reservationConflicts(r,records);
+  if(conflicts.length)return confirm(`같은 차량의 일정이 ${conflicts.length}건 겹칩니다.\n${conflicts.map(o=>`${o.name||'예약'} · ${fmt(o.start)} ~ ${fmt(o.end)}`).join('\n')}\n\n중복을 확인하고 저장하시겠습니까?`);
+  const vehicle=reservationVehicleId(r);
+  const tight=vehicle&&records.find(o=>o.id!==r.id&&o.status!=='cancelled'&&!o.deletedAt&&reservationVehicleId(o)===vehicle&&reservationTime(r.start)>=reservationTime(o.end)&&reservationTime(r.start)-reservationTime(o.end)<3600000);
+  if(tight)return confirm('이 차량의 이전 반납과 다음 배차 사이가 1시간 미만입니다. 준비·이동 시간을 확인하고 저장하시겠습니까?');
+  return true;
+}
+let _editingOriginal=null,_editFormBaseline=null;
+function populateFinanceForm(r){
+  const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
+  set('f-total',total??'');set('f-paid',paid??'');set('f-balance',reservationBalance(r)??'');
+  const method=r.paymentMethod||r.payment_method||'';set('f-payment',method==='이체'?'계좌이체':method==='후불'?'현장결제':method);
+  set('f-ins-price',r.insuranceFee||(r.ins==='자포'||r.insurance==='자포'?'included':r.ins==='자별'||r.insurance==='자별'?'excluded':''));
+  updateFinanceBalance();
+}
+function updateFinanceBalance(){
+  const total=moneyNumber(val('f-total')),paid=moneyNumber(val('f-paid')),el=document.getElementById('f-balance');
+  const calculated=total!==null&&paid!==null;
+  el.readOnly=calculated;
+  if(calculated)el.value=Math.max(0,total-paid);
+  document.getElementById('balance-help').textContent=calculated?'총금액 − 입금액으로 자동 계산':'총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.';
+}
+function reservationFormRecord(){
+  const car=val('f-car'),pickup=val('f-pickup')||'사무실';
+  const candidate={name:val('f-name'),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
+  candidate.vehicleId=reservationVehicleId({car});
+  const selected=document.getElementById('f-car').dataset.fullPlate;
+  if(selected&&PLATE_MAP[selected]&&car===`${PLATE_MAP[selected].n} (${selected.slice(-4)})`)candidate.vehicleId=selected;
+  if(candidate.total!==null&&candidate.paid!==null)candidate.balance=Math.max(0,candidate.total-candidate.paid);
+  return normalizeReservationLocationRecord(candidate);
+}
+function mergeReservationForm(current,form,baseline,original){
+  const changed=Object.keys(form).filter(k=>JSON.stringify(form[k])!==JSON.stringify(baseline[k]));
+  const conflict=changed.find(k=>JSON.stringify(current[k])!==JSON.stringify(original[k])&&JSON.stringify(current[k])!==JSON.stringify(form[k]));
+  if(conflict)return {error:'이 예약이 다른 화면에서 수정되었습니다. 입력 내용은 유지됩니다. 최신 예약을 확인한 뒤 다시 저장하세요.'};
+  const merged={...current};changed.forEach(k=>merged[k]=form[k]);
+  return {record:merged};
+}
+function saveRes(){
+  applyVehicleNumberInput({notify:false});
+  for(const id of ['f-total','f-paid','f-balance']){if(val(id)&&moneyNumber(val(id))===null){toast('금액은 숫자 또는 30만원 형식으로 입력하세요.');document.getElementById(id).focus();return}}
+  const form=reservationFormRecord();let r={id:editId||uid(),...form};
+  if(editId){
+    const current=data.find(x=>x.id===editId);
+    if(!current){toast('다른 화면에서 삭제된 예약입니다. 신규 예약으로 확인해 주세요.');return}
+    if(_editFormBaseline&&_editingOriginal){const merged=mergeReservationForm(current,form,_editFormBaseline,_editingOriginal);if(merged.error){toast(merged.error);return}r=merged.record}else r={...current,...r};
+  }
+  const invalid=validateReservation(r);if(invalid){toast(invalid);return}
+  if(!confirmReservationWarnings(r))return;
+  snapshot();if(editId)data[data.findIndex(x=>x.id===editId)]=r;else data.unshift(r);
+  const durable=save();
+  if(!durable){
+    editId=r.id;_editingOriginal=JSON.parse(JSON.stringify(data.find(x=>x.id===r.id)||r));_editFormBaseline=reservationFormRecord();
+    document.getElementById('save-btn').textContent='저장 다시 시도';
+    render();toast('기기 저장에 실패했습니다. 입력 내용은 유지됩니다. 창을 닫지 말고 백업해 주세요.');return;
+  }
+  clearForm();if(typeof closeReservationPanel==='function')closeReservationPanel();render();toast('예약을 기기에 저장했습니다. 상단에서 서버 저장 상태를 확인하세요.');
+}
+function clearForm(){
+  ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price'].forEach(i=>set(i,''));
+  document.getElementById('f-ins').value='일반면책';document.getElementById('f-status').value='wait';
+  delete document.getElementById('f-car').dataset.fullPlate;
+  returnLocationManuallyEdited=false;previousPickupValue='';editId=null;_editingOriginal=null;_editFormBaseline=null;
+  document.getElementById('save-btn').textContent='예약 저장';document.getElementById('edit-hint').textContent='';
+  const status=document.getElementById('ai-parse-status');status.textContent='';status.classList.remove('on');updateFinanceBalance();
+}
+function editRes(id){
+  const original=data.find(x=>x.id===id);if(!original)return;
+  const r=normalizeReservationLocationRecord(original);clearForm();
+  set('f-name',r.name);set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
+  set('f-ins',['일반면책','완전자차'].includes(r.ins)?r.ins:'');set('f-status',r.status||'wait');set('f-memo',r.memo);
+  applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
+  const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
+  editId=id;_editingOriginal=JSON.parse(JSON.stringify(original));_editFormBaseline=reservationFormRecord();
+  document.getElementById('save-btn').textContent='수정 저장';document.getElementById('edit-hint').textContent='예약 수정';
+  if(typeof openReservationPanel==='function')openReservationPanel('manual');else go2('dashboard');
+}
+function setReservationStatus(id,status){
+  const r=data.find(x=>x.id===id);if(!r||!['wait','active','done','cancelled'].includes(status)||r.status===status)return;
+  if(status==='active'&&!reservationVehicleId(r)){toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);return}
+  if(!confirm(`${r.name||'예약'} · ${status==='done'?'실제 반납을 확인했습니까?':status==='active'?'배차 완료로 변경할까요?':'상태를 변경할까요?'}`))return;
+  snapshot();r.status=status;r[status==='active'?'dispatchedAt':status==='done'?'returnedAt':'statusChangedAt']=new Date().toISOString();save();render();
+}
+function cycleStatus(id){const r=data.find(x=>x.id===id);if(!r)return;if(r.status==='cancelled'||r.status==='done'){editRes(id);return}setReservationStatus(id,r.status==='active'?'done':'active')}
+
+function delRes(id){if(!data.some(x=>x.id===id))return;if(!confirm('이 예약을 휴지통으로 이동할까요?'))return;snapshot();data=data.filter(x=>x.id!==id);save();storageRender();toast('휴지통으로 이동했습니다')}
 function renderPast(){
   const el=document.getElementById('past-list');if(!el)return;
   const now=new Date();const q=(document.getElementById('past-search')?.value||'').toLowerCase();
-  const rows=data.filter(r=>r.end&&new Date(r.end)<now)
+  const rows=data.filter(r=>['done','cancelled'].includes(r.status)&&reservationTime(r.end)<Date.now())
     .filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')+' '+(r.ret||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(b.start||'').localeCompare(String(a.start||'')));
-  const total=data.filter(r=>r.end&&new Date(r.end)<now).length;
+  const total=data.filter(r=>['done','cancelled'].includes(r.status)&&reservationTime(r.end)<Date.now()).length;
   document.getElementById('nav-past').textContent=total;
   if(!rows.length){el.innerHTML='<div class="empty"><div>표시할 지난 예약이 없습니다</div></div>';return}
   el.innerHTML=resTable(rows);
 }
 function deletePast(){
-  const now=new Date();const count=data.filter(r=>r.end&&new Date(r.end)<now).length;
-  if(!count){toast('삭제할 지난 예약이 없습니다');return}
-  if(!confirm(`지난 예약 ${count}건을 모두 삭제할까요?\n현재 및 미래 예약은 유지됩니다.`))return;
-  snapshot();data=data.filter(r=>!(r.end&&new Date(r.end)<now));save();render();toast('지난 예약 '+count+'건을 삭제했습니다');
+  const now=new Date(),eligible=r=>r.end&&new Date(r.end)<now&&['done','cancelled'].includes(r.status);
+  const count=data.filter(eligible).length;
+  if(!count){toast('휴지통으로 옮길 완료·취소 예약이 없습니다');return}
+  if(!confirm(`지난 완료·취소 예약 ${count}건을 휴지통으로 이동할까요? 미반납 예약은 유지됩니다.`))return;
+  snapshot();data=data.filter(r=>!eligible(r));save();storageRender();toast(`${count}건을 휴지통으로 이동했습니다`);
 }
-function cycleStatus(id){const r=data.find(x=>x.id===id);if(!r)return;if(r.status==='cancelled'){toast('취소 예약은 전체수정에서 상태를 변경하세요');return}snapshot();const o=['wait','active','done'];r.status=o[(o.indexOf(r.status)+1)%3];save();render()}
-
 /* ===== 충돌 감지 ===== */
-function hasConflict(r){
-  if(r.status==='cancelled'||!r.car||!r.start)return false;
-  const plate=(r.car.match(/\((\d{4})\)/)||[])[1];if(!plate)return false;
-  return data.some(o=>o.status!=='cancelled'&&o.id!==r.id&&o.car&&o.car.includes('('+plate+')')&&o.start&&r.end&&o.end&&
-    (new Date(r.start)<new Date(o.end)&&new Date(o.start)<new Date(r.end)));
-}
+function hasConflict(r){return reservationConflicts(r).length>0}
 
 /* ===== 렌더 ===== */
-function setFilter(el){document.querySelectorAll('#filter button').forEach(b=>b.classList.remove('on'));el.classList.add('on');filter=el.dataset.f;render()}
+function setFilter(el){setDashboardPeriod(el.dataset.period||el.dataset.f||'today')}
 function setSched(el){document.querySelectorAll('#sched-tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');schedTab=el.dataset.t;render()}
 function statusBadge(s){if(s==='active')return '<span class="badge b-active">운행중</span>';if(s==='done')return '<span class="badge b-done">완료</span>';if(s==='cancelled')return '<span class="badge b-cancel">취소</span>';return '<span class="badge b-wait">대기</span>'}
 function fmt(dt){return dt?dt.replace('T',' ').slice(0,16):'-'}
 function rentalDuration(start,end){if(!start||!end)return '-';const ms=new Date(end)-new Date(start);if(!Number.isFinite(ms)||ms<0)return '-';const hours=Math.floor(ms/3600000),days=Math.floor(hours/24);return `${days}일 ${hours%24}시간`}
 
+function uiArg(value){return esc(JSON.stringify(String(value)))}
+function reservationActionButtons(r,compact=false){
+  const id=uiArg(r.id),cls=compact?'status-action':'res-action primary';
+  if(r.status==='cancelled'||r.status==='done')return '';
+  if(r.status==='active')return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'done')">반납 완료</button>`;
+  return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'active')">배차 완료</button>`;
+}
+function reservationBalanceLabel(r){const amount=reservationBalance(r);return amount===null?'금액 미확인':amount===0?'완납':amount.toLocaleString('ko-KR')+'원'}
 function resCard(r){
-  const t=todayStr();const today=(r.start||'').slice(0,10)===t;const conflict=hasConflict(r);
-  return `<div class="res ${today?'today':''} ${conflict?'conflict':''}">
-    <div class="res-top">
-      <div class="res-name">${esc(r.name)}${r.car?`<span class="plate">${esc(r.car)}</span>`:''}</div>
-      <div style="display:flex;gap:6px">${conflict?'<span class="badge b-flag">중복</span>':''}${statusBadge(r.status)}</div>
-    </div>
-    <div class="res-info">
-      <div>📞 <b>${esc(r.phone||'-')}</b></div>
-      <div>🛡️ <b>${esc(r.ins||'-')}</b></div>
-      <div>📅 <b>${fmt(r.start)}</b></div>
-      <div>↩️ <b>${fmt(r.end)}</b></div>
-      <div>📍 <b>${esc(r.pickup||'-')} → ${esc(r.ret||r.pickup||'사무실')}</b></div>
-      <div>⏱️ <b>${esc(rentalDuration(r.start,r.end))}</b></div>
-      ${r.memo?`<div style="grid-column:1/3">💰 ${esc(r.memo)}</div>`:''}
-    </div>
-    <div class="res-actions">
-      <button class="link" onclick="cycleStatus('${r.id}')">상태변경</button>
-      <button class="link" onclick="editRes('${r.id}')">수정</button>
-      <button class="link del" onclick="delRes('${r.id}')">삭제</button>
-    </div></div>`;
+  const today=(r.start||'').slice(0,10)===todayStr(),conflict=hasConflict(r),id=uiArg(r.id),phone=String(r.phone||'').replace(/[^+\d]/g,'');
+  const destination=r.status==='active'?(r.ret||r.pickup):r.pickup;
+  const mapUrl=destination?'https://map.kakao.com/?q='+encodeURIComponent(destination):'';
+  const alerts=dashboardAttentionReasons(r);
+  return `<article class="res ${today?'today':''} ${conflict?'conflict':''}">
+    <div class="res-top"><div class="res-name">${esc(r.name||'고객명 미기재')}<span class="plate">${esc(r.car||'차량 미정')}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
+    <div class="res-info"><div><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(r.ins||'미정')}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<div class="full">${esc(r.memo)}</div>`:''}</div>
+    ${alerts.length?`<div class="res-alert">${esc(alerts.join(' · '))}</div>`:''}
+    <div class="res-actions">${phone?`<a class="res-action" href="tel:${esc(phone)}">전화</a>`:''}${mapUrl?`<a class="res-action" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">길찾기</a>`:''}${reservationActionButtons(r)}<button class="link" onclick="editRes(${id})">수정</button><button class="link del" onclick="delRes(${id})">삭제</button></div>
+  </article>`;
 }
 
-// 컴팩트 표 (한눈에 여러 건)
-let viewMode='table'; // 'table' | 'card'
-function setViewMode(m){viewMode=m;document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.vm===m));render()}
+let viewMode='auto';
+function effectiveViewMode(){return viewMode==='auto'?(window.matchMedia('(max-width:820px)').matches?'card':'table'):viewMode}
+function setViewMode(m){viewMode=['auto','table','card'].includes(m)?m:'auto';try{localStorage.setItem('ky-reservation-view',viewMode)}catch(e){}render()}
+try{const savedView=localStorage.getItem('ky-reservation-view');if(['auto','table','card'].includes(savedView))viewMode=savedView}catch(e){}
+window.matchMedia('(max-width:820px)').addEventListener('change',()=>{if(viewMode==='auto')render()});
 function statusMini(s){const map={active:['운행중','b-active'],done:['완료','b-done'],cancelled:['취소','b-cancel'],wait:['대기','b-wait']};const[t,c]=map[s]||map.wait;return `<span class="mini-badge ${c}">${t}</span>`}
 function resTable(rows){
-  const t=todayStr();
-  const head=`<thead><tr>
-    <th>대여</th><th>반납</th><th>차량</th><th>번호</th><th>임차인</th><th>연락처</th><th>배차</th><th>회차</th><th>잔금</th><th>상태</th><th></th>
-  </tr></thead>`;
+  const t=todayStr(),head='<thead><tr><th>배차</th><th>반납</th><th>차량</th><th>번호</th><th>고객명</th><th>연락처</th><th>배차 장소</th><th>회차 장소</th><th>잔금</th><th>상태</th><th>업무</th></tr></thead>';
   const body=rows.map(r=>{
-    const today=(r.start||'').slice(0,10)===t;const conflict=hasConflict(r);
-    const plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
-    const carName=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
-    const ed=(field,cls,val)=>`<td class="${cls} editable" data-id="${r.id}" data-field="${field}" onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
-    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">
-      <td class="editable" data-id="${r.id}" data-field="start" data-type="dt" onclick="startEdit(this)" title="클릭하여 수정">${fmtShort(r.start)}</td>
-      <td class="editable" data-id="${r.id}" data-field="end" data-type="dt" onclick="startEdit(this)" title="클릭하여 수정">${fmtShort(r.end)}</td>
-      ${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}
-      <td class="c-name editable" data-id="${r.id}" data-field="name" onclick="startEdit(this)" title="클릭하여 수정">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
-      ${ed('phone','',r.phone)}
-      ${ed('pickup','c-memo',r.pickup)}
-      ${ed('ret','c-memo',r.ret||r.pickup||'사무실')}
-      ${ed('balance','c-bal',r.balance)}
-      <td>${statusMini(r.status)}</td>
-      <td><div class="rowact"><button onclick="event.stopPropagation();cycleStatus('${r.id}')" title="상태변경">↻</button><button onclick="event.stopPropagation();editRes('${r.id}')" title="전체수정">✎</button><button class="del" onclick="event.stopPropagation();delRes('${r.id}')" title="삭제">✕</button></div></td>
-    </tr>`;
+    const today=(r.start||'').slice(0,10)===t,conflict=hasConflict(r),id=uiArg(r.id),plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'',carName=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
+    const ed=(field,cls,val,type='')=>`<td class="${cls} editable" data-id="${esc(r.id)}" data-field="${field}" ${type?'data-type="'+type+'"':''} onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
+    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
   }).join('');
   return `<div class="res-table-wrap"><table class="res-table">${head}<tbody>${body}</tbody></table></div>`;
 }
@@ -2314,108 +2581,114 @@ function fmtShort(dt){if(!dt)return '-';const d=new Date(dt);if(isNaN(d))return 
 // ===== 인라인 셀 편집 =====
 let editingCell=null;
 function startEdit(td){
-  if(editingCell)return; // 한 번에 하나만
-  const id=td.dataset.id,field=td.dataset.field,type=td.dataset.type;
-  const r=data.find(x=>x.id===id);if(!r)return;
-  editingCell=td;
-  let cur='';
-  if(field==='carName')cur=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
-  else if(field==='plate')cur=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
-  else cur=r[field]||'';
-  const w=td.offsetWidth;
-  let input;
-  if(type==='dt'){input=document.createElement('input');input.type='datetime-local';input.value=r[field]||''}
-  else{input=document.createElement('input');input.type='text';input.value=cur}
-  input.style.cssText='width:100%;min-width:'+Math.max(w-4,70)+'px;font-size:12.5px;padding:4px 6px;border:1.5px solid var(--gold);border-radius:6px;background:#fff;color:var(--ivory);font-family:inherit';
-  td.innerHTML='';td.appendChild(input);input.focus();if(type!=='dt')input.select();
-  const done=(commit)=>{
-    if(!editingCell)return;editingCell=null;
-    if(commit){
-      const v=input.value.trim();
-      snapshot();
-      if(field==='carName'){
-        const plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
-        r.car=v+(plate?` (${plate})`:'');
-      }
-      else if(field==='plate'){
-        // 일정표/예약관리의 번호 셀에 차량관리 등록번호를 입력하면
-        // 차량관리(PLATE_MAP)의 정확한 차종명과 번호로 함께 교체한다.
-        // 예: 김병주 차량 4415 → 1190 입력 시
-        //     스타리아 하이브리드 9인승 → 스타리아 11인승 디젤 (1190)
-        const matched=vehicleFromNumberInput(v);
-        if(matched.matched){
-          r.car=`${matched.info.n} (${matched.last4})`;
-          toast(`${matched.last4} → ${matched.info.n}`);
-        }else{
-          const nm=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
-          r.car=nm+(v?` (${v})`:'');
-          if(matched.reason==='duplicate')toast('같은 끝번호 차량이 여러 대입니다. 전체 차량번호를 입력하세요');
-        }
-      }
-      else if(field==='pickup'){
-        const oldPickup=locationText(r.pickup),oldReturn=locationText(r.ret);
-        r.pickup=v||'사무실';
-        if(!oldReturn||oldReturn===oldPickup||isNonLocationReturnNote(oldReturn)){
-          if(oldReturn&&isNonLocationReturnNote(oldReturn))r.memo=appendMemoOnce(r.memo,oldReturn);
-          r.ret=r.pickup;
-        }
-      }
-      else if(field==='ret')r.ret=v||r.pickup||'사무실';
-      else r[field]=v;
-      Object.assign(r,normalizeReservationLocationRecord(r));
-      save();
-    }
-    render();
-  };
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();done(true)}else if(e.key==='Escape'){done(false)}});
-  input.addEventListener('blur',()=>done(true));
+  const field=td.dataset.field;editRes(td.dataset.id);
+  const ids={start:'f-start',end:'f-end',carName:'f-car',plate:'f-car',name:'f-name',phone:'f-phone',pickup:'f-pickup',ret:'f-return',balance:'f-balance'};
+  setTimeout(()=>document.getElementById(ids[field]||'f-name')?.focus(),0);
 }
 
-function render(){
-  const t=todayStr();
-  const byStart=(a,b)=>String(a.start||'').localeCompare(String(b.start||''));
-  // 대시보드 목록
-  const q=(document.getElementById('search').value||'').toLowerCase();
+let dashboardPeriod='today',dashboardMetric='all';
+let reservationPanelReturnFocus=null;
+function openReservationPanel(mode='manual'){
+  const panel=document.getElementById('reservation-panel');if(!panel)return;
+  if(!document.getElementById('view-dashboard').classList.contains('on'))go2('dashboard');
+  const options=document.getElementById('vehicle-options');if(options)options.innerHTML=sortPlates(Object.keys(PLATE_MAP)).map(p=>`<option value="${esc(PLATE_MAP[p].n+' ('+p+')')}">${esc(p)}</option>`).join('');
+  if(panel.hidden)reservationPanelReturnFocus=document.activeElement;
+  panel.hidden=false;document.getElementById('reservation-scrim').hidden=false;document.body.classList.add('reservation-panel-open');
+  document.getElementById('reservation-panel-title').textContent=mode==='paste'?'카톡으로 예약 입력':editId?'예약 수정':'예약 입력';
+  requestAnimationFrame(()=>{const field=document.getElementById(mode==='paste'?'raw':'f-name');field?.focus();field?.scrollIntoView({block:'nearest'})});
+}
+function closeReservationPanel(){document.getElementById('reservation-panel').hidden=true;document.getElementById('reservation-scrim').hidden=true;document.body.classList.remove('reservation-panel-open');reservationPanelReturnFocus?.focus?.()}
+document.addEventListener('keydown',e=>{
+  const panel=document.getElementById('reservation-panel');if(!panel||panel.hidden)return;
+  if(e.key==='Escape'){e.preventDefault();closeReservationPanel();return}
+  if(e.key==='Tab'){const nodes=[...panel.querySelectorAll('button,input,textarea,select,a[href],[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}
+});
+function dashboardDayOffset(day,offset){const d=new Date(day+'T12:00:00+09:00');d.setUTCDate(d.getUTCDate()+offset);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function dashboardRange(){const t=todayStr();if(dashboardPeriod==='all')return null;if(dashboardPeriod==='tomorrow'){const d=dashboardDayOffset(t,1);return[d,d]}if(dashboardPeriod==='week'){const weekday=new Date(t+'T12:00:00+09:00').getUTCDay();return[dashboardDayOffset(t,-((weekday+6)%7)),dashboardDayOffset(t,6-((weekday+6)%7))]}return[t,t]}
+function dashboardOpenRecord(r){return r.status!=='cancelled'&&r.status!=='done'}
+function dashboardAttentionReasons(r){
+  if(!dashboardOpenRecord(r))return[];
+  const reasons=[];if(!r.start||!r.end)reasons.push('일정 미입력');else if(String(r.end)<=String(r.start))reasons.push('반납 시간 확인');
+  if(!r.name||r.name==='(미기재)'||!r.phone)reasons.push('고객정보 확인');
+  if(hasConflict(r))reasons.push('동일 차량 일정 중복');
+  const now=typeof koreanNow==='function'?koreanNow():toLocalDT(new Date());
+  const nowText=typeof now==='string'?now:toLocalDT(now);
+  if(r.status==='active'&&r.end&&String(r.end)<nowText)reasons.push('반납 예정시간 경과');
+  if(r.status==='wait'&&r.start&&String(r.start)<nowText)reasons.push('배차 확인 필요');
+  return reasons;
+}
+function setDashboardPeriod(value){dashboardPeriod=['today','tomorrow','week','all'].includes(value)?value:'today';dashboardMetric='all';renderDashboard();updateDashboardStats()}
+function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=['pickup','return'].includes(dashboardMetric)?'today':'all';go2('dashboard')}
+function resetDashboardFilters(){dashboardPeriod='today';dashboardMetric='all';document.getElementById('search').value='';render()}
+function dashboardMetricMatch(r){if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();if(dashboardMetric==='active')return r.status==='active';if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;if(dashboardMetric==='unassigned')return dashboardOpenRecord(r)&&!reservationVehicleId(r);if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;return true}
+function renderDashboard(){
+  const q=(document.getElementById('search').value||'').trim().toLowerCase(),range=dashboardRange();
   let rows=data.filter(r=>{
-    if(filter==='today'&&(r.start||'').slice(0,10)!==t)return false;
-    if(['wait','active'].includes(filter)&&r.status!==filter)return false;
-    if(q&&!(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q))return false;
-    return true;
-  }).sort(byStart);
+    if(!dashboardMetricMatch(r))return false;
+    if(dashboardMetric==='all'&&range){if(r.status==='cancelled')return false;const start=String(r.start||'').slice(0,10),end=String(r.end||r.start||'').slice(0,10);const intersects=start&&start<=range[1]&&end>=range[0];if(!intersects&&!(dashboardPeriod==='today'&&r.status==='active'))return false}
+    if(q&&![r.name,r.car,r.phone,r.pickup,r.ret,r.memo].join(' ').toLowerCase().includes(q))return false;return true;
+  });
+  const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
+  rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||String(a.name||'').localeCompare(String(b.name||'')));
+  const periodLabels={today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
+  document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||periodLabels[dashboardPeriod]+' 업무';
+  document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 배차·반납·수금 현황';
+  document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${dashboardPeriod==='today'&&dashboardMetric==='all'?' · 운행중 포함':''}`;
+  document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='today'&&dashboardMetric==='all'&&!q;
+  document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('on',b.dataset.period===dashboardPeriod));
+  document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.vm===viewMode));
   paint('list',rows);
-  // 예약관리 전용 (행 사이 삽입 버튼 포함)
-  renderReservations();
-  // 일정표 (날짜별 그룹 + 추가버튼)
-  renderSchedule();
-  // 지난 예약 (데이터는 data에 유지하고 종료시각 기준으로 별도 조회)
-  renderPast();
-  // 간트 + 차량표
-  renderGantt();renderVehicles();renderScheduleBoard();
-  // 통계
-  const flag=data.filter(r=>hasConflict(r)).length;
-  document.getElementById('s-total').innerHTML=data.length+'<small>건</small>';
-  document.getElementById('s-today').innerHTML=data.filter(r=>(r.start||'').slice(0,10)===t).length+'<small>건</small>';
-  document.getElementById('s-active').innerHTML=data.filter(r=>r.status==='active').length+'<small>건</small>';
-  document.getElementById('s-wait').innerHTML=data.filter(r=>r.status==='wait').length+'<small>건</small>';
-  document.getElementById('s-flag').innerHTML=flag+'<small>건</small>';
-  document.getElementById('nav-res').textContent=data.filter(r=>!(r.end&&new Date(r.end)<new Date())).length;
+}
+function updateDashboardStats(){
+  const live=data.filter(r=>r.status!=='cancelled'),t=todayStr(),unpaid=live.filter(r=>reservationBalance(r)>0),unknown=live.filter(r=>dashboardOpenRecord(r)&&reservationBalance(r)===null).length;
+  const counts={'s-today':live.filter(r=>String(r.start||'').slice(0,10)===t).length,'s-return':live.filter(r=>String(r.end||'').slice(0,10)===t).length,'s-active':live.filter(r=>r.status==='active').length,'s-unassigned':live.filter(r=>dashboardOpenRecord(r)&&!reservationVehicleId(r)).length,'s-flag':live.filter(r=>dashboardAttentionReasons(r).length>0).length};
+  Object.entries(counts).forEach(([id,n])=>{document.getElementById(id).innerHTML=n.toLocaleString()+'<small>'+ (id==='s-active'?'대':'건')+'</small>'});
+  document.getElementById('s-unpaid').innerHTML=unpaid.reduce((sum,r)=>sum+reservationBalance(r),0).toLocaleString('ko-KR')+'<small>원</small>';
+  document.getElementById('s-unpaid-count').textContent=unpaid.length+'건 미수'+(unknown?' · '+unknown+'건 금액 미확인':'');
+  document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.metric===dashboardMetric)));
+  document.getElementById('nav-res').textContent=data.filter(dashboardOpenRecord).length;
+  document.getElementById('nav-past').textContent=data.filter(r=>['done','cancelled'].includes(r.status)&&reservationTime(r.end)<Date.now()).length;
+  document.getElementById('nav-vehicles').textContent=Object.keys(PLATE_MAP).length;
+  const deleted=typeof getDeletedReservations==='function'?getDeletedReservations():[];document.getElementById('nav-trash').textContent=deleted.length;
+}
+function render(){
+  updateDashboardStats();
+  const current=document.querySelector('.view.on')?.id||'view-dashboard';
+  if(current==='view-dashboard')renderDashboard();
+  else if(current==='view-reservations')renderReservations();
+  else if(current==='view-schedule')renderSchedule();
+  else if(current==='view-past')renderPast();
+  else if(current==='view-gantt')renderGantt();
+  else if(current==='view-vehicles')renderVehicles();
+  else if(current==='view-schedule-board')renderScheduleBoard();
+  else if(current==='view-trash')renderTrash();
 }
 function paint(id,rows){
   const el=document.getElementById(id);if(!el)return;
-  if(!rows.length){el.innerHTML='<div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><div>표시할 예약이 없습니다</div></div>';return}
-  // list/list2/sched-list는 표 모드 지원, 그 외 카드
-  if(viewMode==='table'){el.innerHTML=resTable(rows)}
-  else el.innerHTML=rows.map(resCard).join('');
+  if(!rows.length){el.innerHTML='<div class="empty"><div style="font-size:24px;margin-bottom:12px">✓</div><div>선택한 조건에 해당하는 예약이 없습니다.</div><div style="margin-top:8px;font-size:12px">조회 기간이나 필터를 변경해 확인하세요.</div></div>';return}
+  el.innerHTML=effectiveViewMode()==='table'?resTable(rows):rows.map(resCard).join('');
 }
+function renderTrash(){
+  const rows=typeof getDeletedReservations==='function'?getDeletedReservations():[];
+  document.getElementById('trash-count').textContent=rows.length+'건';
+  document.getElementById('trash-list').innerHTML=rows.length?rows.map(r=>`<article class="trash-item"><div><b>${esc(r.name||'고객명 미기재')}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreReservation(${uiArg(r.id)})">복원</button></article>`).join(''):'<div class="empty">삭제한 예약이 없습니다.</div>';
+  document.getElementById('nav-trash').textContent=rows.length;
+  const recovery=typeof getLocalRecoveryReservations==='function'?getLocalRecoveryReservations():[];
+  document.getElementById('local-recovery-panel').hidden=recovery.length===0;
+  document.getElementById('local-recovery-count').textContent=recovery.length+'건';
+  document.getElementById('local-recovery-list').innerHTML=recovery.map(r=>`<article class="trash-item"><div><b>${esc(r.name||'고객명 미기재')}</b><p>${esc(r.car||'차량 미정')}<br>${esc(fmt(r.start))} ~ ${esc(fmt(r.end))}</p></div><button class="btn btn-ghost" onclick="restoreLocalRecovery(${uiArg(r.id)})">복원</button></article>`).join('');
+}
+window.addEventListener('reservation-trash-changed',()=>{const rows=typeof getDeletedReservations==='function'?getDeletedReservations():[];document.getElementById('nav-trash').textContent=rows.length;if(document.getElementById('view-trash').classList.contains('on'))renderTrash()});
 
 /* ===== 예약 관리: 행 사이사이 삽입 버튼 ===== */
 function renderReservations(){
   const el=document.getElementById('list2');if(!el)return;
   const q=(document.getElementById('search2').value||'').toLowerCase();
   const now=new Date();
-  const rows=data.filter(r=>!(r.end&&new Date(r.end)<now)) // 반납시각 지난 예약은 '지난 예약' 탭에서만 표시
+  const rows=data.filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())) // 미반납·미처리 예약은 예정시간이 지나도 유지
     .filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
+  if(effectiveViewMode()==='card'){el.innerHTML='<button class="btn btn-ghost" onclick="clearForm();openReservationPanel()" style="margin-bottom:12px">＋ 예약 추가</button>'+(rows.length?rows.map(resCard).join(''):'<div class="empty">표시할 예약이 없습니다.</div>');return}
   const t=todayStr();
   const insBtn=(idx,label)=>`<tr class="ins-row"><td colspan="11"><button class="ins-btn" onclick="insertBetween(${idx})">＋ ${label}</button></td></tr>`;
   const head=`<thead><tr>
@@ -2428,16 +2701,16 @@ function renderReservations(){
     const today=(r.start||'').slice(0,10)===t;const conflict=hasConflict(r);
     const plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
     const carName=String(r.car||'').replace(/\s*\(.+?\)/,'').trim();
-    const ed=(field,cls,val)=>`<td class="${cls} editable" data-id="${r.id}" data-field="${field}" onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
+    const ed=(field,cls,val)=>`<td class="${cls} editable" data-id="${esc(r.id)}" data-field="${field}" onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
     body+=`<tr class="${today?'today':''} ${conflict?'conflict':''}">
-      <td class="editable" data-id="${r.id}" data-field="start" data-type="dt" onclick="startEdit(this)">${fmtShort(r.start)}</td>
-      <td class="editable" data-id="${r.id}" data-field="end" data-type="dt" onclick="startEdit(this)">${fmtShort(r.end)}</td>
+      <td class="editable" data-id="${esc(r.id)}" data-field="start" data-type="dt" onclick="startEdit(this)">${fmtShort(r.start)}</td>
+      <td class="editable" data-id="${esc(r.id)}" data-field="end" data-type="dt" onclick="startEdit(this)">${fmtShort(r.end)}</td>
       ${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}
-      <td class="c-name editable" data-id="${r.id}" data-field="name" onclick="startEdit(this)">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
+      <td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(r.name||'-')}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
       ${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup||'사무실')}
-      ${ed('balance','c-bal',r.balance)}
+      ${ed('balance','c-bal',reservationBalanceLabel(r))}
       <td>${statusMini(r.status)}</td>
-      <td><div class="rowact"><button onclick="event.stopPropagation();cycleStatus('${r.id}')" title="상태변경">↻</button><button onclick="event.stopPropagation();editRes('${r.id}')" title="전체수정">✎</button><button class="del" onclick="event.stopPropagation();delRes('${r.id}')" title="삭제">✕</button></div></td>
+      <td><div class="rowact"><button onclick="event.stopPropagation();cycleStatus(${uiArg(r.id)})" title="상태변경">↻</button><button onclick="event.stopPropagation();editRes(${uiArg(r.id)})" title="전체수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${uiArg(r.id)})" title="삭제">✕</button></div></td>
     </tr>`;
     // 행 사이 삽입 버튼
     body+=insBtn(i,'여기에 예약 삽입');
@@ -2447,7 +2720,7 @@ function renderReservations(){
 }
 // idx번째 예약 뒤에 삽입 (idx=-1이면 맨 앞). 앞뒤 날짜 중간값으로 폼 준비
 function insertBetween(idx){
-  const rows=[...data].filter(r=>true).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
+  const rows=[...data].filter(r=>!(['done','cancelled'].includes(r.status)&&r.end&&reservationTime(r.end)<Date.now())).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
   // 검색 필터 반영
   const q=(document.getElementById('search2').value||'').toLowerCase();
   const shown=rows.filter(r=>!q||(r.name+' '+r.car+' '+r.phone+' '+(r.pickup||'')).toLowerCase().includes(q));
@@ -2462,6 +2735,7 @@ function insertBetween(idx){
   clearForm();
   if(ds){set('f-start',ds+'T09:00');set('f-end',ds+'T20:00')}
   go2('dashboard');
+  if(typeof openReservationPanel==='function')openReservationPanel('manual');
   document.getElementById('f-name').focus();
   window.scrollTo({top:0,behavior:'smooth'});
   const pos=before?`${fmtShort(before.start).split(' ')[0]} 뒤`:'맨 앞';
@@ -2474,9 +2748,9 @@ function renderSchedule(){
   const now=new Date();
   let rows=data.filter(r=>{
     if(r.status==='cancelled')return false;
-    // 반납시각이 지난 예약은 '지난 예약' 화면에서만 별도 관리
-    if(r.end&&new Date(r.end)<now)return false;
     if(schedTab==='done')return r.status==='done';
+    // 예정시간만 지난 운행중·대기 예약은 업무 목록에 유지
+    if(r.status==='done'&&r.end&&reservationTime(r.end)<Date.now())return false;
     if(schedTab==='all')return true;
     return carBase(r.car)===schedTab||((r.car||'').includes(schedTab));
   }).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
@@ -2494,7 +2768,7 @@ function renderSchedule(){
     html+=`<div class="sched-day ${isToday?'today':''}">
       <div class="sched-day-h"><span class="d-label">${dayLabel(ds)}</span><span class="d-count">${groups[ds].length}건</span>
         <button class="add-here" onclick="addForDate('${ds==='미정'?'':ds}')" title="이 날짜에 예약 추가">＋ 추가</button></div>
-      ${resTable(groups[ds])}
+      ${effectiveViewMode()==='card'?'<div style="padding:12px;display:grid;gap:10px">'+groups[ds].map(resCard).join('')+'</div>':resTable(groups[ds])}
     </div>`;
   });
   if(!dates.length)html+='<div class="empty" style="padding:30px">표시할 예약이 없습니다. 위 ＋ 버튼으로 추가하세요.</div>';
@@ -2508,6 +2782,7 @@ function addForDate(ds){
   // 일정표 탭이 차종필터면 차종도 힌트로
   if(['쏠라티','스타리아','카니발'].includes(schedTab))set('f-car',schedTab);
   go2('dashboard');
+  if(typeof openReservationPanel==='function')openReservationPanel('manual');
   document.getElementById('f-name').focus();
   window.scrollTo({top:0,behavior:'smooth'});
   toast(ds?`${ds.slice(5).replace('-','.')} 예약 추가 — 정보를 입력하세요`:'새 예약 — 정보를 입력하세요');
@@ -2675,7 +2950,7 @@ function renderScheduleBoard(){
           if(span>maxSpan)span=maxSpan;if(span<1)span=1;
           const st={wait:'',active:'active',done:'done'}[r.status]||'';
           const label=esc(r.name||'(미기재)')+(r.phone?' / '+r.phone.replace(/(\d{3})-?\d{4}-?(\d{4})/,'$1-****-$2'):'');
-          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(r.name||'')} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="editRes('${r.id}')">${label}</div>`;
+          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(r.name||'')} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="editRes(${uiArg(r.id)})">${label}</div>`;
         }
       });
       html+=`<div class="sb-cell ${cls}">${barHtml}</div>`;
@@ -2868,7 +3143,7 @@ function exportExcel(){
   if(!data.length){toast('내보낼 예약이 없습니다');return}
   const past=confirm('지난 예약(반납일이 오늘 이전)은 제외할까요?\n\n[확인] 미래 예약만 · [취소] 전체');
   const now=new Date();
-  let rows=data.filter(r=>r.status!=='cancelled'&&(!past||!r.end||new Date(r.end)>=new Date(now.toISOString().slice(0,10))));
+  let rows=data.filter(r=>r.status!=='cancelled'&&(!past||!r.end||new Date(r.end)>=new Date(todayStr()+'T00:00:00+09:00')));
   const map={wait:'대기',active:'운행중',done:'완료'};
   const out=rows.map(r=>{
     const plate=(String(r.car||'').match(/\((.+?)\)/)||[])[1]||'';
@@ -2884,7 +3159,7 @@ function exportExcel(){
 }
 
 /* ===== 네비게이션 ===== */
-const TITLES={dashboard:'대시보드',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리'};
+const TITLES={dashboard:'대시보드',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
 function go(el){document.querySelectorAll('#nav a').forEach(a=>a.classList.remove('on'));el.classList.add('on');go2(el.dataset.v);closeNav()}
 function go2(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-'+v).classList.add('on');
   document.getElementById('page-title').textContent=TITLES[v]||v;
@@ -2893,87 +3168,44 @@ function openNav(){document.getElementById('sidebar').classList.add('open');docu
 function closeNav(){document.getElementById('sidebar').classList.remove('open');document.getElementById('backdrop').classList.remove('on')}
 
 /* ===== 파서 자체 테스트 (A·B·C형 8컬럼 검증) ===== */
-function runParserTestLegacy(){
-  const samples=[
-    {형식:'A형',raw:'■ 예약 내역\n- 예약자명 : 김민수\n- 연락처 : 010-1234-5678\n- 차량정보 : 카니발4.5세대 9인승 디젤\n- 예약시작 : 2026.05.09 (토) 08:00\n- 예약종료 : 2026.05.11 (월) 20:00\n- 배차주소 : 동대구지점\n- 보험유형 : 완전면책\n- 계약금 : 50,000\n- 잔금 : 340,000'},
-    {형식:'B형',raw:'카니발 4.5 9인승\n7.10 08:00 ~ 7.11 20:00\n배차: 동대구 사무실\n결제: 완납182,000 카드\n임차인: 박지훈 010-9876-5432\n75자포 카모아'},
-    {형식:'C형',raw:'10일08시 쏠라티 시민꽃집콜 30자포 010-5555-6666 당일20시 계15 잔60'}
-  ];
-  // 현재 폼 백업
-  const backupIds=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-pickup','f-return','f-memo'];
-  const backup={};backupIds.forEach(id=>backup[id]=document.getElementById(id).value);
-  const backupRaw=rawEl().value;const backupHint=document.getElementById('edit-hint').innerHTML;
+function runParserTestLegacy(){return runParserTest()}
 
-  const rows=samples.map(s=>{
-    rawEl().value=s.raw;
-    try{parseRaw();}catch(e){}
-    const g=id=>document.getElementById(id).value;
-    const plate=(String(g('f-car')).match(/\((.+?)\)/)||[])[1]||'';
-    const carName=String(g('f-car')).replace(/\s*\(.+?\)/,'').trim();
-    const need=[g('f-start'),g('f-end'),g('f-car'),g('f-phone')];
-    const ok=need.every(Boolean);
-    return {형식:s.형식,ok,대여:g('f-start'),반납:g('f-end'),차량:carName,번호:plate,임차인:g('f-name'),연락처:g('f-phone'),배차:g('f-pickup'),회차:g('f-return')};
-  });
-
-  // 폼 복원
-  backupIds.forEach(id=>document.getElementById(id).value=backup[id]);
-  rawEl().value=backupRaw;document.getElementById('edit-hint').innerHTML=backupHint;
-
-  const allPass=rows.every(r=>r.ok);
-  const cell=v=>`<td>${esc(v||'-')}</td>`;
-  const body=rows.map(r=>`<tr>
-    <td><b>${r.형식}</b> ${r.ok?'<span style="color:var(--ok)">✓</span>':'<span style="color:var(--danger)">✗</span>'}</td>
-    ${cell(fmtShort(r.대여))}${cell(fmtShort(r.반납))}${cell(r.차량)}${cell(r.번호)}${cell(r.임차인)}${cell(r.연락처)}${cell(r.배차)}${cell(r.회차)}
-  </tr>`).join('');
-  document.getElementById('parser-test-result').innerHTML=`
-    <div style="margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
-      <div style="padding:8px 12px;background:${allPass?'rgba(46,158,107,.12)':'rgba(209,67,67,.12)'};font-size:12px;font-weight:600;color:${allPass?'var(--ok)':'var(--danger)'}">
-        파서 테스트 ${allPass?'전체 통과 ✓':'일부 실패 ✗'} · A·B·C형 8컬럼 검증
-      </div>
-      <div style="overflow-x:auto"><table class="res-table" style="min-width:640px;font-size:11.5px">
-        <thead><tr><th>형식</th><th>대여</th><th>반납</th><th>차량</th><th>번호</th><th>임차인</th><th>연락처</th><th>배차</th><th>회차</th></tr></thead>
-        <tbody>${body}</tbody>
-      </table></div>
-    </div>`;
-  toast(allPass?'파서 테스트 전체 통과':'파서 테스트 일부 실패 — 결과 확인');
-}
-
-/* 실제 API 비용 없이 기존·AI(모의)·병합 결과를 비교하는 회귀 테스트 */
+/* 개발용 익명 가상정보로만 검증하며 실제 API를 호출하지 않습니다. */
 function runParserTest(){
   const year=new Date().getFullYear(),month=String(new Date().getMonth()+1).padStart(2,'0');
   const base={name:'',phone:'',car:'',plate:'',start:'',end:'',days:null,insurance:'',pickup:'',return_location:'',
     deposit:null,balance:null,total:null,payment_method:'',memo:'',confidence:'HIGH',warnings:[]};
   const samples=[
-    {name:'테스트 1',raw:'이강욱 1971.11.17 01033507964\n아반떼 CN7 F/L\n07/13 08:00 ~ 07/13 20:00\n배차:배달, 회차:배달\n배차주소:달서구 상인서로3 평광맨션 102동 1013호\n회차주소:달서구 상인서로3 평광맨션 102동 1013호\n완전면책\n101,000원',
-      ai:{...base,name:'이강욱',phone:'010-3350-7964',car:'아반떼 CN7 F/L',start:`${year}-07-13T08:00`,end:`${year}-07-13T20:00`,days:1,insurance:'완전자차',pickup:'달서구 상인서로3 평광맨션 102동 1013호',return_location:'달서구 상인서로3 평광맨션 102동 1013호',total:101000},
-      expected:{name:'이강욱',phone:'010-3350-7964',car:'아반떼 CN7 F/L',start:`${year}-07-13T08:00`,end:`${year}-07-13T20:00`,insurance:'완전자차',pickup:'달서구 상인서로3 평광맨션 102동 1013호',return_location:'달서구 상인서로3 평광맨션 102동 1013호',total:101000}},
-    {name:'테스트 2',raw:'010 8596 9185\n카니발 4세대 9인승\n360,000\n07/14 10:00 ~ 07/17 10:00\n일반면책\n대구광역시 수성구 상록로 74 4층',
-      ai:{...base,phone:'010-8596-9185',car:'카니발 4세대 9인승',start:`${year}-07-14T10:00`,end:`${year}-07-17T10:00`,days:3,insurance:'일반면책',pickup:'대구광역시 수성구 상록로 74 4층',total:360000},
-      expected:{phone:'010-8596-9185',car:'카니발 4세대 9인승',start:`${year}-07-14T10:00`,end:`${year}-07-17T10:00`,days:3,insurance:'일반면책',pickup:'대구광역시 수성구 상록로 74 4층',total:360000}},
-    {name:'테스트 3',raw:'7월27일오전~7월29일 20시\n스타리아9인승 경유\n완전면책 480,000\n영대병원역점 배반차\n010-5120-1823\n계약금10',
-      ai:{...base,phone:'010-5120-1823',car:'스타리아 9인승',start:`${year}-07-27T09:00`,end:`${year}-07-29T20:00`,days:3,insurance:'완전자차',pickup:'영대병원역점',return_location:'영대병원역점',deposit:100000,total:480000,warnings:['오전의 정확한 시간이 없어 09:00로 처리함']},
-      expected:{phone:'010-5120-1823',car:'스타리아 9인승',start:`${year}-07-27T09:00`,end:`${year}-07-29T20:00`,insurance:'완전자차',pickup:'영대병원역점',return_location:'영대병원역점',deposit:100000,total:480000}},
-    {name:'테스트 4',raw:'카니발 4.5 9인승\n7.10 08:00 ~ 7.11 20:00\n배차: 동대구 사무실\n결제: 완납182,000 카드\n임차인: 박지훈 010-9876-5432\n75자포 카모아',
-      ai:{...base,name:'박지훈',phone:'010-9876-5432',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,days:2,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드',memo:'75자포'},
-      expected:{name:'박지훈',phone:'010-9876-5432',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드'}},
-    {name:'테스트 5',raw:'10일08시 쏠라티 시민꽃집콜 30자포 010-5555-6666 당일20시 계15 잔60',
-      ai:{...base,name:'시민꽃집 고객',phone:'010-5555-6666',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,days:1,insurance:'자포',deposit:150000,balance:600000,memo:'30자포',warnings:['월이 없어 현재 월로 처리함']},
-      expected:{name:'시민꽃집 고객',phone:'010-5555-6666',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,insurance:'자포',deposit:150000,balance:600000}},
-    {name:'테스트 6 · 축약 반납일',raw:'[이름] 7월14일20시 15일 21시 쏠라티\n신차콜 25만원자차 보험\n8월 15일08 시 15일20시 25자포\n두건 50 예약 감사합니다\n남구 봉덕로11\n[폰] 010-2598-2259',
+    {name:'테스트 1',raw:'가상가 1990.01.01 01000000001\n아반떼 CN7 F/L\n07/13 08:00 ~ 07/13 20:00\n배차:배달, 회차:배달\n배차주소:대구 가상구 테스트로 1 가상아파트 101동 101호\n회차주소:대구 가상구 테스트로 1 가상아파트 101동 101호\n완전면책\n101,000원',
+      ai:{...base,name:'가상가',phone:'010-0000-0001',car:'아반떼 CN7 F/L',start:`${year}-07-13T08:00`,end:`${year}-07-13T20:00`,days:1,insurance:'완전자차',pickup:'대구 가상구 테스트로 1 가상아파트 101동 101호',return_location:'대구 가상구 테스트로 1 가상아파트 101동 101호',total:101000},
+      expected:{name:'가상가',phone:'010-0000-0001',car:'아반떼 CN7 F/L',start:`${year}-07-13T08:00`,end:`${year}-07-13T20:00`,insurance:'완전자차',pickup:'대구 가상구 테스트로 1 가상아파트 101동 101호',return_location:'대구 가상구 테스트로 1 가상아파트 101동 101호',total:101000}},
+    {name:'테스트 2',raw:'010 0000 0002\n카니발 4세대 9인승\n360,000\n07/14 10:00 ~ 07/17 10:00\n일반면책\n대구광역시 가상구 테스트로 2 1층',
+      ai:{...base,phone:'010-0000-0002',car:'카니발 4세대 9인승',start:`${year}-07-14T10:00`,end:`${year}-07-17T10:00`,days:3,insurance:'일반면책',pickup:'대구광역시 가상구 테스트로 2 1층',total:360000},
+      expected:{phone:'010-0000-0002',car:'카니발 4세대 9인승',start:`${year}-07-14T10:00`,end:`${year}-07-17T10:00`,days:3,insurance:'일반면책',pickup:'대구광역시 가상구 테스트로 2 1층',total:360000}},
+    {name:'테스트 3',raw:'7월27일오전~7월29일 20시\n스타리아9인승 경유\n완전면책 480,000\n영대병원역점 배반차\n010-0000-0003\n계약금10',
+      ai:{...base,phone:'010-0000-0003',car:'스타리아 9인승',start:`${year}-07-27T09:00`,end:`${year}-07-29T20:00`,days:3,insurance:'완전자차',pickup:'영대병원역점',return_location:'영대병원역점',deposit:100000,total:480000,warnings:['오전의 정확한 시간이 없어 09:00로 처리함']},
+      expected:{phone:'010-0000-0003',car:'스타리아 9인승',start:`${year}-07-27T09:00`,end:`${year}-07-29T20:00`,insurance:'완전자차',pickup:'영대병원역점',return_location:'영대병원역점',deposit:100000,total:480000}},
+    {name:'테스트 4',raw:'카니발 4.5 9인승\n7.10 08:00 ~ 7.11 20:00\n배차: 동대구 사무실\n결제: 완납182,000 카드\n임차인: 가상나 010-0000-0004\n75자포 카모아',
+      ai:{...base,name:'가상나',phone:'010-0000-0004',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,days:2,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드',memo:'75자포'},
+      expected:{name:'가상나',phone:'010-0000-0004',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드'}},
+    {name:'테스트 5',raw:'10일08시 쏠라티 가상꽃집콜 30자포 010-0000-0005 당일20시 계15 잔60',
+      ai:{...base,name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,days:1,insurance:'자포',deposit:150000,balance:600000,memo:'30자포',warnings:['월이 없어 현재 월로 처리함']},
+      expected:{name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,insurance:'자포',deposit:150000,balance:600000}},
+    {name:'테스트 6 · 축약 반납일',raw:'[이름] 7월14일20시 15일 21시 쏠라티\n신차콜 25만원자차 보험\n8월 15일08 시 15일20시 25자포\n두건 50 예약 감사합니다\n대구 가상구 테스트로 3\n[폰] 010-0000-0006',
       ai:{...base},
-      expected:{phone:'010-2598-2259',car:'쏠라티',start:`${year}-07-14T20:00`,end:`${year}-07-15T21:00`,insurance:'자포'}},
-    {name:'테스트 7 · 첨부 태그형',raw:'[이름] 20일9시-21일20시 4.5세카니발7-9인승30자포\n강병민\n[휴대전화] 010-8300-2121',
+      expected:{phone:'010-0000-0006',car:'쏠라티',start:`${year}-07-14T20:00`,end:`${year}-07-15T21:00`,insurance:'자포'}},
+    {name:'테스트 7 · 첨부 태그형',raw:'[이름] 20일9시-21일20시 4.5세카니발7-9인승30자포\n가상다\n[휴대전화] 010-0000-0007',
       ai:{...base},
-      expected:{name:'강병민',phone:'010-8300-2121',car:'카니발 4.5세대 7-9인승',start:`${year}-${month}-20T09:00`,end:`${year}-${month}-21T20:00`,insurance:'자포',total:300000}},
-    {name:'테스트 8 · 첨부 구조화형',raw:'- 고객명 : 김예약\n- 연락처 : 010-1111-2222\n- 시작일시 : 2026.08.18 09:00\n- 반납일시 : 2026.08.20 18:00\n- 차량명 : 카니발 4세대 9인승\n- 보험 : 완전면책\n- 고객 결제금액 : 467,000원\n- 배차주소 : (차고지 방문) 대구역\n- 반차주소 : 대구역',
+      expected:{name:'가상다',phone:'010-0000-0007',car:'카니발 4.5세대 7-9인승',start:`${year}-${month}-20T09:00`,end:`${year}-${month}-21T20:00`,insurance:'자포',total:300000}},
+    {name:'테스트 8 · 첨부 구조화형',raw:'- 고객명 : 가상라\n- 연락처 : 010-0000-0008\n- 시작일시 : 2026.08.18 09:00\n- 반납일시 : 2026.08.20 18:00\n- 차량명 : 카니발 4세대 9인승\n- 보험 : 완전면책\n- 고객 결제금액 : 467,000원\n- 배차주소 : (차고지 방문) 대구역\n- 반차주소 : 대구역',
       ai:{...base},
-      expected:{name:'김예약',phone:'010-1111-2222',car:'카니발 4세대 9인승',start:'2026-08-18T09:00',end:'2026-08-20T18:00',insurance:'완전자차',pickup:'대구역',return_location:'대구역',total:467000}},
-    {name:'테스트 9 · 시간없는 범위',raw:'홍길동 010-3333-4444 K5\n4월25-26일\n사무실',
+      expected:{name:'가상라',phone:'010-0000-0008',car:'카니발 4세대 9인승',start:'2026-08-18T09:00',end:'2026-08-20T18:00',insurance:'완전자차',pickup:'대구역',return_location:'대구역',total:467000}},
+    {name:'테스트 9 · 시간없는 범위',raw:'가상마 010-0000-0009 K5\n4월25-26일\n사무실',
       ai:{...base},
-      expected:{phone:'010-3333-4444',car:'K5',start:`${year}-04-25T08:00`,end:`${year}-04-26T20:00`,insurance:'일반면책',pickup:'사무실',return_location:'사무실'}},
-    {name:'테스트 10 · 당일 시간범위',raw:'이당일 010-5555-7777 K3\n5월1일07시~20시\n완전자차 사무실',
+      expected:{phone:'010-0000-0009',car:'K5',start:`${year}-04-25T08:00`,end:`${year}-04-26T20:00`,insurance:'일반면책',pickup:'사무실',return_location:'사무실'}},
+    {name:'테스트 10 · 당일 시간범위',raw:'가상바 010-0000-0010 K3\n5월1일07시~20시\n완전자차 사무실',
       ai:{...base},
-      expected:{phone:'010-5555-7777',car:'K3',start:`${year}-05-01T07:00`,end:`${year}-05-01T20:00`,insurance:'완전자차',pickup:'사무실',return_location:'사무실'}}
+      expected:{phone:'010-0000-0010',car:'K3',start:`${year}-05-01T07:00`,end:`${year}-05-01T20:00`,insurance:'완전자차',pickup:'사무실',return_location:'사무실'}}
   ];
   const slim=r=>({name:r.name,phone:r.phone,car:r.car,plate:r.plate,start:r.start,end:r.end,days:r.days,
     insurance:r.insurance,pickup:r.pickup,return_location:r.return_location,deposit:r.deposit,balance:r.balance,
@@ -3036,23 +3268,14 @@ function runKakaoAnalyzerTests(){
 }
 
 /* ===== clock ===== */
-function tick(){const d=new Date();const dn=['일','월','화','수','목','금','토'];
-  document.getElementById('clock').textContent=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${dn[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  autoCompletePastReservations();}
-
-/* ===== 대여종료 시각이 지난 예약을 자동으로 '완료(대여종료)' 상태로 전환 ===== */
-function autoCompletePastReservations(){
-  const now=new Date();
-  let changed=false;
-  data.forEach(r=>{
-    if(!r.end)return; // 종료일시 없으면 건너뜀
-    if(r.status==='cancelled'||r.status==='done')return; // 취소·이미완료는 제외
-    const endDate=new Date(r.end);
-    if(isNaN(endDate.getTime()))return;
-    if(endDate<now){ r.status='done'; changed=true; }
-  });
-  if(changed){ save(); render(); }
+let _lastClockMinute='';
+function tick(){
+  const now=koreanNow(),day=new Date(now+':00+09:00');
+  document.getElementById('clock').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(day);
+  if(_lastClockMinute!==now){_lastClockMinute=now;render()}
 }
+
+/* 반납 완료는 직원이 확인해 변경합니다. 예정시각 경과만으로 완료 처리하지 않습니다. */
 
 /* 개발 점검용: 화면 너비별 대시보드 배치와 날짜 입력칸을 데이터 속성으로 기록한다. */
 function runLayoutSelfTest(){
@@ -3251,6 +3474,7 @@ function auditEventToReservation(e){
   return normalizeReservationLocationRecord({
     id:uid(),name,phone:e.phone||'',car,start:e.start||'',end:e.end||'',days:e.days||'',
     ins:e.insurance||'',status:'wait',pickup:e.pickup||'사무실',ret:e.returnLocation||e.pickup||'사무실',
+    total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
   });
@@ -3259,6 +3483,7 @@ function auditUploadRow(i){
   const row=reservationAuditState.rows[i],e=row?.event;if(!e){toast('등록할 예약 정보가 없습니다');return}
   if(!e.customerName&&!e.sourceName&&!e.name){toast('고객명이 없어 등록할 수 없습니다 — 직접 확인하세요');return}
   const rec=auditEventToReservation(e);
+  const invalid=validateReservation(rec);if(invalid){fillKakaoEventForm(e);toast(invalid);return}
   const dup=findKakaoConflict(rec);
   const warn=dup?`\n\n⚠️ ${dup.name} (${fmtShort(dup.start)}) 예약과 차량·시간이 겹칩니다.`:'';
   if(!confirm(`누락 예약을 바로 등록할까요?${warn}\n\n${rec.name} / ${rec.car} / ${fmtShort(rec.start)}~${fmtShort(rec.end)}`))return;
@@ -3270,12 +3495,11 @@ function auditUploadAllMissing(){
   const targets=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)&&r.event&&(r.event.customerName||r.event.sourceName||r.event.name));
   if(!targets.length){toast('자동 등록할 누락 예약이 없습니다');return}
   const items=targets.map(r=>({r,rec:auditEventToReservation(r.event)}));
-  const dupCount=items.filter(x=>findKakaoConflict(x.rec)).length;
-  const msg=`누락 가능성 예약 ${targets.length}건을 한 번에 등록할까요?`+(dupCount?`\n\n⚠️ 이 중 ${dupCount}건은 차량·시간이 겹칩니다.`:'');
-  if(!confirm(msg))return;
-  snapshot();let n=0;items.forEach(x=>{data.unshift(x.rec);x.r.ignored=true;n++});save();render();renderReservationAudit();
-  document.getElementById('nav-audit').textContent='0';
-  toast(`${n}건을 등록했습니다`);
+  if(!confirmBulkReservations(items,'누락 가능성 예약'))return;
+  snapshot();data.unshift(...items.map(x=>x.rec));const durable=save();
+  items.forEach(x=>{x.r.ignored=true});render();renderReservationAudit();
+  document.getElementById('nav-audit').textContent=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)).length;
+  toast(durable?`${items.length}건을 기기에 등록했습니다. 상단에서 서버 저장 상태를 확인하세요.`:'기기 저장 실패 · 창을 닫지 말고 JSON 백업을 내려받아 주세요.');
 }
 function auditOpenMatched(i){const row=reservationAuditState.rows[i],id=row?.finalResult?.matchedReservationId||row?.match?.top?.reservationId;if(!id)return;editRes(id);go2('dashboard');window.scrollTo({top:0,behavior:'smooth'});toast('일치하는 저장 예약을 열었습니다')}
 function auditIgnoreRow(i){if(!reservationAuditState.rows[i])return;reservationAuditState.rows[i].ignored=true;renderReservationAudit();const miss=reservationAuditState.rows.filter(r=>!r.ignored&&['LIKELY_MISSING','POSSIBLE_MISSING'].includes(r.finalVerdict)).length;document.getElementById('nav-audit').textContent=miss}
@@ -3315,16 +3539,8 @@ auth.onAuthStateChanged(user=>{
   }
 });
 
-// 개발 점검용: 파일 주소 뒤에 #ai-self-test를 붙이면 무과금 회귀 테스트를 자동 실행한다.
-if(location.hash==='#ai-self-test')setTimeout(runParserTest,0);
-if(location.hash==='#ai-fallback-test')setTimeout(()=>{rawEl().value='확인 필요 예약';smartParse()},0);
-if(location.hash==='#kakao-event-self-test')setTimeout(runKakaoAnalyzerTests,0);
-if(location.hash==='#kakao-ui-smoke')setTimeout(()=>{rawEl().value='--------------- 2026년 7월 13일 월요일 ---------------\n[테스트직원] [오전 10:25] 테스트고객 010-1234-5678\n카니발 7월20일08시-21일20시\n사무실 30자포\n[테스트직원] [오전 10:40] 3478 주유 20,000';analyzeKakaoBundle()},0);
-if(location.hash==='#layout-self-test')setTimeout(runLayoutSelfTest,60);
-if(location.hash==='#reservation-self-test')setTimeout(runReservationSelfTest,0);
-if(location.hash==='#layout-matrix-self-test')setTimeout(runLayoutMatrixSelfTest,0);
-if(location.hash==='#all-regression-self-tests')setTimeout(runAllRegressionSelfTests,0);
-if(location.hash==='#mobile-390-self-test')setTimeout(runMobile390SelfTest,60);
+// 개발 회귀 테스트는 tests/의 로컬 VM 환경에서만 수동 실행합니다.
 </script>
 </body>
 </html>
+
