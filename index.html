@@ -496,6 +496,10 @@ button.stat[aria-pressed="true"]{background:#fffbf1}.stat .k{font-size:12px;lett
 .dashboard-card-grid .res-money{font-size:18px;padding:12px 14px;background:#f0f3f7}
 .dashboard-card-grid .res-money strong{font-size:22px;color:#825100}
 .dashboard-card-grid .res-alert{font-size:17px;font-weight:700;color:#a71919;background:#fff0ed;padding:10px 12px;border-radius:8px}
+.res-memo{min-width:0;border:1px solid var(--line);border-radius:9px;background:#f8fafc}
+.res-memo summary{padding:10px 12px;cursor:pointer;font-weight:600;color:#475569}
+.res-memo[open] summary{border-bottom:1px solid var(--line)}
+.res-memo-content{padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
 .dashboard-card-grid .res-actions{border-top:1px solid #dce1e8;margin-top:20px;padding-top:16px;gap:10px}
 .dashboard-card-grid .res-actions .res-action,.dashboard-card-grid .res-actions .link{font-family:inherit;font-size:17px;font-weight:650;min-height:50px;padding:11px 15px}
 .dashboard-card-grid .res-action.primary{background:#17263d;color:#fff;border-color:#17263d}
@@ -511,6 +515,8 @@ body.tv-mode{display:block;background:#0b1420}
 @media(max-width:1450px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-card-grid{grid-template-columns:1fr}.stats .stat{min-height:128px}}
 @media(max-width:820px){.topbar h1{font-size:19px}.sync-state{font-size:12px}.stats .stat{padding:15px 12px;min-height:116px}.stats .stat .k{font-size:16px}.stats .stat .v{font-size:34px}.stats .stat .v.money{font-size:24px}.stats .stat .sub{font-size:12px}.stats .stat .v small{font-size:15px}.dashboard-welcome h2{font-size:28px}.dashboard-welcome p{font-size:16px}.dashboard-primary-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}.dashboard-primary-actions .btn-tv{grid-column:1/-1}.dashboard-primary-actions .btn{font-size:16px;padding:12px;min-height:52px}.dashboard-schedule .card-b{padding:16px}.dashboard-schedule>.card-h{padding:17px 16px}.dashboard-schedule>.card-h h2{font-size:22px}.dashboard-card-grid .res{padding:20px}.dashboard-card-grid .res-name{font-size:23px}.dashboard-card-grid .res-info{font-size:18px}.dashboard-card-grid .res-info .res-time b{font-size:23px}.dashboard-card-grid .res-status .badge{font-size:14px}.dashboard-periods button{font-size:17px;padding:12px 7px}.dashboard-filterline{font-size:15px;flex-wrap:wrap}.dashboard-search{font-size:16px!important}}
 @media(max-width:480px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats .stat .v.money{font-size:26px}.dashboard-card-grid .res-info{grid-template-columns:1fr}.dashboard-card-grid .res-info .full{grid-column:auto}.dashboard-card-grid .res-top{flex-wrap:wrap;gap:10px}.dashboard-card-grid .res-status{justify-content:flex-start}.dashboard-card-grid .res-info .res-time b{font-size:25px}.dashboard-schedule>.card-h h2{font-size:20px}.res-plate-number{font-size:29px}}
+
+@media(max-width:820px){.dashboard-periods button[data-period="upcoming"]{grid-column:1/-1}}
 
 /* TV board: read-only operations display. All selectors are scoped. */
 #tv-board[hidden],#tv-board .tv-ongoing[hidden]{display:none!important}
@@ -637,6 +643,7 @@ body.tv-mode{display:block;background:#0b1420}
   <div style="padding:8px 0;border-top:1px solid var(--line);margin-top:auto;display:flex;flex-direction:column;gap:6px;">
     <button onclick="exportJSON()" style="width:100%;padding:7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">📦 JSON 백업</button>
     <button onclick="importJSON()" style="width:100%;padding:7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">📂 JSON 가져오기</button>
+    <button onclick="openJSONPaste()" id="open-json-paste" style="width:100%;padding:9px 7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">＋ 예약 일괄 입력</button>
   </div>
   <div class="side-foot">
     경일렌트카<br>대표 장성달<br>010-4164-2820<br>사업자 607-87-00253
@@ -671,7 +678,7 @@ body.tv-mode{display:block;background:#0b1420}
     <!-- ===== 대시보드 / 예약관리 ===== -->
     <div class="view on" id="view-dashboard">
       <div class="dashboard-welcome">
-        <div><h2>오늘의 배차와 업무</h2><p id="dashboard-date">업무 일정을 확인하고 예약을 관리하세요.</p></div>
+        <div><h2>예약 현황</h2><p id="dashboard-date">예정 예약과 운행중인 차량을 확인하세요.</p></div>
         <div class="dashboard-primary-actions"><button class="btn btn-tv" id="open-tv-mode" onclick="setTVMode(true)">▣ TV 크게 보기</button><button class="btn btn-ghost" onclick="openReservationPanel('paste')">카톡 붙여넣기</button><button class="btn btn-gold" onclick="clearForm();openReservationPanel('manual')">＋ 예약 추가</button></div>
       </div>
       <div class="reservation-scrim" id="reservation-scrim" hidden onclick="closeReservationPanel()"></div>
@@ -747,7 +754,7 @@ body.tv-mode{display:block;background:#0b1420}
       </section>
 
       <section class="card dashboard-schedule">
-        <div class="card-h"><h2 id="dashboard-list-title">오늘 업무</h2>
+        <div class="card-h"><h2 id="dashboard-list-title">예정 예약 · 운행중</h2>
           <div style="display:flex;gap:8px">
             <button class="btn btn-ghost btn-sm" onclick="undo()" id="undo-btn">되돌리기</button>
             <button class="btn btn-ghost btn-sm" onclick="exportExcel()">엑셀</button>
@@ -756,7 +763,8 @@ body.tv-mode{display:block;background:#0b1420}
         <div class="card-b">
           <div class="toolbar">
             <div class="dashboard-periods" id="filter" aria-label="조회 기간">
-              <button class="on" data-period="today" onclick="setDashboardPeriod('today')">오늘</button>
+              <button class="on" data-period="upcoming" onclick="setDashboardPeriod('upcoming')">예정 예약</button>
+              <button data-period="today" onclick="setDashboardPeriod('today')">오늘</button>
               <button data-period="tomorrow" onclick="setDashboardPeriod('tomorrow')">내일</button>
               <button data-period="week" onclick="setDashboardPeriod('week')">이번 주</button>
               <button data-period="all" onclick="setDashboardPeriod('all')">전체</button>
@@ -2687,7 +2695,7 @@ function deletePast(){
 function hasConflict(r){return reservationConflicts(r).length>0}
 
 /* ===== 렌더 ===== */
-function setFilter(el){setDashboardPeriod(el.dataset.period||el.dataset.f||'today')}
+function setFilter(el){setDashboardPeriod(el.dataset.period||el.dataset.f||'upcoming')}
 function setSched(el){document.querySelectorAll('#sched-tabs button').forEach(b=>b.classList.remove('on'));el.classList.add('on');schedTab=el.dataset.t;render()}
 function statusBadge(s){if(s==='active')return '<span class="badge b-active">운행중</span>';if(s==='done')return '<span class="badge b-done">완료</span>';if(s==='cancelled')return '<span class="badge b-cancel">취소</span>';return '<span class="badge b-wait">대기</span>'}
 function fmt(dt){return dt?dt.replace('T',' ').slice(0,16):'-'}
@@ -2708,8 +2716,8 @@ function resCard(r){
   const mapUrl=destination?'https://map.kakao.com/?q='+encodeURIComponent(destination):'';
   const alerts=dashboardAttentionReasons(r);
   return `<article class="res ${today?'today':''} ${conflict?'conflict':''}">
-    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">${esc(r.name||'고객명 미기재')}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
-    <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(r.ins||'미정')}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<div class="full">${esc(r.memo)}</div>`:''}</div>
+    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(r.name||'고객명 미기재')}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
+    <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(r.ins||'미정')}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<details class="full res-memo"><summary>메모 보기</summary><div class="res-memo-content">${esc(r.memo)}</div></details>`:''}</div>
     ${alerts.length?`<div class="res-alert">${esc(alerts.join(' · '))}</div>`:''}
     <div class="res-actions">${phone?`<a class="res-action" href="tel:${esc(phone)}">전화</a>`:''}${mapUrl?`<a class="res-action" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">길찾기</a>`:''}${reservationActionButtons(r)}<button class="link" onclick="editRes(${id})">수정</button><button class="link del" onclick="delRes(${id})">삭제</button></div>
   </article>`;
@@ -2740,7 +2748,7 @@ function startEdit(td){
   setTimeout(()=>document.getElementById(ids[field]||'f-name')?.focus(),0);
 }
 
-let dashboardPeriod='today',dashboardMetric='all';
+let dashboardPeriod='upcoming',dashboardMetric='all';
 let reservationPanelReturnFocus=null;
 function openReservationPanel(mode='manual'){
   const panel=document.getElementById('reservation-panel');if(!panel)return;
@@ -2758,8 +2766,14 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Tab'){const nodes=[...panel.querySelectorAll('button,input,textarea,select,a[href],[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}
 });
 function dashboardDayOffset(day,offset){const d=new Date(day+'T12:00:00+09:00');d.setUTCDate(d.getUTCDate()+offset);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
-function dashboardRange(){const t=todayStr();if(dashboardPeriod==='all')return null;if(dashboardPeriod==='tomorrow'){const d=dashboardDayOffset(t,1);return[d,d]}if(dashboardPeriod==='week'){const weekday=new Date(t+'T12:00:00+09:00').getUTCDay();return[dashboardDayOffset(t,-((weekday+6)%7)),dashboardDayOffset(t,6-((weekday+6)%7))]}return[t,t]}
+function dashboardRange(){const t=todayStr();if(['upcoming','all'].includes(dashboardPeriod))return null;if(dashboardPeriod==='tomorrow'){const d=dashboardDayOffset(t,1);return[d,d]}if(dashboardPeriod==='week'){const weekday=new Date(t+'T12:00:00+09:00').getUTCDay();return[dashboardDayOffset(t,-((weekday+6)%7)),dashboardDayOffset(t,6-((weekday+6)%7))]}return[t,t]}
 function dashboardOpenRecord(r){return r.status!=='cancelled'&&r.status!=='done'}
+function dashboardUpcomingRecord(r){
+  if(r.deletedAt||!dashboardOpenRecord(r))return false;
+  if(r.status==='active')return true;
+  if(!r.start||!r.end)return true;
+  return String(r.start).slice(0,10)>=todayStr()||String(r.end).slice(0,10)>=todayStr();
+}
 function dashboardAttentionReasons(r){
   if(!dashboardOpenRecord(r))return[];
   const reasons=[];if(!r.start||!r.end)reasons.push('일정 미입력');else if(String(r.end)<=String(r.start))reasons.push('반납 시간 확인');
@@ -2771,24 +2785,25 @@ function dashboardAttentionReasons(r){
   if(r.status==='wait'&&r.start&&String(r.start)<nowText)reasons.push('배차 확인 필요');
   return reasons;
 }
-function setDashboardPeriod(value){dashboardPeriod=['today','tomorrow','week','all'].includes(value)?value:'today';dashboardMetric='all';renderDashboard();updateDashboardStats()}
-function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=['pickup','return'].includes(dashboardMetric)?'today':'all';go2('dashboard')}
-function resetDashboardFilters(){dashboardPeriod='today';dashboardMetric='all';document.getElementById('search').value='';render()}
+function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';renderDashboard();updateDashboardStats()}
+function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=dashboardMetric==='all'?'upcoming':['pickup','return'].includes(dashboardMetric)?'today':'all';go2('dashboard')}
+function resetDashboardFilters(){dashboardPeriod='upcoming';dashboardMetric='all';document.getElementById('search').value='';render()}
 function dashboardMetricMatch(r){if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();if(dashboardMetric==='active')return r.status==='active';if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;if(dashboardMetric==='unassigned')return dashboardOpenRecord(r)&&!reservationVehicleId(r);if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;return true}
 function renderDashboard(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase(),range=dashboardRange();
   let rows=data.filter(r=>{
     if(!dashboardMetricMatch(r))return false;
+    if(dashboardMetric==='all'&&dashboardPeriod==='upcoming'&&!dashboardUpcomingRecord(r))return false;
     if(dashboardMetric==='all'&&range){if(r.status==='cancelled')return false;const start=String(r.start||'').slice(0,10),end=String(r.end||r.start||'').slice(0,10);const intersects=start&&start<=range[1]&&end>=range[0];if(!intersects&&!(dashboardPeriod==='today'&&r.status==='active'))return false}
     if(q&&![r.name,r.car,r.phone,r.pickup,r.ret,r.memo].join(' ').toLowerCase().includes(q))return false;return true;
   });
   const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
   rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||String(a.name||'').localeCompare(String(b.name||'')));
-  const periodLabels={today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
-  document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||periodLabels[dashboardPeriod]+' 업무';
-  document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 배차·반납·수금 현황';
-  document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${dashboardPeriod==='today'&&dashboardMetric==='all'?' · 운행중 포함':''}`;
-  document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='today'&&dashboardMetric==='all'&&!q;
+  const periodLabels={upcoming:'예정 예약 · 운행중',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
+  document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||(dashboardPeriod==='upcoming'?periodLabels.upcoming:periodLabels[dashboardPeriod]+' 업무');
+  document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 예정 예약·운행 현황';
+  document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${dashboardPeriod==='today'&&dashboardMetric==='all'?' · 운행중 포함':''}${dashboardPeriod==='upcoming'&&dashboardMetric==='all'?' · 고객·차량·배차·반납 일정':''}`;
+  document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='upcoming'&&dashboardMetric==='all'&&!q;
   document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('on',b.dataset.period===dashboardPeriod));
   document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.vm===viewMode));
   paint('list',rows);
@@ -3807,6 +3822,172 @@ auth.onAuthStateChanged(user=>{
 
 // 개발 회귀 테스트는 tests/의 로컬 VM 환경에서만 수동 실행합니다.
 </script>
+<!-- KY reservation JSON paste: user-visible, validated, additive import. -->
+<style>
+.json-paste-overlay{position:fixed;inset:0;z-index:120;background:rgba(20,25,40,.45);display:flex;align-items:center;justify-content:center;padding:24px}
+.json-paste-overlay[hidden]{display:none!important}
+.json-paste-dialog{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 80px rgba(20,25,40,.22);width:min(1120px,100%);max-height:calc(100dvh - 48px);display:flex;flex-direction:column;color:var(--ivory)}
+.json-paste-head,.json-paste-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;flex-shrink:0}
+.json-paste-head{border-bottom:1px solid var(--line)}.json-paste-head h2{font-size:19px;margin:0 0 5px}.json-paste-head p{font-size:12px;color:var(--ivory-dim);margin:0}
+.json-paste-body{padding:18px 22px;overflow:auto;min-height:0}.json-paste-body label{font-size:13px;font-weight:650;display:block;margin-bottom:8px}
+#json-paste-input{width:100%;min-height:170px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.5;box-sizing:border-box}
+.json-paste-note{font-size:12px;line-height:1.6;color:var(--ivory-dim);margin:10px 0}.json-paste-summary{padding:12px 14px;background:#f4f6f8;border-radius:9px;font-size:13px;line-height:1.65;margin:14px 0}
+.json-paste-summary strong{color:var(--ivory)}.json-paste-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px;max-height:360px}.json-paste-table{border-collapse:collapse;width:100%;min-width:1050px;font-size:12px}.json-paste-table th,.json-paste-table td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line);line-height:1.5;max-width:230px;overflow-wrap:anywhere}.json-paste-table th{background:#f5f6f8;position:sticky;top:0;z-index:1;white-space:nowrap}.json-paste-table small{display:block;color:var(--ivory-dim)}.json-paste-table details summary{cursor:pointer}.json-paste-table .json-paste-memo{white-space:pre-wrap;max-height:160px;overflow:auto;margin-top:6px}
+.json-paste-tag{font-weight:700;white-space:nowrap}.json-paste-tag.new{color:#287354}.json-paste-tag.duplicate{color:#657084}.json-paste-tag.error,.json-paste-warning{color:#ab3b37}.json-paste-foot{border-top:1px solid var(--line);flex-wrap:wrap}.json-paste-foot .actions{display:flex;gap:8px;flex-wrap:wrap}#json-paste-result{font-size:12px;line-height:1.6;flex:1;min-width:220px}
+@media(max-width:720px){.json-paste-overlay{padding:8px}.json-paste-dialog{max-height:calc(100dvh - 16px)}.json-paste-head,.json-paste-foot,.json-paste-body{padding:14px}.json-paste-head{align-items:flex-start}.json-paste-foot .actions{width:100%}.json-paste-foot .actions .btn{flex:1}#json-paste-input{font-size:16px}}
+</style>
+<section class="json-paste-overlay" id="json-paste-overlay" hidden>
+  <div class="json-paste-dialog" role="dialog" aria-modal="true" aria-labelledby="json-paste-title" aria-describedby="json-paste-description">
+    <header class="json-paste-head"><div><h2 id="json-paste-title">예약 일괄 입력</h2><p id="json-paste-description">예약 JSON을 붙여넣고 미리보기에서 확인한 신규 예약만 추가하세요.</p></div><button class="btn btn-ghost" id="json-paste-close" onclick="closeJSONPaste()" aria-label="예약 일괄 입력 닫기">닫기</button></header>
+    <div class="json-paste-body">
+      <label for="json-paste-input">예약 데이터 JSON 배열</label><textarea id="json-paste-input" spellcheck="false" placeholder="준비된 예약 JSON 배열 전체를 붙여넣으세요." oninput="invalidateJSONPastePreview()"></textarea>
+      <p class="json-paste-note">기존 예약과 같은 ID, 또는 연락처·대여/반납 일시·차량이 같은 예약은 건너뜁니다. 기존 예약은 덮어쓰지 않습니다. 오류가 있는 행은 추가하지 않으며, 메모는 입력한 내용 그대로 보존합니다.</p>
+      <div class="json-paste-summary" id="json-paste-summary" role="status">데이터를 붙여넣은 뒤 미리보기를 누르세요.</div>
+      <div id="json-paste-preview"></div>
+    </div>
+    <footer class="json-paste-foot"><div id="json-paste-result" role="status" aria-live="polite"></div><div class="actions"><button class="btn btn-ghost" id="json-paste-preview-button" onclick="previewJSONPaste()">미리보기</button><button class="btn btn-gold" id="json-paste-commit" onclick="commitJSONPaste()" disabled>검증통과 예약 추가</button></div></footer>
+  </div>
+</section>
+<script>
+let jsonPastePreviewState=null,jsonPasteCommitting=false,jsonPasteReturnFocus=null;
+const JSON_PASTE_MAX_ROWS=500,JSON_PASTE_MAX_LENGTH=2000000;
+function openJSONPaste(){
+  jsonPasteReturnFocus=document.activeElement;
+  if(typeof closeNav==='function')closeNav();
+  const overlay=document.getElementById('json-paste-overlay');overlay.hidden=false;
+  document.getElementById('json-paste-input').focus();
+}
+function closeJSONPaste(){
+  if(jsonPasteCommitting)return;
+  document.getElementById('json-paste-overlay').hidden=true;
+  if(jsonPasteReturnFocus&&typeof jsonPasteReturnFocus.focus==='function')jsonPasteReturnFocus.focus();
+}
+function invalidateJSONPastePreview(){
+  jsonPastePreviewState=null;
+  document.getElementById('json-paste-commit').disabled=true;
+  document.getElementById('json-paste-commit').textContent='검증통과 예약 추가';
+  document.getElementById('json-paste-summary').textContent='입력 내용이 변경되었습니다. 미리보기를 다시 확인하세요.';
+  document.getElementById('json-paste-preview').innerHTML='';document.getElementById('json-paste-result').textContent='';
+}
+function jsonPasteText(value,key,errors,max=20000){
+  if(value==null)return '';
+  if(typeof value!=='string'&&typeof value!=='number'){errors.push(`${key} 형식을 확인하세요`);return ''}
+  const text=String(value);if(text.length>max)errors.push(`${key}가 너무 깁니다`);return text;
+}
+function jsonPasteMoney(value,key,errors){
+  if(value==null||String(value).trim()===''||/^(?:-|미정|미확인|확인\s*필요|unknown)$/i.test(String(value).trim()))return null;
+  const n=moneyNumber(value);if(n===null||!Number.isSafeInteger(n)||n<0){errors.push(`${key} 금액을 확인하세요`);return null}return n;
+}
+function normalizeJSONPasteRecord(raw,index){
+  const errors=[];
+  if(!raw||Array.isArray(raw)||typeof raw!=='object')return{record:null,errors:['예약 객체가 아닙니다']};
+  const id=typeof raw.id==='string'?raw.id.trim():'';
+  if(!id||id.length>500||/[\/\x00-\x1f]/.test(id))errors.push('고유 ID가 없거나 형식이 잘못되었습니다');
+  const r={id};
+  const fields=['name','phone','car','vehicleId','start','end','days','ins','insuranceFee','paymentMethod','pickup','ret','memo','sourceFile','sourceRow','sourceBatch'];
+  fields.forEach(key=>{if(Object.prototype.hasOwnProperty.call(raw,key))r[key]=jsonPasteText(raw[key],key,errors,key==='memo'?20000:2000)});
+  for(const key of ['name','phone','car','vehicleId','start','end','ins','insuranceFee','paymentMethod'])r[key]=String(r[key]||'').trim();
+  if(!Object.prototype.hasOwnProperty.call(raw,'ret')&&Object.prototype.hasOwnProperty.call(raw,'returnLocation'))r.ret=jsonPasteText(raw.returnLocation,'반납 장소',errors,2000);
+  r.memo=String(r.memo||'');
+  r.status=raw.status==null||raw.status===''?'wait':String(raw.status);
+  if(!['wait','active','done','cancelled'].includes(r.status))errors.push('예약 상태를 확인하세요');
+  r.total=jsonPasteMoney(raw.total,'총금액',errors);
+  r.paid=jsonPasteMoney(raw.paid??raw.deposit,'입금액',errors);
+  r.balance=jsonPasteMoney(raw.balance,'잔금',errors);
+  if(r.total!==null&&r.paid!==null){
+    const calculated=r.total-r.paid;
+    if(r.balance!==null&&r.balance!==calculated)errors.push('총금액·입금액·잔금이 일치하지 않습니다');
+    r.balance=Math.max(0,calculated);
+  }
+  if(r.insuranceFee&&!['included','excluded','unknown'].includes(r.insuranceFee))errors.push('보험료 포함 여부를 확인하세요');
+  const normalized=normalizeReservationLocationRecord(r);
+  // Location normalization may add old payment notes; preserve the supplied source memo exactly.
+  normalized.memo=r.memo;
+  const invalid=validateReservation(normalized);if(invalid)errors.push(invalid);
+  return{record:normalized,errors:[...new Set(errors)]};
+}
+function jsonPasteDuplicateKey(r){
+  const phone=String(r.phone||'').replace(/\D/g,'');
+  if(!phone||!r.start||!r.end)return '';
+  const vehicle=reservationVehicleId(r)||String(r.car||'').replace(/\s/g,'').toLowerCase();
+  if(!vehicle)return '';
+  return JSON.stringify([phone,r.start,r.end,vehicle]);
+}
+function buildJSONPastePlan(rawText,existing=data,deleted=typeof trashData==='undefined'?[]:trashData,recovery=typeof localRecoveryData==='undefined'?[]:localRecoveryData){
+  const text=String(rawText||'').trim();
+  if(!text)throw new Error('예약 JSON 배열을 붙여넣으세요.');
+  if(text.length>JSON_PASTE_MAX_LENGTH)throw new Error('입력 크기가 너무 큽니다. 나누어 입력하세요.');
+  let parsed;try{parsed=JSON.parse(text)}catch(e){throw new Error('JSON 형식이 올바르지 않습니다. 배열 전체를 확인하세요.')}
+  if(!Array.isArray(parsed))throw new Error('대괄호로 시작하는 예약 JSON 배열이 필요합니다.');
+  if(!parsed.length)throw new Error('추가할 예약이 없습니다.');
+  if(parsed.length>JSON_PASTE_MAX_ROWS)throw new Error(`한 번에 ${JSON_PASTE_MAX_ROWS}건까지 입력할 수 있습니다.`);
+  const allKnown=[...existing,...deleted,...recovery],ids=new Map(),keys=new Map();
+  allKnown.forEach(r=>{if(r?.id)ids.set(r.id,r);const key=r&&jsonPasteDuplicateKey(r);if(key)keys.set(key,r)});
+  const rows=[],newRecords=[];
+  parsed.forEach((raw,index)=>{
+    const {record,errors}=normalizeJSONPasteRecord(raw,index);
+    const row={index:index+1,record,errors,status:'new',reason:'신규',conflicts:[],tight:false};
+    if(errors.length){row.status='error';row.reason=errors.join(' · ')}
+    else if(ids.has(record.id)){row.status='duplicate';row.reason='같은 ID가 있어 건너뜀 · 기존 내용 유지'}
+    else{
+      const key=jsonPasteDuplicateKey(record);
+      if(key&&keys.has(key)){row.status='duplicate';row.reason='같은 연락처·일정·차량이 있어 건너뜀'}
+      else{newRecords.push(record);ids.set(record.id,record);if(key)keys.set(key,record)}
+    }
+    rows.push(row);
+  });
+  const checked=[...existing];
+  rows.filter(r=>r.status==='new').sort((a,b)=>String(a.record.start).localeCompare(String(b.record.start))).forEach(row=>{
+    row.conflicts=reservationConflicts(row.record,checked);
+    const v=reservationVehicleId(row.record),start=reservationTime(row.record.start);
+    row.tight=!!v&&row.record.status!=='cancelled'&&checked.some(o=>o.id!==row.record.id&&!o.deletedAt&&o.status!=='cancelled'&&reservationVehicleId(o)===v&&start>=reservationTime(o.end)&&start-reservationTime(o.end)<3600000);
+    checked.push(row.record);
+  });
+  return{raw:text,rows,newRecords,total:rows.length,duplicates:rows.filter(r=>r.status==='duplicate').length,invalid:rows.filter(r=>r.status==='error').length,conflicts:rows.filter(r=>r.status==='new'&&r.conflicts.length).length,tight:rows.filter(r=>r.status==='new'&&r.tight).length};
+}
+function renderJSONPastePlan(plan){
+  const summary=document.getElementById('json-paste-summary');
+  summary.innerHTML=`전체 <strong>${plan.total}건</strong> · 신규 <strong>${plan.newRecords.length}건</strong> · 중복 제외 <strong>${plan.duplicates}건</strong> · 오류 제외 <strong>${plan.invalid}건</strong> · 차량 일정 겹침 <strong>${plan.conflicts}건</strong>${plan.tight?` · 준비시간 1시간 미만 <strong>${plan.tight}건</strong>`:''}`;
+  const money=v=>v==null?'미정':Number(v).toLocaleString('ko-KR')+'원';
+  const rowHTML=plan.rows.map(row=>{
+    const r=row.record||{},warning=[row.conflicts.length?`차량 일정 ${row.conflicts.length}건 겹침`:'',row.tight?'준비시간 1시간 미만':''].filter(Boolean).join(' · ');
+    return`<tr><td>${row.index}</td><td><span class="json-paste-tag ${row.status}">${row.status==='new'?'추가 대상':row.status==='duplicate'?'중복 제외':'오류 제외'}</span><small>${esc(row.reason)}</small>${warning?`<small class="json-paste-warning">${esc(warning)}</small>`:''}</td><td>${esc(r.name||'-')}<small>${esc(r.phone||'연락처 미기재')}</small></td><td>${esc(r.car||'-')}</td><td>${esc(r.start||'-')}<small>~ ${esc(r.end||'-')}</small></td><td>총 ${esc(money(r.total))}<small>입금 ${esc(money(r.paid))}</small><small>잔금 ${esc(money(r.balance))}</small></td><td>${esc(r.ins||'보험 미기재')}<small>${esc(r.paymentMethod||'결제수단 미기재')}</small></td><td>배차 ${esc(r.pickup||'-')}<small>반납 ${esc(r.ret||'-')}</small></td><td><details><summary>메모·ID 확인</summary><div class="json-paste-memo">${esc(r.memo||'메모 없음')}</div><small>${esc(r.id||'ID 없음')}</small></details></td></tr>`;
+  }).join('');
+  document.getElementById('json-paste-preview').innerHTML=`<div class="json-paste-table-wrap"><table class="json-paste-table"><thead><tr><th>행</th><th>검증</th><th>고객</th><th>차량</th><th>대여·반납</th><th>금액</th><th>보험·결제</th><th>장소</th><th>원문 메모</th></tr></thead><tbody>${rowHTML}</tbody></table></div>`;
+  const button=document.getElementById('json-paste-commit');button.disabled=!plan.newRecords.length||jsonPasteCommitting;button.textContent=`검증통과 ${plan.newRecords.length}건 추가`;
+}
+function previewJSONPaste(){
+  try{
+    const plan=buildJSONPastePlan(document.getElementById('json-paste-input').value);jsonPastePreviewState=plan;renderJSONPastePlan(plan);
+    document.getElementById('json-paste-result').textContent=plan.invalid?'오류 행은 추가하지 않습니다. 미리보기의 오류 내용을 확인하세요.':'미리보기만 생성했습니다. 추가 버튼을 눌러 저장하세요.';
+  }catch(e){jsonPastePreviewState=null;document.getElementById('json-paste-commit').disabled=true;document.getElementById('json-paste-preview').innerHTML='';document.getElementById('json-paste-summary').textContent=e.message;document.getElementById('json-paste-result').textContent='아직 예약을 추가하지 않았습니다.'}
+}
+function commitJSONPaste(){
+  if(jsonPasteCommitting)return;
+  const raw=document.getElementById('json-paste-input').value.trim();
+  if(!jsonPastePreviewState||raw!==jsonPastePreviewState.raw){invalidateJSONPastePreview();toast('입력 내용의 미리보기를 먼저 확인하세요');return}
+  let plan;try{plan=buildJSONPastePlan(raw)}catch(e){previewJSONPaste();return}
+  jsonPastePreviewState=plan;renderJSONPastePlan(plan);
+  if(!plan.newRecords.length){document.getElementById('json-paste-result').textContent='추가할 신규 예약이 없습니다. 기존 예약은 변경하지 않았습니다.';return}
+  const warning=`검증통과 신규 ${plan.newRecords.length}건을 추가할까요?\n기존 예약은 덮어쓰지 않습니다.\n중복 ${plan.duplicates}건 · 오류 ${plan.invalid}건은 추가하지 않습니다.`+(plan.conflicts?`\n\n차량 일정이 겹치는 신규 예약 ${plan.conflicts}건이 있습니다. 실제 배차를 확인하세요.`:'')+(plan.tight?`\n이전 반납과 배차 간격이 1시간 미만인 신규 예약 ${plan.tight}건이 있습니다.`:'');
+  if(!confirm(warning))return;
+  jsonPasteCommitting=true;document.getElementById('json-paste-commit').disabled=true;
+  try{
+    snapshot();data.unshift(...plan.newRecords);const durable=save();render();jsonPastePreviewState=null;
+    document.getElementById('json-paste-result').textContent=durable?`${plan.newRecords.length}건을 기기에 추가했습니다. 상단에서 서버 저장 완료를 확인하세요. 중복 ${plan.duplicates}건·오류 ${plan.invalid}건은 제외했습니다.`:`${plan.newRecords.length}건을 화면에 반영했지만 기기 저장에 실패했습니다. 창을 닫지 말고 JSON 백업과 서버 저장 상태를 확인하세요.`;
+    document.getElementById('json-paste-summary').textContent=`이번 입력: 신규 ${plan.newRecords.length}건 처리 · 기존 예약 유지 · 다시 입력하려면 미리보기를 누르세요.`;
+    document.getElementById('json-paste-commit').textContent='처리 완료 · 미리보기로 재확인';
+  }catch(e){jsonPastePreviewState=null;document.getElementById('json-paste-result').textContent='처리 중 오류가 발생했습니다. 예약 목록과 상단 저장 상태를 확인한 뒤 미리보기를 다시 실행하세요.'}
+  finally{jsonPasteCommitting=false;document.getElementById('json-paste-commit').disabled=true}
+}
+document.getElementById('json-paste-overlay').addEventListener('keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault();closeJSONPaste();return}
+  if(event.key!=='Tab')return;
+  const overlay=document.getElementById('json-paste-overlay'),items=[...overlay.querySelectorAll('button:not([disabled]),textarea')],first=items[0],last=items.at(-1);
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}
+});
+</script>
+
 </body>
 </html>
 
