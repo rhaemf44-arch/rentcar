@@ -688,6 +688,7 @@ body.tv-mode{display:block;background:#0b1420}
   .main{min-width:0;max-width:100vw;overflow-x:clip}
   .content{padding:16px 16px calc(var(--m-tab-h) + 32px + env(safe-area-inset-bottom))!important}
   .toast{bottom:calc(var(--m-tab-h) + 16px + env(safe-area-inset-bottom))}
+  body:has(#view-dashboard.on) .toast{bottom:calc(var(--m-tab-h) + 96px + env(safe-area-inset-bottom))}
 
   /* 하단 탭 */
   .m-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:calc(var(--m-tab-h) + env(safe-area-inset-bottom));padding:0 4px env(safe-area-inset-bottom);background:rgba(255,255,255,.97);border-top:1px solid var(--m-line)}
@@ -784,7 +785,8 @@ body.tv-mode{display:block;background:#0b1420}
   .m-row-money{justify-self:end;font-size:13px;font-weight:700;color:var(--m-muted);white-space:nowrap}
   .m-row-money.due{color:var(--m-red)}
 
-  /* 예약 입력: 저장 버튼을 탭 위에 고정 */
+  /* 예약 입력: 저장 버튼을 탭 위에 고정 (overflow:hidden 이면 sticky 가 동작하지 않는다) */
+  #reservation-panel,#reservation-panel .card,#reservation-form-tabpanel,#reservation-parser-tabpanel{overflow:visible!important}
   #reservation-panel .reservation-actions{position:sticky!important;bottom:calc(var(--m-tab-h) + env(safe-area-inset-bottom));z-index:5;margin:0 -16px -16px!important;padding:12px 16px!important;background:#fff;border-top:1px solid var(--m-line)}
   #reservation-panel .reservation-actions .btn{min-height:52px;font-size:16px}
 
@@ -3823,12 +3825,19 @@ function closeMobileSheet(){
   clearTimeout(mSheetCloseTimer);mSheetCloseTimer=setTimeout(()=>{sheet.hidden=true;sheet.classList.remove('closing')},220);
   const back=mSheetReturnFocus;mSheetReturnFocus=null;if(back&&document.contains(back))back.focus({preventScroll:true});
 }
+/* 예약 입력 패널은 다음 프레임에 '고객명'으로 포커스를 옮긴다. 그 뒤(두 프레임 뒤)에 원하는 칸으로 옮겨야 덮어쓰이지 않는다. */
+function focusAfterPanel(id){requestAnimationFrame(()=>requestAnimationFrame(()=>{const el=document.getElementById(id);if(!el)return;el.focus({preventScroll:true});el.scrollIntoView({block:'center'})}))}
 function mobileSheetAction(action){
   const id=mSheetId;if(!id)return;
   if(action==='edit'){closeMobileSheet();editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});return}
   if(action==='notice'){closeMobileSheet();openDispatchNotice(id);return}
   if(action==='delete'){delRes(id);return}
-  if(action==='pickup')setReservationStatus(id,'active');
+  if(action==='pickup'){
+    const r=data.find(x=>x.id===id);
+    // 차량번호가 없으면 상태를 바꾸지 않고 수정 화면으로 보낸다. 시트를 먼저 닫아야 폼이 가려지지 않는다.
+    if(r&&!reservationVehicleId(r)){closeMobileSheet();toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});focusAfterPanel('f-car');return}
+    setReservationStatus(id,'active');
+  }
   if(action==='return')setReservationStatus(id,'done');
 }
 function renderMobileSheet(){
