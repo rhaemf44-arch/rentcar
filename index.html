@@ -711,7 +711,10 @@ body.tv-mode{display:block;background:#0b1420}
   .sync-state[data-state="saved"]:before{background:#1f7a52}
   .sync-state[data-state="error"]{background:var(--m-red-soft)}
   .sync-state[data-state="error"]:before{background:var(--m-red)}
-  .main{min-width:0;max-width:100vw;overflow-x:clip}
+  /* iOS 16 미만(카카오톡 내장 브라우저 등)은 overflow-x:clip 을 몰라 페이지가 옆으로 넓어질 수 있어 hidden 도 함께 건다 */
+  html{overflow-x:hidden} /* body 까지 걸면 스크롤이 body 안으로 옮겨가 window 스크롤이 멈춘다 */
+  .main{min-width:0;max-width:100vw;overflow-x:hidden;overflow-x:clip}
+  .m-sheet-panel{max-width:100vw}
   .content{padding:16px 16px calc(var(--m-tab-h) + 32px + env(safe-area-inset-bottom))!important}
   .toast{bottom:calc(var(--m-tab-h) + 16px + env(safe-area-inset-bottom))}
   body:has(#view-dashboard.on) .toast{bottom:calc(var(--m-tab-h) + 96px + env(safe-area-inset-bottom))}
@@ -3140,7 +3143,8 @@ function plateCell(r,plate){
   if(plate)return `<td class="c-plate editable" data-id="${esc(r.id)}" data-field="plate" onclick="startEdit(this)" title="클릭하여 수정">${esc(plate)}</td>`;
   return `<td class="c-plate plate-empty"><button type="button" class="plate-search-btn" onclick="event.stopPropagation();openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">＋ 차량 검색</button></td>`;
 }
-function plateCandidateCar(r,plate){const name=reservationVehicleName(r);return `${name&&name!=='차종 미기재'?name:PLATE_MAP[plate].n} (${plate.slice(-4)})`}
+// 고른 차의 등록 차량명으로 바꾼다(예약 당시 적힌 차량명은 메모 원문에 남아 있다). 폼에서 고를 때와 같은 형식.
+function plateCandidateCar(r,plate){return `${PLATE_MAP[plate].n} (${plate.slice(-4)})`}
 function platePickerMatches(r,query){
   const q=String(query||'').replace(/\s/g,'').toLowerCase(),name=reservationVehicleName(r),base=PLATE_BASES.find(b=>name.includes(b))||'';
   let plates=sortPlates(Object.keys(PLATE_MAP));
