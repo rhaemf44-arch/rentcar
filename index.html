@@ -564,104 +564,107 @@ body.tv-mode{display:block;background:#0b1420}
 @media(min-width:641px){#reservation-panel .reservation-panel-head{padding:24px 28px 20px}#reservation-panel .card-b{padding:22px 28px 28px}#reservation-panel .card-h{padding:20px 28px 0}}
 @media(max-width:640px){#view-dashboard .dashboard-workspace{gap:18px}#reservation-panel .reservation-panel-head{padding:18px 16px 14px}#reservation-panel .card-b{padding:16px}#reservation-panel .reservation-row-contact,#reservation-panel .reservation-row-date,#reservation-panel .reservation-row-location{grid-template-columns:1fr}#reservation-panel .reservation-row-meta{grid-template-columns:repeat(2,minmax(0,1fr))}#reservation-panel input,#reservation-panel select,#reservation-panel textarea{font-size:16px;min-height:46px}#view-dashboard .dashboard-workspace .dashboard-schedule>.card-h,#view-dashboard .dashboard-workspace .dashboard-schedule>.card-b{padding:16px}#view-dashboard .dashboard-workspace .dashboard-periods button{font-size:15px;padding:10px 6px}#view-dashboard .dashboard-workspace .res-info{grid-template-columns:1fr}}
 
-/* TV board: all today's work stays visible; no rotating pages. */
+/* TV board: sized for a 1920x1080 screen read from 3-5m; --u is 1px at 1920x1080 and scales with the screen. */
 #tv-board[hidden],#tv-board [hidden]{display:none!important}
-#tv-board{--tv-bg:#07111e;--tv-panel:#101e2e;--tv-edge:#344559;--tv-text:#f7fafc;--tv-muted:#b9c7d7;--tv-pickup:#67e8dc;--tv-return:#ffca7a;position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:hidden;font-family:inherit;line-height:1.35;color-scheme:dark}
+#tv-board{--u:max(.6px,min(.0521vw,.0926vh));--tv-bg:#0b111c;--tv-panel:#131b29;--tv-panel-2:#0f1622;--tv-edge:#34425a;--tv-text:#f2f4f8;--tv-muted:#aeb6c4;--tv-dim:#8e97a8;--tv-pickup:#4fd1c5;--tv-return:#f2b84b;--tv-active:#8fb8ff;--tv-late:#ff6b5e;--tv-ease:cubic-bezier(.23,1,.32,1);position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:hidden;font-family:inherit;line-height:1.3;font-variant-numeric:tabular-nums;word-break:keep-all;-webkit-font-smoothing:antialiased}
 #tv-board *{box-sizing:border-box}
-#tv-board .tv-board-inner{height:100dvh;display:flex;flex-direction:column;padding:20px 26px 14px;gap:14px;min-height:0}
+#tv-board:not(.show-controls){cursor:none}
+#tv-board .tv-board-inner{position:relative;height:100dvh;display:flex;flex-direction:column;gap:calc(28*var(--u));padding:calc(40*var(--u)) calc(48*var(--u)) calc(32*var(--u));min-height:0}
 #tv-board button{font-family:inherit;cursor:pointer;touch-action:manipulation}
-#tv-board button:focus-visible{outline:3px solid #fff;outline-offset:4px}
-#tv-board .tv-header{display:flex;align-items:center;justify-content:space-between;gap:20px;flex:none}
-#tv-board .tv-brand{font-size:15px;font-weight:700;letter-spacing:.06em;color:var(--tv-muted);margin-bottom:4px}
-#tv-board .tv-title{margin:0;font-size:32px;font-weight:850;letter-spacing:-1px;line-height:1.2}
-#tv-board .tv-header-right{display:flex;align-items:center;justify-content:flex-end;gap:22px}
-#tv-board .tv-clock-group{text-align:right}
-#tv-board .tv-date{font-size:18px;color:var(--tv-muted);white-space:nowrap}
-#tv-board .tv-clock{font-size:40px;font-weight:800;line-height:1.05;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-#tv-board .tv-header-buttons{display:flex;gap:8px}
-#tv-board .tv-button{border:1px solid #526278;background:#142537;border-radius:10px;padding:10px 15px;color:var(--tv-text);min-height:44px;font-size:17px;font-weight:650;white-space:nowrap}
-#tv-board .tv-button:hover{background:#21394d}
-#tv-board .tv-status-line{display:flex;align-items:center;gap:14px;justify-content:space-between;font-size:16px;color:var(--tv-muted);flex:none}
-#tv-board .tv-sync{display:flex;align-items:center;gap:8px;min-width:0}
-#tv-board .tv-sync:before{content:"";display:block;width:9px;height:9px;border-radius:50%;background:#e7bb66;flex:none}
-#tv-board .tv-sync[data-state="saved"]:before{background:#69e4b4}
+#tv-board button:focus-visible,#tv-board .tv-date-input:focus-visible{outline:3px solid #fff;outline-offset:4px}
+#tv-board .tv-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:calc(40*var(--u));flex:none}
+#tv-board .tv-brand{font-size:calc(20*var(--u));font-weight:500;letter-spacing:.08em;color:var(--tv-dim)}
+#tv-board .tv-title{margin:calc(6*var(--u)) 0 0;font-size:calc(48*var(--u));font-weight:800;letter-spacing:-.02em;line-height:1.15}
+#tv-board .tv-title-note{display:inline-flex;align-items:center;height:calc(40*var(--u));margin-left:calc(16*var(--u));padding:0 calc(14*var(--u));border-radius:calc(10*var(--u));background:#3a2a10;color:#ffd99a;font-size:calc(22*var(--u));font-weight:700;letter-spacing:0;vertical-align:middle}
+#tv-board .tv-summary{display:flex;gap:calc(16*var(--u))}
+#tv-board .tv-sum{display:flex;flex-direction:column;align-items:center;min-width:calc(168*var(--u));padding:calc(12*var(--u)) calc(28*var(--u));border-radius:calc(16*var(--u));background:var(--tv-panel)}
+#tv-board .tv-sum-k{font-size:calc(20*var(--u));font-weight:700}
+#tv-board .tv-sum-pickup .tv-sum-k{color:var(--tv-pickup)}
+#tv-board .tv-sum-return .tv-sum-k{color:var(--tv-return)}
+#tv-board .tv-sum-active .tv-sum-k{color:var(--tv-active)}
+#tv-board .tv-sum-v{font-size:calc(44*var(--u));font-weight:800;line-height:1.1}
+#tv-board .tv-sum-v small{font-size:calc(24*var(--u));font-weight:500;color:var(--tv-dim)}
+#tv-board .tv-clock-group{display:flex;flex-direction:column;align-items:flex-end;gap:calc(8*var(--u));min-width:0}
+#tv-board .tv-clock{font-size:calc(96*var(--u));font-weight:800;line-height:1;letter-spacing:-.03em}
+#tv-board .tv-date{font-size:calc(20*var(--u));color:var(--tv-muted)}
+#tv-board[data-today="true"] .tv-date{display:none}
+#tv-board .tv-sync{display:inline-flex;align-items:center;gap:calc(8*var(--u));font-size:calc(20*var(--u));color:var(--tv-muted);max-width:100%}
+#tv-board .tv-sync:before{content:"";width:calc(10*var(--u));height:calc(10*var(--u));border-radius:50%;background:#e7bb66;flex:none}
+#tv-board .tv-sync[data-state="saved"]{color:#7fd8a8}
+#tv-board .tv-sync[data-state="saved"]:before{background:#3dbe7e}
 #tv-board .tv-sync[data-state="error"]{color:#ffd5a1}
 #tv-board .tv-sync[data-state="error"]:before{background:#ff9d77}
-#tv-board .tv-readonly{color:#c9d5e3;white-space:nowrap}
-#tv-board .tv-date-nav{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-#tv-board .tv-date-input{font-family:inherit;font-size:20px;font-weight:700;line-height:1.2;min-height:44px;width:180px;padding:8px 10px;border:1px solid #697f96;border-radius:10px;background:#142537;color:var(--tv-text);color-scheme:dark}
-#tv-board .tv-date-input:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#tv-board .tv-lanes:focus{outline:none}
+#tv-board .tv-lanes{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(40*var(--u))}
+#tv-board .tv-lane{--lane:var(--tv-pickup);display:flex;flex-direction:column;gap:calc(12*var(--u));min-width:0;min-height:0}
+#tv-board .tv-lane-return{--lane:var(--tv-return)}
+#tv-board .tv-lane-head{display:flex;align-items:center;justify-content:space-between;gap:calc(16*var(--u));padding-bottom:calc(12*var(--u));border-bottom:calc(4*var(--u)) solid var(--lane);flex:none}
+#tv-board .tv-lane-title{margin:0;font-size:calc(40*var(--u));font-weight:800;color:var(--lane);letter-spacing:-.01em}
+#tv-board .tv-lane-total{margin-left:calc(12*var(--u));font-size:calc(26*var(--u));font-weight:500;color:var(--tv-muted);letter-spacing:0}
+#tv-board .tv-page{display:inline-flex;align-items:center;gap:calc(10*var(--u));font-size:calc(22*var(--u));color:var(--tv-muted);white-space:nowrap}
+#tv-board .tv-page-bar{width:calc(120*var(--u));height:calc(6*var(--u));border-radius:calc(3*var(--u));background:#243045;overflow:hidden}
+#tv-board .tv-page-bar i{display:block;height:100%;width:100%;background:var(--lane);transform-origin:left;transform:scaleX(0)}
+#tv-board .tv-page.is-running .tv-page-bar i{animation:tv-page-progress 15s linear forwards}
+@keyframes tv-page-progress{to{transform:scaleX(1)}}
+#tv-board .tv-cards{flex:1;min-height:0;display:flex;flex-direction:column;gap:calc(12*var(--u));overflow:hidden}
+#tv-board .tv-cards .tv-off{display:none}
+#tv-board .tv-task{display:grid;grid-template-columns:calc(168*var(--u)) minmax(0,1fr) auto;align-items:center;gap:calc(6*var(--u)) calc(24*var(--u));padding:calc(20*var(--u)) calc(24*var(--u));border-radius:calc(16*var(--u));background:var(--tv-panel);border:calc(2*var(--u)) solid var(--tv-panel);min-width:0;flex:none}
+#tv-board .tv-task-timeblock{display:flex;flex-direction:column;gap:calc(4*var(--u));min-width:0}
+#tv-board .tv-task-day{font-size:calc(20*var(--u));font-weight:700;color:#ffccb5}
+#tv-board .tv-task-time{font-size:calc(56*var(--u));font-weight:800;line-height:1;letter-spacing:-.02em;white-space:nowrap}
+#tv-board .tv-task-body{min-width:0}
+#tv-board .tv-car-row{display:flex;align-items:baseline;gap:calc(16*var(--u));min-width:0;white-space:nowrap;overflow:hidden}
+#tv-board .tv-plate{font-size:calc(44*var(--u));font-weight:800;line-height:1.1;letter-spacing:-.01em}
+#tv-board .tv-unassigned{font-size:calc(36*var(--u));font-weight:800;line-height:1.1;color:#ffb4ab}
+#tv-board .tv-car-name{font-size:calc(26*var(--u));font-weight:500;color:var(--tv-muted);overflow:hidden;text-overflow:ellipsis}
+#tv-board .tv-task-details{display:flex;gap:calc(28*var(--u));margin-top:calc(6*var(--u));font-size:calc(28*var(--u));font-weight:500;white-space:nowrap;overflow:hidden;min-width:0}
+#tv-board .tv-task-detail{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#tv-board .tv-task-detail:first-child{flex:none;max-width:45%}
+#tv-board .tv-detail-label{margin-right:calc(8*var(--u));font-size:calc(20*var(--u));font-weight:400;color:var(--tv-dim)}
+#tv-board .tv-task-memo{grid-column:2/-1;font-size:calc(22*var(--u));color:#d7e0ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tv-board .tv-task-memo b{margin-right:calc(8*var(--u));color:#f6deb1;font-weight:700}
+#tv-board .tv-task-state{display:inline-flex;align-items:center;height:calc(44*var(--u));padding:0 calc(16*var(--u));border-radius:calc(10*var(--u));background:#1f2a3c;color:#c9d1de;font-size:calc(22*var(--u));font-weight:700;white-space:nowrap}
+#tv-board .tv-task.is-next{border-color:var(--lane)}
+#tv-board .tv-task.is-next .tv-task-state{background:var(--lane);color:#0b111c}
+#tv-board .tv-task.is-late{background:#2a1518;border-color:var(--tv-late)}
+#tv-board .tv-task.is-late .tv-task-time{color:#ff8a7f}
+#tv-board .tv-task.is-late .tv-task-state{background:var(--tv-late);color:#1a0b0a}
+#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr) auto;gap:calc(20*var(--u));height:calc(56*var(--u));padding:0 calc(24*var(--u));border-radius:calc(12*var(--u));background:var(--tv-panel-2);border-color:var(--tv-panel-2);color:#7d8697;font-size:calc(24*var(--u))}
+#tv-board .tv-task.is-done svg{width:calc(24*var(--u));height:calc(24*var(--u));fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#tv-board .tv-task.is-done .tv-task-time{font-size:calc(28*var(--u));font-weight:700;color:#9aa3b2;letter-spacing:0}
+#tv-board .tv-done-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tv-board .tv-task.is-done .tv-task-state{height:auto;padding:0;background:none;color:#7d8697;font-size:calc(22*var(--u));font-weight:500}
+#tv-board .tv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(8*var(--u));border:calc(2*var(--u)) dashed #243045;border-radius:calc(16*var(--u));font-size:calc(32*var(--u));font-weight:700;color:var(--tv-muted);text-align:center;padding:calc(24*var(--u))}
+#tv-board .tv-empty small{font-size:calc(22*var(--u));font-weight:500;color:var(--tv-dim)}
+#tv-board[data-density="compact"] .tv-cards{gap:calc(8*var(--u))}
+#tv-board[data-density="compact"] .tv-task:not(.is-done){grid-template-columns:calc(132*var(--u)) minmax(0,1fr) auto;gap:calc(2*var(--u)) calc(20*var(--u));height:calc(84*var(--u));padding:0 calc(20*var(--u));border-radius:calc(12*var(--u))}
+#tv-board[data-density="compact"] .tv-task-day{display:none}
+#tv-board[data-density="compact"] .tv-task-time{font-size:calc(42*var(--u))}
+#tv-board[data-density="compact"] .tv-plate{font-size:calc(34*var(--u))}
+#tv-board[data-density="compact"] .tv-unassigned{font-size:calc(28*var(--u))}
+#tv-board[data-density="compact"] .tv-car-name{font-size:calc(22*var(--u))}
+#tv-board[data-density="compact"] .tv-task-details{margin-top:calc(2*var(--u));font-size:calc(22*var(--u));gap:calc(20*var(--u));color:#c9d1de}
+#tv-board[data-density="compact"] .tv-detail-label{display:none}
+#tv-board[data-density="compact"] .tv-task-memo{display:none}
+#tv-board[data-density="compact"] .tv-task-state{height:calc(38*var(--u));padding:0 calc(14*var(--u));border-radius:calc(9*var(--u));font-size:calc(20*var(--u))}
+#tv-board .tv-footer{display:flex;align-items:center;justify-content:space-between;gap:calc(24*var(--u));min-height:calc(64*var(--u));padding:0 calc(24*var(--u));border-radius:calc(16*var(--u));background:var(--tv-panel);flex:none}
+#tv-board .tv-page-info{font-size:calc(24*var(--u));color:var(--tv-muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tv-board .tv-page-info b{color:var(--tv-text);font-weight:700}
+#tv-board .tv-notice{font-size:calc(20*var(--u));color:#fce0a6}
+#tv-board .tv-notice:empty{display:none}
+#tv-board .tv-hint{font-size:calc(20*var(--u));color:#6f788a;white-space:nowrap}
+#tv-board .tv-controls{position:absolute;left:50%;bottom:calc(120*var(--u));z-index:2;display:flex;align-items:center;gap:calc(12*var(--u));padding:calc(16*var(--u));border-radius:calc(22*var(--u));background:rgba(11,17,28,.94);border:calc(2*var(--u)) solid var(--tv-edge);box-shadow:0 24px 64px rgba(0,0,0,.5);opacity:0;pointer-events:none;transform:translate(-50%,calc(16*var(--u)));transition:opacity 200ms var(--tv-ease),transform 200ms var(--tv-ease)}
+#tv-board.show-controls .tv-controls,#tv-board .tv-controls:has(:focus-visible){opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+#tv-board .tv-button{display:inline-flex;align-items:center;justify-content:center;gap:calc(10*var(--u));min-height:max(44px,calc(64*var(--u)));padding:0 calc(24*var(--u));border-radius:calc(14*var(--u));border:calc(2*var(--u)) solid var(--tv-edge);background:#182234;color:var(--tv-text);font-size:max(16px,calc(24*var(--u)));font-weight:700;white-space:nowrap;transition:transform 140ms var(--tv-ease)}
+#tv-board .tv-button:active{transform:scale(.97)}
+#tv-board .tv-button:disabled{opacity:.4;cursor:default}
+#tv-board .tv-today-button[aria-pressed="true"]{background:var(--tv-pickup);border-color:var(--tv-pickup);color:#06201d}
+#tv-board .tv-date-input{min-height:max(44px,calc(64*var(--u)));width:max(170px,calc(260*var(--u)));padding:0 calc(16*var(--u));border-radius:calc(14*var(--u));border:calc(2*var(--u)) solid var(--tv-edge);background:var(--tv-bg);color:var(--tv-text);font-family:inherit;font-size:max(16px,calc(24*var(--u)));font-weight:700;color-scheme:dark}
 #tv-board .tv-date-input::-webkit-calendar-picker-indicator{cursor:pointer}
-#tv-board .tv-today-button[aria-pressed="true"]{background:#164640;border-color:#6ee8ce;color:#befff1}
-#tv-board .tv-clock-label{font-size:13px;color:var(--tv-muted);margin-right:6px}
-#tv-board .tv-date-nav .tv-button{padding:8px 13px}
-@media(max-width:1100px){#tv-board .tv-status-line{flex-wrap:wrap;gap:10px}#tv-board .tv-date-nav{order:3;flex-basis:100%;justify-content:flex-start}#tv-board .tv-date-input{font-size:18px;width:172px}}
-@media(max-width:700px){#tv-board .tv-date-nav{gap:6px}#tv-board .tv-date-nav .tv-button{font-size:14px;padding:7px 9px}#tv-board .tv-date-input{font-size:16px;width:156px}}
-#tv-board .tv-lanes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;align-items:start;gap:20px;flex:1;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
-#tv-board .tv-lane{min-width:0;display:flex;flex-direction:column;gap:10px;align-self:start}
-#tv-board .tv-lane-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 8px;border-bottom:3px solid var(--tv-pickup);color:var(--tv-pickup)}
-#tv-board .tv-lane-return .tv-lane-head{border-color:var(--tv-return);color:var(--tv-return)}
-#tv-board .tv-lane-title{font-size:27px;font-weight:850;margin:0;letter-spacing:-.6px}
-#tv-board .tv-lane-total{font-size:19px;font-weight:650;white-space:nowrap}
-#tv-board .tv-cards{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;gap:10px;align-content:start;min-width:0}
-#tv-board .tv-task{padding:15px 16px;border:1px solid var(--tv-edge);border-left:5px solid var(--tv-pickup);background:var(--tv-panel);border-radius:11px;min-width:0;display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px 16px;align-items:start}
-#tv-board .tv-lane-return .tv-task{border-left-color:var(--tv-return)}
-#tv-board .tv-task.is-done{background:#101b28;border-color:#354151;border-left-color:#8294aa}
-#tv-board .tv-task.is-late{border-color:#f28f6e;border-left-color:#ffad86;background:#2b1b23}
-#tv-board .tv-task-timeblock{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0}
-#tv-board .tv-task-time{font-size:42px;font-weight:850;letter-spacing:-1.4px;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
-#tv-board .tv-task-day{font-size:17px;font-weight:650;color:#ffccb5}
-#tv-board .tv-task-state{display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;background:#153c40;color:#b4fff6;font-size:18px;font-weight:800;white-space:nowrap}
-#tv-board .tv-lane-return .tv-task-state{background:#3e3424;color:#ffe0ad}
-#tv-board .is-done .tv-task-state{background:#283746;color:#d1dce9}
-#tv-board .is-late .tv-task-state{background:#6b3029;color:#fff0db}
-#tv-board .tv-task-body{display:flex;flex-direction:column;gap:8px;min-width:0}
-#tv-board .tv-car-row{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;min-width:0}
-#tv-board .tv-plate{font-size:32px;font-weight:850;letter-spacing:-.7px;line-height:1.1;white-space:nowrap;color:#fff}
-#tv-board .tv-car-name{font-size:22px;font-weight:650;color:#c7d5e6;overflow-wrap:anywhere;word-break:keep-all}
-#tv-board .tv-unassigned{color:#ffe09c;background:#45381e;border:1px solid #b9a05e;padding:3px 7px;border-radius:6px;font-size:25px;font-weight:850;white-space:nowrap}
-#tv-board .tv-task-details{display:flex;flex-wrap:wrap;gap:5px 18px;min-width:0}
-#tv-board .tv-task-detail{display:flex;align-items:baseline;gap:7px;font-size:22px;line-height:1.35;min-width:0;max-width:100%}
-#tv-board .tv-task-location{flex:1 1 220px}
-#tv-board .tv-detail-label{font-size:16px;font-weight:600;color:#b1c2d5;white-space:nowrap;flex:none}
-#tv-board .tv-detail-text{font-weight:650;overflow-wrap:anywhere;word-break:keep-all;min-width:0}
-#tv-board .tv-task-memo{grid-column:1/-1;font-size:18px;color:#d7e0ea;overflow-wrap:anywhere;word-break:keep-all;line-height:1.35;padding-top:6px;border-top:1px solid #344052}
-#tv-board .tv-task-memo b{color:#f6deb1;font-weight:700;margin-right:6px}
-#tv-board .tv-empty{font-size:20px;font-weight:650;color:#bdcddd;padding:12px 2px}
-#tv-board .tv-empty small{display:none}
-#tv-board .tv-lane.is-empty{grid-column:1/-1;order:2;flex-direction:row;align-items:center;gap:20px;border:1px solid #33475d;background:#0e1b2a;padding:12px 16px;border-radius:10px}
-#tv-board .tv-lane.is-empty .tv-lane-head{border:0;padding:0;gap:20px}
-#tv-board .tv-lane.is-empty .tv-lane-title{font-size:22px}
-#tv-board .tv-lane.is-empty .tv-lane-total{font-size:18px;color:#b9c7d7}
-#tv-board .tv-lane.is-empty .tv-cards{display:none}
-#tv-board[data-layout="single"] .tv-lane:not(.is-empty){grid-column:1/-1}
-#tv-board[data-layout="single"] .tv-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
-#tv-board .tv-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;flex:none}
-#tv-board .tv-page-info{font-size:16px;color:#c6d2df;line-height:1.4}
-#tv-board .tv-notice{font-size:16px;color:#fce0a6}
-/* More work uses the full width in fixed grids, never hidden pages. */
-#tv-board[data-density="compact"] .tv-lanes{grid-template-columns:minmax(0,1fr);gap:14px}
-#tv-board[data-density="compact"] .tv-lane{gap:8px}
-#tv-board[data-density="compact"] .tv-lane-title{font-size:24px}
-#tv-board[data-density="compact"] .tv-lane-head{padding-bottom:6px;border-bottom-width:2px}
-#tv-board[data-density="compact"] .tv-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#tv-board[data-density="compact"] .tv-task{padding:10px 11px;grid-template-columns:81px minmax(0,1fr);gap:6px 10px;border-radius:8px;border-left-width:4px}
-#tv-board[data-density="compact"] .tv-task-timeblock{gap:6px}
-#tv-board[data-density="compact"] .tv-task-time{font-size:32px;letter-spacing:-.8px}
-#tv-board[data-density="compact"] .tv-task-state{font-size:15px;padding:3px 5px}
-#tv-board[data-density="compact"] .tv-task-body{gap:6px}
-#tv-board[data-density="compact"] .tv-plate{font-size:27px;letter-spacing:-.5px}
-#tv-board[data-density="compact"] .tv-car-name{font-size:19px}
-#tv-board[data-density="compact"] .tv-unassigned{font-size:21px}
-#tv-board[data-density="compact"] .tv-car-row{gap:4px 9px}
-#tv-board[data-density="compact"] .tv-task-details{gap:4px 13px}
-#tv-board[data-density="compact"] .tv-task-detail{font-size:20px;gap:5px}
-#tv-board[data-density="compact"] .tv-task-location{flex-basis:190px}
-#tv-board[data-density="compact"] .tv-detail-label{font-size:14px}
-#tv-board[data-density="compact"] .tv-task-memo{font-size:16px;padding-top:4px}
-@media(max-width:1500px){#tv-board[data-density="compact"] .tv-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:1100px){#tv-board .tv-board-inner{padding:15px 16px 12px;gap:11px}#tv-board .tv-title{font-size:27px}#tv-board .tv-header-right{gap:14px}#tv-board .tv-date{font-size:16px}#tv-board .tv-clock{font-size:34px}#tv-board .tv-header-buttons .tv-button{font-size:15px;min-height:39px;padding:7px 10px}#tv-board .tv-lanes{gap:14px}#tv-board .tv-lane-title{font-size:24px}#tv-board .tv-lane-total{font-size:17px}#tv-board .tv-task{padding:12px;grid-template-columns:86px minmax(0,1fr);gap:8px 11px}#tv-board .tv-task-time{font-size:34px}#tv-board .tv-plate{font-size:28px}#tv-board .tv-car-name{font-size:20px}#tv-board .tv-task-detail{font-size:20px}#tv-board .tv-task-state{font-size:16px;padding:4px 6px}#tv-board .tv-task-location{flex-basis:100%}}
-@media(max-width:700px){#tv-board .tv-board-inner{padding:13px 11px;gap:11px}#tv-board .tv-header{align-items:flex-start;gap:12px}#tv-board .tv-brand{font-size:12px}#tv-board .tv-title{font-size:24px;max-width:9em}#tv-board .tv-header-right{flex-direction:column;align-items:flex-end;gap:8px}#tv-board .tv-header-buttons{gap:5px}#tv-board .tv-date{font-size:14px}#tv-board .tv-clock{font-size:31px}#tv-board .tv-status-line{font-size:13px;align-items:flex-start}#tv-board .tv-readonly{white-space:normal;text-align:right}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:18px}#tv-board .tv-cards,#tv-board[data-layout="single"] .tv-cards,#tv-board[data-density="compact"] .tv-cards{grid-template-columns:minmax(0,1fr)}#tv-board .tv-task{padding:12px;gap:7px 10px}#tv-board .tv-lane.is-empty{padding:10px 12px}#tv-board .tv-lane.is-empty .tv-lane-head{width:100%;justify-content:space-between;gap:10px}#tv-board .tv-task-detail{font-size:19px}#tv-board .tv-page-info{font-size:13px}#tv-board .tv-button{font-size:14px;padding:7px 9px}#tv-board .tv-notice{font-size:14px}}
+#tv-board .tv-controls-sep{width:calc(2*var(--u));height:calc(40*var(--u));margin:0 calc(4*var(--u));background:var(--tv-edge)}
+@media(hover:hover){#tv-board .tv-button:not(:disabled):hover{background:#22304a}}
+@media(prefers-reduced-motion:reduce){#tv-board .tv-controls{transition:opacity 200ms linear;transform:translate(-50%,0)}#tv-board .tv-page.is-running .tv-page-bar i{animation:none;transform:scaleX(1)}#tv-board .tv-button:active{transform:none}}
+@media(max-width:900px){#tv-board{overflow-y:auto}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{height:auto;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
 
 </style>
 </head>
@@ -670,17 +673,27 @@ body.tv-mode{display:block;background:#0b1420}
   <div class="tv-board-inner">
     <header class="tv-header">
       <div><div class="tv-brand">KY RENTCAR · 경일렌트카</div><h1 class="tv-title" id="tv-title">오늘의 배차 · 반납 예정</h1></div>
-      <div class="tv-header-right">
-        <div class="tv-clock-group"><div class="tv-date"><span class="tv-clock-label">현재</span><span id="tv-date"></span></div><div class="tv-clock" id="tv-clock"></div></div>
-        <div class="tv-header-buttons"><button class="tv-button" id="tv-fullscreen" onclick="toggleTVFullscreen()">전체 화면</button><button class="tv-button" id="tv-exit" onclick="exitTVMode()">관리 화면</button></div>
+      <div class="tv-summary" aria-label="선택 날짜 요약">
+        <div class="tv-sum tv-sum-pickup"><span class="tv-sum-k">배차 남음</span><span class="tv-sum-v" id="tv-sum-pickup">0</span></div>
+        <div class="tv-sum tv-sum-return"><span class="tv-sum-k">반납 남음</span><span class="tv-sum-v" id="tv-sum-return">0</span></div>
+        <div class="tv-sum tv-sum-active"><span class="tv-sum-k">운행중</span><span class="tv-sum-v" id="tv-sum-active">0</span></div>
       </div>
+      <div class="tv-clock-group"><div class="tv-clock" id="tv-clock"></div><div class="tv-date">현재 <span id="tv-date"></span></div><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span></div>
     </header>
-    <div class="tv-status-line"><span class="tv-sync" id="tv-sync" role="status">저장 상태 확인 중</span><nav class="tv-date-nav" aria-label="TV 조회 날짜 선택"><button class="tv-button" id="tv-date-prev" onclick="shiftTVDate(-1)" aria-label="이전날">‹ 이전날</button><input class="tv-date-input" id="tv-date-input" type="date" min="0001-01-01" max="9999-12-31" aria-label="TV 조회 날짜" onchange="setTVDate(this.value)"><button class="tv-button" id="tv-date-next" onclick="shiftTVDate(1)" aria-label="다음날">다음날 ›</button><button class="tv-button tv-today-button" id="tv-date-today" onclick="showTVToday()" aria-pressed="true">오늘</button></nav><span class="tv-readonly">실시간 업무 현황</span></div>
-    <div class="tv-lanes" id="tv-lanes" tabindex="0" aria-label="선택 날짜 전체 배차와 반납 목록">
-      <section id="tv-pickup-lane" class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">당일 배차</h2><span class="tv-lane-total" id="tv-pickup-count"></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
-      <section id="tv-return-lane" class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납 예정</h2><span class="tv-lane-total" id="tv-return-count"></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
+    <div class="tv-lanes" id="tv-lanes" tabindex="-1" aria-label="선택 날짜 배차와 반납 목록">
+      <section id="tv-pickup-lane" class="tv-lane tv-lane-pickup" aria-labelledby="tv-pickup-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-pickup-title">배차<span class="tv-lane-total" id="tv-pickup-count"></span></h2><span class="tv-page" id="tv-pickup-page" hidden><span class="tv-page-text"></span><span class="tv-page-bar" aria-hidden="true"><i></i></span></span></div><div class="tv-cards" id="tv-pickup-cards"></div></section>
+      <section id="tv-return-lane" class="tv-lane tv-lane-return" aria-labelledby="tv-return-title"><div class="tv-lane-head"><h2 class="tv-lane-title" id="tv-return-title">반납<span class="tv-lane-total" id="tv-return-count"></span></h2><span class="tv-page" id="tv-return-page" hidden><span class="tv-page-text"></span><span class="tv-page-bar" aria-hidden="true"><i></i></span></span></div><div class="tv-cards" id="tv-return-cards"></div></section>
     </div>
-    <footer class="tv-footer"><div class="tv-page-info" id="tv-page-info"></div><div class="tv-notice" id="tv-notice" role="status"></div></footer>
+    <footer class="tv-footer"><div class="tv-page-info" id="tv-page-info"></div><div class="tv-notice" id="tv-notice" role="status"></div><div class="tv-hint">화면을 누르면 날짜 이동 · 관리 화면 메뉴</div></footer>
+    <nav class="tv-controls" id="tv-controls" aria-label="TV 메뉴">
+      <button class="tv-button" id="tv-date-prev" onclick="shiftTVDate(-1)" aria-label="이전날">‹ 이전날</button>
+      <input class="tv-date-input" id="tv-date-input" type="date" min="0001-01-01" max="9999-12-31" aria-label="TV 조회 날짜" onchange="setTVDate(this.value);this.blur()">
+      <button class="tv-button" id="tv-date-next" onclick="shiftTVDate(1)" aria-label="다음날">다음날 ›</button>
+      <button class="tv-button tv-today-button" id="tv-date-today" onclick="showTVToday()" aria-pressed="true">오늘</button>
+      <span class="tv-controls-sep" aria-hidden="true"></span>
+      <button class="tv-button" id="tv-fullscreen" onclick="toggleTVFullscreen()">전체 화면</button>
+      <button class="tv-button" id="tv-exit" onclick="exitTVMode()">관리 화면</button>
+    </nav>
   </div>
 </section>
 
@@ -3849,7 +3862,7 @@ function setTVMode(enabled){
   try{localStorage.setItem('ky-tv-mode',tvMode?'1':'0')}catch(e){}
   syncTVDateURL();
   setTVBoardActive(tvMode);
-  if(tvMode){window.scrollTo({top:0});document.getElementById('tv-exit')?.focus()}
+  if(tvMode){window.scrollTo({top:0});document.getElementById('tv-lanes')?.focus({preventScroll:true});showTVControls()}
   else{go2('dashboard');document.getElementById('open-tv-mode')?.focus()}
 }
 function exitTVMode(){
@@ -3883,37 +3896,94 @@ function tvDisplayMemo(r){
   if(/^[^\n]+\.hwp\s*·\s*\d+번\n/.test(memo)&&memo.includes('원문: '))memo=memo.split('\n').filter(line=>line.startsWith('확인: ')).map(line=>line.slice(4)).join(' · ');
   return memo.split('\n').map(line=>line.replace(/고객명 미기재\s*[:：]\s*연락처로 구분/g,'').replace(/\s*·\s*(?:·\s*)+/g,' · ').replace(/^[ ·;,]+|[ ·;,]+$/g,'').trim()).filter(Boolean).join('\n');
 }
-function tvTaskCard(r,type,now=Date.now()){
-  const isReturn=type==='return',value=String((isReturn?r.end:r.start)||''),day=value.slice(0,10),time=reservationTime(value),valid=Number.isFinite(time);
-  const done=isReturn?r.status==='done':r.status==='active'||r.status==='done';
-  const late=!isReturn&&valid&&time<now&&!done&&r.status!=='active';
-  let status=isReturn?(r.status==='done'?'반납 완료':'반납 예정'):done?'배차 완료':'배차 대기';
-  if(late)status='배차 확인';
-  const vehicle=tvVehicleDisplay(r),location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정'),displayMemo=tvDisplayMemo(r);
+function tvDuration(ms){
+  const total=Math.max(1,Math.round(Math.abs(ms)/60000)),h=Math.floor(total/60),m=total%60;
+  return h?`${h}시간${m?' '+m+'분':''}`:`${m}분`;
+}
+function tvTaskTiming(r,type,now=Date.now()){
+  const value=String((type==='return'?r.end:r.start)||''),time=reservationTime(value),valid=Number.isFinite(time);
+  const done=type==='return'?r.status==='done':r.status==='active'||r.status==='done';
+  return{value,time,valid,done,late:valid&&time<now&&!done};
+}
+function tvTaskCard(r,type,now=Date.now(),isNext=false){
+  const isReturn=type==='return',{value,time,valid,done,late}=tvTaskTiming(r,type,now),day=value.slice(0,10);
+  const vehicle=tvVehicleDisplay(r),customer=reservationCustomerName(r),clock=valid?value.slice(11,16):'시간 확인';
+  if(done){
+    const car=[vehicle.plate,vehicle.name].filter(Boolean).join(' ')||'차량 미배정';
+    return `<article class="tv-task is-done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="tv-task-time">${esc(clock)}</span><span class="tv-done-text">${esc(car)} · ${esc(customer)}</span><span class="tv-task-state">${isReturn?'반납 완료':'배차 완료'}</span></article>`;
+  }
+  let status=isReturn?'반납 예정':'배차 대기';
+  if(late)status=`${tvDuration(now-time)} 지남 · 확인`;
+  else if(isNext)status=time-now<60000?'다음 · 곧':`다음 · ${tvDuration(time-now)} 후`;
+  const location=String(isReturn?r.ret||r.pickup||'장소 미정':r.pickup||'장소 미정'),displayMemo=tvDisplayMemo(r);
   const dayLabel=valid&&day!==tvSelectedDay(now)?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:'';
-  return `<article class="tv-task${done?' is-done':''}${late?' is-late':''}"><div class="tv-task-timeblock">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${valid?esc(value.slice(11,16)):'시간 확인'}</span><span class="tv-task-state">${esc(status)}</span></div><div class="tv-task-body"><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-details"><div class="tv-task-detail"><span class="tv-detail-label">고객</span><span class="tv-detail-text">${esc(reservationCustomerName(r))}</span></div><div class="tv-task-detail tv-task-location"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span><span class="tv-detail-text">${esc(location)}</span></div></div></div>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo)}</div>`:''}</article>`;
+  return `<article class="tv-task${late?' is-late':''}${isNext?' is-next':''}"><div class="tv-task-timeblock">${dayLabel?`<span class="tv-task-day">${esc(dayLabel)}</span>`:''}<span class="tv-task-time">${esc(clock)}</span></div><div class="tv-task-body"><div class="tv-car-row">${vehicle.plate?`<strong class="tv-plate">${esc(vehicle.plate)}</strong>`:'<strong class="tv-unassigned">차량 미배정</strong>'}<span class="tv-car-name">${esc(vehicle.name)}</span></div><div class="tv-task-details"><span class="tv-task-detail"><span class="tv-detail-label">고객</span>${esc(customer)}</span><span class="tv-task-detail"><span class="tv-detail-label">${isReturn?'회차':'배차'}</span>${esc(location)}</span></div></div><span class="tv-task-state">${esc(status)}</span>${displayMemo?`<div class="tv-task-memo"><b>메모</b>${esc(displayMemo.replace(/\n/g,' · '))}</div>`:''}</article>`;
+}
+function tvLongDate(day){return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date(day+'T12:00:00+09:00'))}
+function tvShortDate(day){return `${Number(day.slice(5,7))}.${Number(day.slice(8,10))} (${'일월화수목금토'[new Date(day+'T12:00:00+09:00').getUTCDay()]})`}
+function tvNextDayInfo(day,isToday,now){
+  const next=dashboardDayOffset(day,1),groups=tvBoardGroups(data,now,next),label=`<b>${isToday?'내일':'다음날'} ${esc(tvShortDate(next))}</b>`;
+  if(!groups.pickup.length&&!groups.returns.length)return label+' · 배차·반납 일정 없음';
+  const first=groups.pickup.find(r=>Number.isFinite(reservationTime(r.start)));
+  const vehicle=first?tvVehicleDisplay(first):null,car=vehicle?[vehicle.name,vehicle.plate].filter(Boolean).join(' '):'';
+  return `${label} · 배차 ${groups.pickup.length}건 · 반납 ${groups.returns.length}건${first?` · 첫 배차 <b>${esc(String(first.start).slice(11,16))} ${esc(car)}</b> ${esc(first.pickup||'')}`:''}`;
+}
+
+/* Lanes page every 15s when a day has more work than fits on screen; finished work goes last. */
+const TV_PAGE_MS=15000;
+let tvPages={pickup:{index:0,count:1},return:{index:0,count:1}},tvPageStartedAt=0,tvBoardMinute='',tvControlsTimer=null,tvResizeTimer=null;
+function tvPaginateLane(id){
+  const box=document.getElementById('tv-'+id+'-cards'),state=tvPages[id];
+  const items=[...box.children].filter(el=>el.classList.contains('tv-task'));
+  items.forEach(el=>{el.classList.remove('tv-off');delete el.dataset.page});
+  let count=1;
+  if(items.length&&!window.matchMedia('(max-width:900px)').matches){
+    const limit=box.clientHeight,gap=parseFloat(getComputedStyle(box).rowGap)||0;let used=0,page=0;
+    items.forEach(el=>{const h=el.offsetHeight;if(used&&used+gap+h>limit+1){page++;used=0}el.dataset.page=page;used+=(used?gap:0)+h});
+    count=page+1;
+  }
+  state.count=count;if(state.index>=count)state.index=0;
+  return count;
+}
+function tvShowPages(restart){
+  ['pickup','return'].forEach(id=>{
+    const box=document.getElementById('tv-'+id+'-cards'),pager=document.getElementById('tv-'+id+'-page'),state=tvPages[id];
+    [...box.children].forEach(el=>{if(el.dataset.page!==undefined)el.classList.toggle('tv-off',Number(el.dataset.page)!==state.index)});
+    pager.hidden=state.count<2;
+    pager.querySelector('.tv-page-text').textContent=`${state.index+1} / ${state.count}`;
+    if(restart){pager.classList.remove('is-running');void pager.offsetWidth;pager.classList.add('is-running')}
+  });
+  if(restart)tvPageStartedAt=Date.now();
 }
 function renderTVBoard(){
   const board=document.getElementById('tv-board');if(!board||board.hidden)return;
-  const groups=tvBoardGroups(),total=groups.pickup.length+groups.returns.length;
+  const now=Date.now(),groups=tvBoardGroups(data,now),isToday=groups.day===groups.today,dayChanged=tvBoardDay!==groups.day;
   tvBoardDay=groups.day;
   tvBoardToday=groups.today;
-  const isToday=groups.day===groups.today,dateLabel=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'short'}).format(new Date(groups.day+'T12:00:00+09:00'));
-  document.getElementById('tv-title').textContent=isToday?'오늘의 배차 · 반납 예정':`${dateLabel} 배차 · 반납 예정`;
+  tvBoardMinute=koreanNow(new Date(now)).slice(0,16);
+  const title=document.getElementById('tv-title');title.textContent=tvLongDate(groups.day);
+  if(!isToday){const note=document.createElement('span');note.className='tv-title-note';note.textContent=groups.day<groups.today?'지난 날짜':'예정 날짜';title.append(note)}
+  board.dataset.today=String(isToday);
   document.getElementById('tv-date-input').value=groups.day;
   document.getElementById('tv-date-today').setAttribute('aria-pressed',String(!tvSelectedDate));
   document.getElementById('tv-date-prev').disabled=groups.day==='0001-01-01';
   document.getElementById('tv-date-next').disabled=groups.day==='9999-12-31';
-  board.dataset.layout=groups.pickup.length&&groups.returns.length?'split':'single';
-  board.dataset.density=total>8?'compact':'comfortable';
-  const lane=(id,rows,type)=>{
-    const remaining=rows.filter(r=>type==='pickup'?!['active','done'].includes(r.status):r.status!=='done').length;
-    document.getElementById('tv-'+id+'-count').textContent=type==='return'?`예정 ${rows.length}건`:`남은 ${remaining}건 · 전체 ${rows.length}건`;
-    document.getElementById('tv-'+id+'-lane').classList.toggle('is-empty',rows.length===0);
-    document.getElementById('tv-'+id+'-cards').innerHTML=rows.length?rows.map(r=>tvTaskCard(r,type)).join(''):`<div class="tv-empty">${isToday?'오늘':dateLabel} ${type==='pickup'?'배차':'반납 예정'} 일정이 없습니다</div>`;
+  const left=(rows,type)=>rows.filter(r=>!tvTaskTiming(r,type,now).done).length;
+  const pickupLeft=left(groups.pickup,'pickup'),returnLeft=left(groups.returns,'return');
+  document.getElementById('tv-sum-pickup').innerHTML=`${pickupLeft}<small> / ${groups.pickup.length}</small>`;
+  document.getElementById('tv-sum-return').innerHTML=`${returnLeft}<small> / ${groups.returns.length}</small>`;
+  document.getElementById('tv-sum-active').innerHTML=`${data.filter(r=>!r.deletedAt&&r.status==='active').length}<small> 대</small>`;
+  const lane=(id,rows,remaining)=>{
+    document.getElementById('tv-'+id+'-count').textContent=`남은 ${remaining} · 전체 ${rows.length}`;
+    const next=isToday?rows.find(r=>{const t=tvTaskTiming(r,id,now);return t.valid&&!t.done&&!t.late}):null;
+    document.getElementById('tv-'+id+'-cards').innerHTML=rows.length?rows.map(r=>tvTaskCard(r,id,now,r===next)).join(''):`<div class="tv-empty">${id==='pickup'?'배차':'반납'} 일정 없음<small>${esc(isToday?'오늘':tvLongDate(groups.day))}</small></div>`;
   };
-  lane('pickup',groups.pickup,'pickup');lane('return',groups.returns,'return');
-  document.getElementById('tv-page-info').textContent=`${groups.day} · 당일 배차 ${groups.pickup.length}건 · 반납 예정 ${groups.returns.length}건 · 전체 표시 · 시간순 · 미완료 우선`;
+  lane('pickup',groups.pickup,pickupLeft);lane('return',groups.returns,returnLeft);
+  document.getElementById('tv-page-info').innerHTML=tvNextDayInfo(groups.day,isToday,now);
+  if(dayChanged){tvPages.pickup.index=0;tvPages.return.index=0}
+  board.dataset.density='comfortable';
+  if(['pickup','return'].map(tvPaginateLane).some(n=>n>1)){board.dataset.density='compact';['pickup','return'].forEach(tvPaginateLane)}
+  tvShowPages(dayChanged||!tvPageStartedAt);
   updateTVClock();
 }
 
@@ -3926,7 +3996,26 @@ function updateTVClock(){
   const syncEl=document.getElementById('tv-sync');syncEl.textContent=sync.message||'저장 상태 확인 중';syncEl.dataset.state=sync.status||'connecting';
   const full=document.getElementById('tv-fullscreen');full.textContent=document.fullscreenElement?'전체 화면 해제':'전체 화면';
 }
-function tickTVBoard(){const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();if(tvBoardDay!==tvSelectedDay()||tvBoardToday!==todayStr())renderTVBoard()}
+function tickTVBoard(){
+  const board=document.getElementById('tv-board');if(!board||board.hidden)return;updateTVClock();
+  if(tvBoardDay!==tvSelectedDay()||tvBoardToday!==todayStr()||tvBoardMinute!==koreanNow().slice(0,16)){renderTVBoard();return}
+  if(Date.now()-tvPageStartedAt>=TV_PAGE_MS&&(tvPages.pickup.count>1||tvPages.return.count>1)){
+    ['pickup','return'].forEach(id=>{const s=tvPages[id];if(s.count>1)s.index=(s.index+1)%s.count});
+    tvShowPages(true);
+  }
+}
+/* The menu stays hidden on the wall screen and appears for 4s after a touch, mouse move or key press. */
+function showTVControls(){
+  const board=document.getElementById('tv-board');if(!board||board.hidden)return;
+  board.classList.add('show-controls');
+  clearTimeout(tvControlsTimer);tvControlsTimer=setTimeout(()=>board.classList.remove('show-controls'),4000);
+}
+(()=>{
+  const board=document.getElementById('tv-board');if(!board)return;
+  ['pointermove','pointerdown'].forEach(type=>board.addEventListener(type,showTVControls,{passive:true}));
+  board.addEventListener('keydown',e=>{if(e.key!=='Escape')showTVControls()});
+  window.addEventListener('resize',()=>{if(!tvMode)return;clearTimeout(tvResizeTimer);tvResizeTimer=setTimeout(renderTVBoard,200)});
+})();
 
 async function toggleTVFullscreen(){
   const board=document.getElementById('tv-board'),notice=document.getElementById('tv-notice');if(!board)return;
