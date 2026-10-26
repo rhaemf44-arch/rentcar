@@ -692,6 +692,16 @@ body.tv-mode{display:block;background:#0b1420}
 .plate-picker-foot button{min-height:32px;padding:0 6px;border:0;background:none;font:inherit;font-size:13px;color:#1d4c94;cursor:pointer}
 @media(hover:hover){.pp-opt:hover{background:#f6f7f9}}
 @media(prefers-reduced-motion:reduce){.plate-search-btn{transition:none}.plate-search-btn:active{transform:none}}
+
+/* 회차 위치: 배차와 동일 버튼 */
+.field-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.field-label-row label{margin:0}
+.same-loc-btn{flex:none;min-height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;font:inherit;font-size:12px;font-weight:600;color:var(--ivory);cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}
+.same-loc-btn:active{transform:scale(.97)}
+.same-loc-btn:focus-visible{outline:2px solid #1d4c94;outline-offset:2px}
+@media(hover:hover){.same-loc-btn:hover{background:#f4f5f7}}
+@media(max-width:820px){.same-loc-btn{min-height:40px;padding:0 14px;font-size:13px}}
+@media(prefers-reduced-motion:reduce){.same-loc-btn{transition:none}.same-loc-btn:active{transform:none}}
 </style>
 <style id="mobile-app-style">
 /* ===== 모바일 앱 (≤820px) =====
@@ -1048,7 +1058,7 @@ body.tv-mode{display:block;background:#0b1420}
               </div>
               <div class="reservation-row-location">
                 <div class="field"><label for="f-pickup">배차 위치</label><input id="f-pickup" placeholder="사무실"></div>
-                <div class="field"><label>회차 위치 <span style="font-weight:400;color:var(--ivory-dim);font-size:11px">(비우면 배차와 동일)</span></label><input id="f-return" placeholder="배차와 동일"></div>
+                <div class="field"><div class="field-label-row"><label for="f-return">회차 위치 <span style="font-weight:400;color:var(--ivory-dim);font-size:11px">(비우면 배차와 동일)</span></label><button type="button" class="same-loc-btn" onclick="setReturnSameAsPickup()">배차와 동일</button></div><input id="f-return" placeholder="배차와 동일"></div>
               </div>
               <div class="reservation-row-location">
                 <div class="field"><label for="f-ins-price">보험료 포함 여부</label><select id="f-ins-price"><option value="">미정</option><option value="included">포함 (자포)</option><option value="excluded">별도 (자별)</option></select></div>
@@ -2260,6 +2270,11 @@ function setupPickupReturnSync(){
   ret.addEventListener('blur',()=>{
     if(!ret.value.trim()||sameReservationLocation(ret.value)){ret.value=pickup.value.trim()||'사무실';returnLocationManuallyEdited=false}
   });
+}
+function setReturnSameAsPickup(){
+  const pickup=document.getElementById('f-pickup'),ret=document.getElementById('f-return');if(!pickup||!ret)return;
+  ret.value=pickup.value.trim()||'사무실';returnLocationManuallyEdited=false;previousPickupValue=pickup.value.trim();
+  ret.dispatchEvent(new Event('input'));
 }
 function validPhone(v){return /^01[016789]-?\d{3,4}-?\d{4}$/.test(String(v||''))}
 function validDatePair(a,b){const start=reservationTime(a),end=reservationTime(b);return Number.isFinite(start)&&Number.isFinite(end)&&end>start}
