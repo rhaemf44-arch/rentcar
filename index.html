@@ -674,6 +674,7 @@ body.tv-mode{display:block;background:#0b1420}
 .plate-search-btn:focus-visible{outline:2px solid #1d4c94;outline-offset:2px}
 .plate-picker{position:fixed;z-index:110;width:400px;max-width:calc(100vw - 16px);padding:8px;background:#fff;border:1px solid #e6e7eb;border-radius:14px;box-shadow:0 16px 40px rgba(20,25,40,.16);font-variant-numeric:tabular-nums;color:var(--ivory)}
 .plate-picker[hidden]{display:none}
+.plate-picker.form-mode .plate-picker-search,.plate-picker.form-mode .plate-picker-foot>span{display:none}
 .plate-picker-search{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid #d5d8de;border-radius:10px;color:#5f6675}
 .plate-picker-search input{flex:1;min-width:0;border:0;outline:0;background:none;padding:0;font:inherit;font-size:15px;color:var(--ivory)}
 .plate-picker-hint{margin:8px 8px 4px;font-size:12px;font-weight:700;color:#8a6414}
@@ -864,6 +865,10 @@ body.tv-mode{display:block;background:#0b1420}
   .m-plate-btn span{font-size:13px;color:var(--m-muted)}
   .m-plate-btn.empty{border:1px dashed #c9a964;background:var(--m-gold-soft)}
   .m-plate-btn.empty b{font-size:15px}
+  .plate-picker.form-mode .plate-picker-search,.plate-picker.form-mode .plate-picker-foot>span{display:none}
+  #reservation-panel .field,#reservation-panel .reservation-form-grid>*{min-width:0}
+  #reservation-panel input[type=datetime-local]{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:left}
+  #reservation-panel input[type=datetime-local]::-webkit-date-and-time-value{text-align:left}
   .plate-picker{left:8px!important;width:auto;right:8px;max-width:none;z-index:120}
   .plate-picker-list{max-height:min(320px,45vh)}
   .plate-picker-foot>span{display:none}
@@ -3128,7 +3133,9 @@ function fmtShort(dt){if(!dt)return '-';const d=new Date(dt);if(isNaN(d))return 
    예약 입력 폼에서 고를 때와 같은 형식(car: "차명 (끝4자리)", vehicleId: 전체 번호)으로 저장해
    일정 중복 검사·차량 스케줄이 그대로 동작하게 한다. */
 const PLATE_BASES=['쏠라티','스타리아','스타렉스','카니발','승용','SUV'];
-let platePicker={id:null,anchor:null,items:[],index:0};
+// mode 'cell': 표 칸·시트 버튼에서 연 검색창(자체 검색칸 사용, 고르면 바로 저장)
+// mode 'form': 예약 입력 폼의 차량 칸(그 칸 글자로 걸러짐, 고르면 칸만 채움)
+let platePicker={id:null,anchor:null,items:[],index:0,mode:'cell'};
 function plateCell(r,plate){
   if(plate)return `<td class="c-plate editable" data-id="${esc(r.id)}" data-field="plate" onclick="startEdit(this)" title="클릭하여 수정">${esc(plate)}</td>`;
   return `<td class="c-plate plate-empty"><button type="button" class="plate-search-btn" onclick="event.stopPropagation();openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">＋ 차량 검색</button></td>`;
@@ -3143,28 +3150,45 @@ function platePickerMatches(r,query){
   rows.sort((a,b)=>Number(a.conflicts.length>0)-Number(b.conflicts.length>0));
   return{rows:rows.slice(0,40),base:q?'':base,total:rows.length};
 }
+function platePickerRecord(){
+  if(platePicker.mode!=='form')return data.find(x=>x.id===platePicker.id);
+  return{id:editId||'__form__',car:val('f-car'),start:val('f-start'),end:val('f-end'),status:'wait'};
+}
+function platePickerQuery(){
+  if(platePicker.mode!=='form')return document.getElementById('plate-picker-input').value;
+  // 칸을 막 눌렀을 때는 적힌 차종으로 추천만 하고, 글자를 치기 시작하면 그 글자로 검색한다.
+  const car=document.getElementById('f-car');return platePicker.typed&&!car.dataset.fullPlate?car.value:'';
+}
 function setupPlatePicker(){
   let el=document.getElementById('plate-picker');if(el)return el;
   el=document.createElement('div');el.id='plate-picker';el.className='plate-picker';el.hidden=true;
-  el.innerHTML=`<label class="plate-picker-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="plate-picker-input" type="search" placeholder="번호 4자리 또는 차종 (예: 1868, 카니발)" aria-label="차량 검색" autocomplete="off" role="combobox" aria-controls="plate-picker-list" aria-expanded="true"></label><p class="plate-picker-hint" id="plate-picker-hint"></p><ul class="plate-picker-list" id="plate-picker-list" role="listbox" aria-label="차량 목록"></ul><div class="plate-picker-foot"><span>↑↓ 이동 · Enter 선택 · Esc 닫기</span><button type="button" onclick="platePickerManual()">외부 차량 직접 입력</button></div>`;
+  el.innerHTML=`<label class="plate-picker-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="plate-picker-input" type="search" placeholder="번호 4자리 또는 차종 (예: 1868, 카니발)" aria-label="차량 검색" autocomplete="off" role="combobox" aria-controls="plate-picker-list" aria-expanded="true"></label><p class="plate-picker-hint" id="plate-picker-hint"></p><ul class="plate-picker-list" id="plate-picker-list" role="listbox" aria-label="차량 목록"></ul><div class="plate-picker-foot"><span>↑↓ 이동 · Enter 선택 · Esc 닫기</span><button type="button" id="plate-picker-manual" onmousedown="event.preventDefault()" onclick="platePickerManual()">외부 차량 직접 입력</button></div>`;
   document.body.appendChild(el);
   const input=el.querySelector('#plate-picker-input');
   input.addEventListener('input',()=>{platePicker.index=0;renderPlatePicker()});
-  input.addEventListener('keydown',e=>{
-    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=platePicker.items.length;if(!n)return;platePicker.index=(platePicker.index+(e.key==='ArrowDown'?1:-1)+n)%n;renderPlatePicker(false)}
-    else if(e.key==='Enter'){e.preventDefault();assignPlateFromPicker(platePicker.index)}
-    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closePlatePicker(true)}
-  });
+  input.addEventListener('keydown',platePickerKeydown);
   document.addEventListener('mousedown',e=>{if(platePicker.id&&!el.contains(e.target)&&!platePicker.anchor?.contains(e.target))closePlatePicker()},true);
   window.addEventListener('resize',()=>{if(platePicker.id)positionPlatePicker()});
   window.addEventListener('scroll',()=>{if(platePicker.id)positionPlatePicker()},true);
   return el;
 }
+function platePickerKeydown(e){
+  if(!platePicker.id)return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=platePicker.items.length;if(!n)return;platePicker.index=platePicker.index<0?(e.key==='ArrowDown'?0:n-1):(platePicker.index+(e.key==='ArrowDown'?1:-1)+n)%n;renderPlatePicker(false)}
+  else if(e.key==='Enter'){if(platePicker.index<0)return;e.preventDefault();assignPlateFromPicker(platePicker.index)}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closePlatePicker(platePicker.mode==='cell')}
+}
 function openPlatePicker(anchor,id){
   if(!data.some(x=>x.id===id))return;
   const el=setupPlatePicker(),input=el.querySelector('#plate-picker-input');
-  platePicker={id,anchor,items:[],index:0};
-  el.hidden=false;input.value='';renderPlatePicker();positionPlatePicker();input.focus();
+  platePicker={id,anchor,items:[],index:0,mode:'cell'};
+  el.classList.remove('form-mode');el.hidden=false;input.value='';renderPlatePicker();positionPlatePicker();input.focus();
+}
+function openFormPlatePicker(){
+  const car=document.getElementById('f-car');if(!car)return;
+  const el=setupPlatePicker();
+  if(platePicker.mode!=='form'||!platePicker.id)platePicker={id:'form',anchor:car,items:[],index:-1,mode:'form',typed:false};
+  el.classList.add('form-mode');el.hidden=false;renderPlatePicker();positionPlatePicker();
 }
 function positionPlatePicker(){
   const el=document.getElementById('plate-picker'),a=platePicker.anchor;if(!el||!a||!document.contains(a)){closePlatePicker();return}
@@ -3174,31 +3198,54 @@ function positionPlatePicker(){
   el.style.left=Math.max(8,Math.min(rect.left,innerWidth-w-8))+'px';
 }
 function renderPlatePicker(rebuild=true){
-  const r=data.find(x=>x.id===platePicker.id);if(!r){closePlatePicker();return}
-  const list=document.getElementById('plate-picker-list'),hint=document.getElementById('plate-picker-hint'),input=document.getElementById('plate-picker-input');
+  const r=platePickerRecord();if(!r){closePlatePicker();return}
+  const form=platePicker.mode==='form',list=document.getElementById('plate-picker-list'),hint=document.getElementById('plate-picker-hint');
+  const input=form?document.getElementById('f-car'):document.getElementById('plate-picker-input');
   if(rebuild){
-    const m=platePickerMatches(r,input.value);platePicker.items=m.rows;
-    const when=`${fmtShort(r.start)} – ${fmtShort(r.end)}`;
-    hint.textContent=m.base?`추천 · ${m.base} · ${when} 기준`:input.value.trim()?`검색 결과 ${m.total}대 · ${when} 기준`:`전체 차량 · ${when} 기준`;
+    const query=platePickerQuery(),m=platePickerMatches(r,query),timed=Number.isFinite(reservationTime(r.start))&&Number.isFinite(reservationTime(r.end));platePicker.items=m.rows;
+    const when=timed?`${fmtShort(r.start)} – ${fmtShort(r.end)} 기준`:'대여 시작·반납 일시를 넣으면 가능 여부가 표시됩니다';
+    hint.textContent=m.base?`추천 · ${m.base} · ${when}`:query.trim()?`검색 결과 ${m.total}대 · ${when}`:`전체 차량 · ${when}`;
     list.innerHTML=m.rows.length?m.rows.map((it,i)=>{
-      const busy=it.conflicts[0],tag=busy?`<span class="pp-tag busy">${esc(reservationCustomerName(busy))} ~${esc(fmtShort(busy.end))}</span>`:'<span class="pp-tag free">가능</span>';
+      const busy=it.conflicts[0],tag=!timed?'':busy?`<span class="pp-tag busy">${esc(reservationCustomerName(busy))} ~${esc(fmtShort(busy.end))}</span>`:'<span class="pp-tag free">가능</span>';
       return `<li id="pp-opt-${i}" role="option" class="pp-opt${busy?' is-busy':''}" onmousedown="event.preventDefault()" onclick="assignPlateFromPicker(${i})"><b>${esc(it.plate)}</b><span>${esc(it.v.n)}</span>${tag}</li>`;
-    }).join(''):'<li class="pp-empty">찾는 차량이 없습니다. 외부 차량은 아래에서 직접 입력하세요.</li>';
+    }).join(''):`<li class="pp-empty">${form?'등록 차량에 없습니다. 외부 렌터카라면 이대로 입력하세요.':'찾는 차량이 없습니다. 외부 차량은 아래에서 직접 입력하세요.'}</li>`;
+    if(platePicker.index>=m.rows.length)platePicker.index=m.rows.length?0:-1;
   }
   list.querySelectorAll('.pp-opt').forEach((li,i)=>li.setAttribute('aria-selected',String(i===platePicker.index)));
-  const cur=document.getElementById('pp-opt-'+platePicker.index);
-  input.setAttribute('aria-activedescendant',cur?cur.id:'');cur?.scrollIntoView({block:'nearest'});
+  const cur=platePicker.index>=0?document.getElementById('pp-opt-'+platePicker.index):null;
+  input?.setAttribute('aria-activedescendant',cur?cur.id:'');cur?.scrollIntoView({block:'nearest'});
 }
 function closePlatePicker(returnFocus=false){
-  const el=document.getElementById('plate-picker');if(el)el.hidden=true;
-  const anchor=platePicker.anchor;platePicker={id:null,anchor:null,items:[],index:0};
+  const el=document.getElementById('plate-picker');if(el){el.hidden=true;el.classList.remove('form-mode')}
+  const anchor=platePicker.anchor;platePicker={id:null,anchor:null,items:[],index:0,mode:'cell'};
   if(returnFocus&&anchor&&document.contains(anchor))anchor.focus();
 }
-function platePickerManual(){const id=platePicker.id;closePlatePicker();if(!id)return;editRes(id);focusAfterPanel('f-car')}
+function platePickerManual(){
+  if(platePicker.mode==='form'){const car=document.getElementById('f-car');closePlatePicker();car?.focus();car?.select();return}
+  const id=platePicker.id;closePlatePicker();if(!id)return;closeMobileSheet();editRes(id);focusAfterPanel('f-car');
+}
 function assignPlateFromPicker(i){
-  const it=platePicker.items[i],r=data.find(x=>x.id===platePicker.id);if(!it||!r)return;
+  const it=platePicker.items[i],r=platePickerRecord();if(!it||!r)return;
   if(it.conflicts.length&&!confirm(`${it.plate}은(는) 이 시간에 ${it.conflicts.map(o=>reservationCustomerName(o)).join(', ')} 예약과 겹칩니다. 그래도 배정할까요?`))return;
+  if(platePicker.mode==='form'){
+    // 예약 입력 폼에서 고른 것과 같은 형식으로 채운다(reservationFormRecord 가 vehicleId 로 인식).
+    const car=document.getElementById('f-car');car.value=`${it.v.n} (${it.plate.slice(-4)})`;car.dataset.fullPlate=it.plate;car.title=`등록 차량번호: ${it.plate}`;
+    closePlatePicker();car.dispatchEvent(new Event('change'));return;
+  }
   snapshot();r.car=plateCandidateCar(r,it.plate);r.vehicleId=it.plate;closePlatePicker();save();render();toast(`${it.plate} 배정했습니다`);
+}
+function setupFormPlatePicker(){
+  const car=document.getElementById('f-car');if(!car||car.dataset.platePicker==='1')return;
+  car.dataset.platePicker='1';car.removeAttribute('list');car.setAttribute('autocomplete','off');
+  car.setAttribute('role','combobox');car.setAttribute('aria-controls','plate-picker-list');
+  car.addEventListener('focus',openFormPlatePicker);
+  car.addEventListener('input',()=>{
+    if(car.dataset.fullPlate){closePlatePicker();return} // 번호 4자리를 쳐서 기존 자동 채움이 차를 찾은 경우
+    openFormPlatePicker();platePicker.index=-1;platePicker.typed=true;renderPlatePicker();
+  });
+  car.addEventListener('keydown',platePickerKeydown);
+  car.addEventListener('blur',()=>setTimeout(()=>{if(platePicker.mode==='form'&&document.activeElement!==car)closePlatePicker()},150));
+  ['f-start','f-end'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{if(platePicker.mode==='form')renderPlatePicker()}));
 }
 
 // ===== 인라인 셀 편집 =====
@@ -4576,14 +4623,14 @@ function doLogin(){
     console.error('익명 로그인 실패:',err);
     toast('서버 연결 실패 — 오프라인 모드로 사용합니다');
     document.getElementById('login-screen').style.display='none';
-    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
+    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupFormPlatePicker();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
     const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
   });
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
 function initApp(){
-  loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
+  loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupFormPlatePicker();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
   const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
   startFirestoreSync();
   migrateToFirestore();
