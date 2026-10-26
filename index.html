@@ -666,6 +666,31 @@ body.tv-mode{display:block;background:#0b1420}
 @media(prefers-reduced-motion:reduce){#tv-board .tv-controls{transition:opacity 200ms linear;transform:translate(-50%,0)}#tv-board .tv-page.is-running .tv-page-bar i{animation:none;transform:scaleX(1)}#tv-board .tv-button:active{transform:none}}
 @media(max-width:900px){#tv-board{overflow-y:auto}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{height:auto;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
 
+
+/* ===== 표의 빈 번호 칸: 차량 검색 ===== */
+.plate-search-btn{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px dashed #c9a964;border-radius:8px;background:#fbf7ee;font:inherit;font-size:13px;font-weight:600;color:#8a6414;cursor:pointer;white-space:nowrap;transition:transform 140ms cubic-bezier(.23,1,.32,1)}
+.plate-search-btn:hover{background:#f6eedc}
+.plate-search-btn:active{transform:scale(.97)}
+.plate-search-btn:focus-visible{outline:2px solid #1d4c94;outline-offset:2px}
+.plate-picker{position:fixed;z-index:110;width:400px;max-width:calc(100vw - 16px);padding:8px;background:#fff;border:1px solid #e6e7eb;border-radius:14px;box-shadow:0 16px 40px rgba(20,25,40,.16);font-variant-numeric:tabular-nums;color:var(--ivory)}
+.plate-picker[hidden]{display:none}
+.plate-picker-search{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid #d5d8de;border-radius:10px;color:#5f6675}
+.plate-picker-search input{flex:1;min-width:0;border:0;outline:0;background:none;padding:0;font:inherit;font-size:15px;color:var(--ivory)}
+.plate-picker-hint{margin:8px 8px 4px;font-size:12px;font-weight:700;color:#8a6414}
+.plate-picker-list{list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto}
+.pp-opt{display:grid;grid-template-columns:104px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:48px;padding:6px 10px;border-radius:10px;cursor:pointer}
+.pp-opt b{font-size:15px}
+.pp-opt span{font-size:13px;color:#5f6675;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pp-opt[aria-selected="true"]{background:#f1f3f7;box-shadow:inset 0 0 0 1px #c9cdd6}
+.pp-opt.is-busy b{color:#8a909c}
+.pp-tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px!important;font-weight:500}
+.pp-tag.free{background:#e3f2ea;color:#1f6b49!important}
+.pp-tag.busy{background:#fdecea;color:#a32116!important;max-width:150px}
+.pp-empty{padding:16px 10px;font-size:13px;color:#5f6675}
+.plate-picker-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;padding:8px 6px 2px;border-top:1px solid #eeeff2;font-size:12px;color:#8a909c}
+.plate-picker-foot button{min-height:32px;padding:0 6px;border:0;background:none;font:inherit;font-size:13px;color:#1d4c94;cursor:pointer}
+@media(hover:hover){.pp-opt:hover{background:#f6f7f9}}
+@media(prefers-reduced-motion:reduce){.plate-search-btn{transition:none}.plate-search-btn:active{transform:none}}
 </style>
 <style id="mobile-app-style">
 /* ===== 모바일 앱 (≤820px) =====
@@ -3085,11 +3110,88 @@ function resTable(rows,withNotice=false){
   const body=rows.map(r=>{
     const today=(r.start||'').slice(0,10)===t,conflict=hasConflict(r),id=uiArg(r.id),plate=reservationVehicleId(r),carName=reservationVehicleName(r);
     const ed=(field,cls,val,type='')=>`<td class="${cls} editable" data-id="${esc(r.id)}" data-field="${field}" ${type?'data-type="'+type+'"':''} onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
-    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
+    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${plateCell(r,plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
   }).join('');
   return `<div class="res-table-wrap"><table class="res-table">${head}<tbody>${body}</tbody></table></div>`;
 }
 function fmtShort(dt){if(!dt)return '-';const d=new Date(dt);if(isNaN(d))return esc(dt);const D=['일','월','화','수','목','금','토'];return `${d.getMonth()+1}.${d.getDate()}(${D[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+
+/* ===== 표의 빈 번호 칸: 차량을 검색해 바로 배정 =====
+   예약 입력 폼에서 고를 때와 같은 형식(car: "차명 (끝4자리)", vehicleId: 전체 번호)으로 저장해
+   일정 중복 검사·차량 스케줄이 그대로 동작하게 한다. */
+const PLATE_BASES=['쏠라티','스타리아','스타렉스','카니발','승용','SUV'];
+let platePicker={id:null,anchor:null,items:[],index:0};
+function plateCell(r,plate){
+  if(plate)return `<td class="c-plate editable" data-id="${esc(r.id)}" data-field="plate" onclick="startEdit(this)" title="클릭하여 수정">${esc(plate)}</td>`;
+  return `<td class="c-plate plate-empty"><button type="button" class="plate-search-btn" onclick="event.stopPropagation();openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">＋ 차량 검색</button></td>`;
+}
+function plateCandidateCar(r,plate){const name=reservationVehicleName(r);return `${name&&name!=='차종 미기재'?name:PLATE_MAP[plate].n} (${plate.slice(-4)})`}
+function platePickerMatches(r,query){
+  const q=String(query||'').replace(/\s/g,'').toLowerCase(),name=reservationVehicleName(r),base=PLATE_BASES.find(b=>name.includes(b))||'';
+  let plates=sortPlates(Object.keys(PLATE_MAP));
+  if(q)plates=plates.filter(p=>(p+PLATE_MAP[p].n+PLATE_MAP[p].base+plateGroup(p)).replace(/\s/g,'').toLowerCase().includes(q));
+  else if(base)plates=plates.filter(p=>PLATE_MAP[p].base===base);
+  const rows=plates.map(p=>({plate:p,v:PLATE_MAP[p],conflicts:reservationConflicts({...r,car:plateCandidateCar(r,p),vehicleId:p})}));
+  rows.sort((a,b)=>Number(a.conflicts.length>0)-Number(b.conflicts.length>0));
+  return{rows:rows.slice(0,40),base:q?'':base,total:rows.length};
+}
+function setupPlatePicker(){
+  let el=document.getElementById('plate-picker');if(el)return el;
+  el=document.createElement('div');el.id='plate-picker';el.className='plate-picker';el.hidden=true;
+  el.innerHTML=`<label class="plate-picker-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="plate-picker-input" type="search" placeholder="번호 4자리 또는 차종 (예: 1868, 카니발)" aria-label="차량 검색" autocomplete="off" role="combobox" aria-controls="plate-picker-list" aria-expanded="true"></label><p class="plate-picker-hint" id="plate-picker-hint"></p><ul class="plate-picker-list" id="plate-picker-list" role="listbox" aria-label="차량 목록"></ul><div class="plate-picker-foot"><span>↑↓ 이동 · Enter 선택 · Esc 닫기</span><button type="button" onclick="platePickerManual()">외부 차량 직접 입력</button></div>`;
+  document.body.appendChild(el);
+  const input=el.querySelector('#plate-picker-input');
+  input.addEventListener('input',()=>{platePicker.index=0;renderPlatePicker()});
+  input.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=platePicker.items.length;if(!n)return;platePicker.index=(platePicker.index+(e.key==='ArrowDown'?1:-1)+n)%n;renderPlatePicker(false)}
+    else if(e.key==='Enter'){e.preventDefault();assignPlateFromPicker(platePicker.index)}
+    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closePlatePicker(true)}
+  });
+  document.addEventListener('mousedown',e=>{if(platePicker.id&&!el.contains(e.target)&&!platePicker.anchor?.contains(e.target))closePlatePicker()},true);
+  window.addEventListener('resize',()=>{if(platePicker.id)positionPlatePicker()});
+  window.addEventListener('scroll',()=>{if(platePicker.id)positionPlatePicker()},true);
+  return el;
+}
+function openPlatePicker(anchor,id){
+  if(!data.some(x=>x.id===id))return;
+  const el=setupPlatePicker(),input=el.querySelector('#plate-picker-input');
+  platePicker={id,anchor,items:[],index:0};
+  el.hidden=false;input.value='';renderPlatePicker();positionPlatePicker();input.focus();
+}
+function positionPlatePicker(){
+  const el=document.getElementById('plate-picker'),a=platePicker.anchor;if(!el||!a||!document.contains(a)){closePlatePicker();return}
+  const rect=a.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
+  const below=rect.bottom+4,top=below+h>innerHeight-8&&rect.top-h-4>8?rect.top-h-4:below;
+  el.style.top=Math.max(8,Math.min(top,innerHeight-h-8))+'px';
+  el.style.left=Math.max(8,Math.min(rect.left,innerWidth-w-8))+'px';
+}
+function renderPlatePicker(rebuild=true){
+  const r=data.find(x=>x.id===platePicker.id);if(!r){closePlatePicker();return}
+  const list=document.getElementById('plate-picker-list'),hint=document.getElementById('plate-picker-hint'),input=document.getElementById('plate-picker-input');
+  if(rebuild){
+    const m=platePickerMatches(r,input.value);platePicker.items=m.rows;
+    const when=`${fmtShort(r.start)} – ${fmtShort(r.end)}`;
+    hint.textContent=m.base?`추천 · ${m.base} · ${when} 기준`:input.value.trim()?`검색 결과 ${m.total}대 · ${when} 기준`:`전체 차량 · ${when} 기준`;
+    list.innerHTML=m.rows.length?m.rows.map((it,i)=>{
+      const busy=it.conflicts[0],tag=busy?`<span class="pp-tag busy">${esc(reservationCustomerName(busy))} ~${esc(fmtShort(busy.end))}</span>`:'<span class="pp-tag free">가능</span>';
+      return `<li id="pp-opt-${i}" role="option" class="pp-opt${busy?' is-busy':''}" onmousedown="event.preventDefault()" onclick="assignPlateFromPicker(${i})"><b>${esc(it.plate)}</b><span>${esc(it.v.n)}</span>${tag}</li>`;
+    }).join(''):'<li class="pp-empty">찾는 차량이 없습니다. 외부 차량은 아래에서 직접 입력하세요.</li>';
+  }
+  list.querySelectorAll('.pp-opt').forEach((li,i)=>li.setAttribute('aria-selected',String(i===platePicker.index)));
+  const cur=document.getElementById('pp-opt-'+platePicker.index);
+  input.setAttribute('aria-activedescendant',cur?cur.id:'');cur?.scrollIntoView({block:'nearest'});
+}
+function closePlatePicker(returnFocus=false){
+  const el=document.getElementById('plate-picker');if(el)el.hidden=true;
+  const anchor=platePicker.anchor;platePicker={id:null,anchor:null,items:[],index:0};
+  if(returnFocus&&anchor&&document.contains(anchor))anchor.focus();
+}
+function platePickerManual(){const id=platePicker.id;closePlatePicker();if(!id)return;editRes(id);focusAfterPanel('f-car')}
+function assignPlateFromPicker(i){
+  const it=platePicker.items[i],r=data.find(x=>x.id===platePicker.id);if(!it||!r)return;
+  if(it.conflicts.length&&!confirm(`${it.plate}은(는) 이 시간에 ${it.conflicts.map(o=>reservationCustomerName(o)).join(', ')} 예약과 겹칩니다. 그래도 배정할까요?`))return;
+  snapshot();r.car=plateCandidateCar(r,it.plate);r.vehicleId=it.plate;closePlatePicker();save();render();toast(`${it.plate} 배정했습니다`);
+}
 
 // ===== 인라인 셀 편집 =====
 let editingCell=null;
@@ -3245,7 +3347,7 @@ function paintReservationList(rows){
     body+=`<tr class="${today?'today':''} ${conflict?'conflict':''}">
       <td class="editable" data-id="${esc(r.id)}" data-field="start" data-type="dt" onclick="startEdit(this)">${fmtShort(r.start)}</td>
       <td class="editable" data-id="${esc(r.id)}" data-field="end" data-type="dt" onclick="startEdit(this)">${fmtShort(r.end)}</td>
-      ${ed('carName','c-name',carName)}${ed('plate','c-plate',plate)}
+      ${ed('carName','c-name',carName)}${plateCell(r,plate)}
       <td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
       ${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup||'사무실')}
       ${ed('balance','c-bal',reservationBalanceLabel(r))}
