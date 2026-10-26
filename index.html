@@ -666,6 +666,27 @@ body.tv-mode{display:block;background:#0b1420}
 @media(prefers-reduced-motion:reduce){#tv-board .tv-controls{transition:opacity 200ms linear;transform:translate(-50%,0)}#tv-board .tv-page.is-running .tv-page-bar i{animation:none;transform:scaleX(1)}#tv-board .tv-button:active{transform:none}}
 @media(max-width:900px){#tv-board{overflow-y:auto}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{height:auto;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
 
+
+/* ===== 로그인 ===== */
+.login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--page-bg)}
+.login-screen[hidden]{display:none}
+.login-box{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.login-mark{display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin-bottom:16px;border-radius:14px;background:var(--gold);color:#fff;font-weight:800;font-size:22px}
+.login-title{margin:0;font-size:20px;font-weight:700;letter-spacing:.04em}
+.login-sub{margin:4px 0 0;font-size:13px;color:var(--ivory-dim)}
+.login-form{width:100%;display:flex;flex-direction:column;gap:16px;margin-top:32px;text-align:left}
+.login-form[hidden]{display:none}
+.login-field{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:var(--ivory)}
+.login-field input{height:48px;padding:0 14px;border:1px solid var(--line-strong);border-radius:12px;background:#fff;font:inherit;font-size:16px;font-weight:400;color:var(--ivory)}
+.login-field input:focus-visible{outline:2px solid #1d4c94;outline-offset:1px}
+.login-error{margin:0;min-height:20px;font-size:13px;line-height:1.5;color:#a32116}
+.login-error:empty{min-height:0}
+.login-submit{height:52px;border:0;border-radius:12px;background:#1b2030;color:#fff;font:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}
+.login-submit:active:not(:disabled){transform:scale(.97)}
+.login-submit:disabled{opacity:.6;cursor:default}
+.login-foot{margin:32px 0 0;font-size:12px;color:var(--ivory-dim)}
+.side-logout{width:100%;padding:7px;font-size:12px;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--ivory-dim)}
+@media(prefers-reduced-motion:reduce){.login-submit{transition:none}.login-submit:active:not(:disabled){transform:none}}
 </style>
 <style id="mobile-app-style">
 /* ===== 모바일 앱 (≤820px) =====
@@ -893,12 +914,19 @@ body.tv-mode{display:block;background:#0b1420}
 </section>
 
 
-<!-- ===== 로딩 스플래시 (자동 익명 로그인) ===== -->
-<div id="login-screen" style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;position:fixed;top:0;left:0;z-index:9999;background:var(--page-bg);">
-  <div style="text-align:center;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:var(--gold);color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:14px;">KY</div>
-    <h2 style="font-size:20px;font-weight:700;margin:0;">KY MOBILITY</h2>
-    <p style="color:var(--ivory-dim);font-size:13px;margin-top:6px;">서버 연결 중…</p>
+<!-- ===== 로그인 (Firebase 이메일·비밀번호 계정) ===== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-mark" aria-hidden="true">KY</div>
+    <h1 class="login-title">KY MOBILITY</h1>
+    <p class="login-sub" id="login-status" role="status">서버 연결 중…</p>
+    <form class="login-form" id="login-form" hidden onsubmit="return submitLogin(event)" novalidate>
+      <label class="login-field"><span>아이디</span><input id="login-id" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <label class="login-field"><span>비밀번호</span><input id="login-pw" name="password" type="password" autocomplete="current-password" required></label>
+      <p class="login-error" id="login-error" role="alert"></p>
+      <button class="login-submit" type="submit" id="login-submit">로그인</button>
+    </form>
+    <p class="login-foot">경일렌트카 내부 예약관리 시스템</p>
   </div>
 </div>
 
@@ -923,6 +951,7 @@ body.tv-mode{display:block;background:#0b1420}
   <div style="padding:8px 0;border-top:1px solid var(--line);margin-top:auto;display:flex;flex-direction:column;gap:6px;">
     <button onclick="exportJSON()" style="width:100%;padding:7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">📦 JSON 백업</button>
     <button onclick="importJSON()" style="width:100%;padding:7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">📂 JSON 가져오기</button>
+    <button class="side-logout" onclick="logout()">로그아웃</button>
     <button onclick="openJSONPaste()" id="open-json-paste" style="width:100%;padding:9px 7px;font-size:12px;background:var(--input);border:1px solid var(--line);border-radius:6px;cursor:pointer;">＋ 예약 일괄 입력</button>
   </div>
   <div class="side-foot">
@@ -3903,6 +3932,7 @@ function renderMore(){
       ${item('예약 일괄 입력','openJSONPaste()',{note:'PC 권장'})}
       ${item('JSON 백업','exportJSON()')}
       ${item('JSON 가져오기','importJSON()')}
+      ${item('로그아웃','logout()')}
     </div></section>
     <p class="m-company">경일렌트카 · 대표 장성달<br>010-4164-2820 · 사업자 607-87-00253</p>`;
 }
@@ -4459,15 +4489,48 @@ function setTVBoardActive(active){
 }
 
 
-/* ===== 자동 익명 로그인 ===== */
-function doLogin(){
-  auth.signInAnonymously().catch(err=>{
-    console.error('익명 로그인 실패:',err);
-    toast('서버 연결 실패 — 오프라인 모드로 사용합니다');
-    document.getElementById('login-screen').style.display='none';
-    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
-    const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
-  });
+/* ===== 로그인 =====
+   Firebase Authentication 의 이메일·비밀번호 계정을 쓴다. 아이디는 아래 도메인을 붙여 이메일로 바꾼다.
+   계정과 비밀번호는 Firebase 콘솔에서 관리하며 코드에 넣지 않는다(공개 저장소). */
+const LOGIN_EMAIL_DOMAIN='ky-rent-system.firebaseapp.com';
+let _appStarted=false;
+function loginEmail(id){id=String(id||'').trim().toLowerCase();return id.includes('@')?id:id+'@'+LOGIN_EMAIL_DOMAIN}
+function showLoginForm(message=''){
+  const screen=document.getElementById('login-screen');screen.hidden=false;screen.style.display='';
+  document.getElementById('login-status').textContent='아이디와 비밀번호를 입력하세요.';
+  document.getElementById('login-form').hidden=false;
+  document.getElementById('login-error').textContent=message;
+  setTimeout(()=>document.getElementById(document.getElementById('login-id').value?'login-pw':'login-id')?.focus(),0);
+}
+function loginErrorMessage(err){
+  const code=String(err?.code||'');
+  if(['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email','auth/invalid-login-credentials'].includes(code))return '아이디 또는 비밀번호가 맞지 않습니다.';
+  if(code==='auth/too-many-requests')return '여러 번 틀려 잠시 막혔습니다. 몇 분 뒤 다시 시도하세요.';
+  if(code==='auth/network-request-failed')return '서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요.';
+  if(code==='auth/operation-not-allowed')return '로그인 방식이 아직 켜져 있지 않습니다. 관리자에게 문의하세요.';
+  if(code==='auth/user-disabled')return '사용이 중지된 계정입니다. 관리자에게 문의하세요.';
+  return '로그인하지 못했습니다. 잠시 후 다시 시도하세요.';
+}
+async function submitLogin(event){
+  event.preventDefault();
+  const id=document.getElementById('login-id').value.trim(),pw=document.getElementById('login-pw').value;
+  const error=document.getElementById('login-error'),button=document.getElementById('login-submit');
+  if(!id||!pw){error.textContent=!id?'아이디를 입력하세요.':'비밀번호를 입력하세요.';document.getElementById(!id?'login-id':'login-pw').focus();return false}
+  error.textContent='';button.disabled=true;button.textContent='확인 중…';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(loginEmail(id),pw);
+    document.getElementById('login-pw').value='';
+  }catch(err){
+    console.error('로그인 실패:',err?.code||err);
+    error.textContent=loginErrorMessage(err);
+    document.getElementById('login-pw').select();
+  }finally{button.disabled=false;button.textContent='로그인'}
+  return false;
+}
+function logout(){
+  if(!confirm('로그아웃할까요?'))return;
+  auth.signOut().then(()=>location.reload()).catch(()=>toast('로그아웃하지 못했습니다. 다시 시도하세요.'));
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
@@ -4485,15 +4548,17 @@ restoreTVMode();
 /* ===== Firebase Auth 상태 감시 ===== */
 auth.onAuthStateChanged(user=>{
   const loginScreen=document.getElementById('login-screen');
+  if(user&&user.isAnonymous){auth.signOut();return} // 예전 익명 로그인 세션은 정리하고 로그인 화면으로
   if(user){
     _currentUser=user;
-    loginScreen.style.display='none';
-    initApp();
+    loginScreen.hidden=true;loginScreen.style.display='none';
+    if(!_appStarted){_appStarted=true;initApp()}
   }else{
     _currentUser=null;
     if(_unsubFirestore){_unsubFirestore();_unsubFirestore=null}
     _firestoreReady=false;
-    doLogin(); // 자동 익명 로그인 시도
+    if(_appStarted){location.reload();return} // 로그인 상태에서 세션이 끝나면 화면을 비우고 다시 시작
+    showLoginForm();
   }
 });
 
