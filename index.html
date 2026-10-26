@@ -1953,8 +1953,51 @@ function mergeImportedRuleResult(local,rule){
 }
 
 // 기존 정규식 파서: DOM을 수정하지 않고 표준 객체만 반환한다.
+// 사이트가 보내는 "[경일렌트카] 예약 완료" 같은 "항목 : 값" 확인 문자. 라벨을 그대로 읽고,
+// 계좌·문의처·안내문 같은 회사 정보는 고객 정보로 오인하지 않게 무시한다.
+const CONFIRM_LABELS=['예약번호','예약자명','예약자','연락처','차량','유종','배차일시','반차일시','반납일시','이용기간','배차주소','회차주소','반납주소','보험','자차면책금','자차한도','계약금','잔금','총합계','총금액','입금계좌'];
+function parseConfirmationFields(raw){
+  const f={};
+  for(const line of String(raw||'').split('\n')){
+    const m=line.match(/^\s*([가-힣]{2,5})\s*[:：]\s*(.*?)\s*$/);
+    if(m&&CONFIRM_LABELS.includes(m[1])&&!(m[1] in f))f[m[1]]=m[2];
+  }
+  return Object.keys(f).length>=5&&(f['배차일시']||f['반차일시']||f['반납일시'])?f:null;
+}
+function parseConfirmationTemplate(raw,f){
+  const yr=new Date().getFullYear(),notes=[];
+  const won=v=>{if(!v)return null;const m=String(v).match(/[\d,.]+\s*만?/);return m?toManwon(m[0].replace(/\s/g,'')+(/만/.test(m[0])?'원':'')):null};
+  const nameRaw=(f['예약자명']||f['예약자']||'').trim(),name=/^[-–—_.\s]*$|^없음$/.test(nameRaw)?'':nameRaw;
+  const phone=normPhone((String(f['연락처']||'').match(/01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/)||[''])[0]);
+  const carText=String(f['차량']||'').trim();
+  const fulls=carText.match(/\d{2,3}[가-힣]\s?\d{4}/),plate=fulls&&PLATE_MAP[fulls[0].replace(/\s/g,'')]?fulls[0].replace(/\s/g,''):'';
+  const car=carText.replace(/\d{2,3}[가-힣]\s?\d{4}/,'').replace(/[()]/g,'').trim().replace('솔라티','쏠라티');
+  const isVan=VANS.some(v=>car.includes(v)),so=parseMD(f['배차일시'],yr),eo=parseMD(f['반차일시']||f['반납일시'],yr);
+  const start=mdToDT(so,null,9),end=mdToDT(eo,so?so.mo:null,isVan?20:(so?so.h:9));
+  let days=null;
+  if(start&&end){const d=Math.ceil((new Date(end)-new Date(start))/86400000);if(d>=0)days=d||1}
+  const pickup=String(f['배차주소']||'').trim();
+  let ret=String(f['회차주소']||f['반납주소']||'').trim();
+  if(!ret||/동일|같음|상동/.test(ret))ret=pickup;
+  const deposit=won(f['계약금']),total=won(f['총합계']||f['총금액']);
+  let balance=won(f['잔금']);
+  if(balance==null&&total!=null&&deposit!=null)balance=Math.max(0,total-deposit);
+  const memo=[f['예약번호']?`예약번호 ${f['예약번호'].trim()}`:'',f['유종']?`연료 ${f['유종'].trim()}`:'',
+    f['자차면책금']?`면책금 ${f['자차면책금'].trim()}`:'',f['자차한도']?`자차한도 ${f['자차한도'].trim()}`:''].filter(Boolean).join(' · ');
+  if(!start)notes.push('대여 시작일시를 찾지 못했습니다');
+  if(!end)notes.push('반납 예정일시를 찾지 못했습니다');
+  if(!car&&!plate)notes.push('차량 정보를 찾지 못했습니다');
+  if(!phone)notes.push('연락처를 찾지 못했습니다');
+  if(!name)notes.push('예약자명이 비어 있습니다');
+  const out={name,phone,car,plate,start,end,days,insurance:normalizeInsurance(f['보험']),pickup,return_location:ret,returnExplicit:!!ret,
+    deposit,balance,total,payment_method:f['입금계좌']?'이체':'',memo,warnings:notes,format:'확인문자'};
+  out.confidence=scoreResult(out);
+  return out;
+}
 function parseRawToObject(raw){
   raw=String(raw||'').trim();
+  const confirmFields=parseConfirmationFields(raw);
+  if(confirmFields)return parseConfirmationTemplate(raw,confirmFields);
   const fmt=detectFormat(raw);
   const yr=new Date().getFullYear();
   const notes=[];
