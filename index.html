@@ -3825,6 +3825,8 @@ function closeMobileSheet(){
   clearTimeout(mSheetCloseTimer);mSheetCloseTimer=setTimeout(()=>{sheet.hidden=true;sheet.classList.remove('closing')},220);
   const back=mSheetReturnFocus;mSheetReturnFocus=null;if(back&&document.contains(back))back.focus({preventScroll:true});
 }
+/* 예약 입력 패널은 다음 프레임에 '고객명'으로 포커스를 옮긴다. 그 뒤(두 프레임 뒤)에 원하는 칸으로 옮겨야 덮어쓰이지 않는다. */
+function focusAfterPanel(id){requestAnimationFrame(()=>requestAnimationFrame(()=>{const el=document.getElementById(id);if(!el)return;el.focus({preventScroll:true});el.scrollIntoView({block:'center'})}))}
 function mobileSheetAction(action){
   const id=mSheetId;if(!id)return;
   if(action==='edit'){closeMobileSheet();editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});return}
@@ -3833,7 +3835,7 @@ function mobileSheetAction(action){
   if(action==='pickup'){
     const r=data.find(x=>x.id===id);
     // 차량번호가 없으면 상태를 바꾸지 않고 수정 화면으로 보낸다. 시트를 먼저 닫아야 폼이 가려지지 않는다.
-    if(r&&!reservationVehicleId(r)){closeMobileSheet();toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});setTimeout(()=>document.getElementById('f-car')?.focus(),0);return}
+    if(r&&!reservationVehicleId(r)){closeMobileSheet();toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});focusAfterPanel('f-car');return}
     setReservationStatus(id,'active');
   }
   if(action==='return')setReservationStatus(id,'done');
