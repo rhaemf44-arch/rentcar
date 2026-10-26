@@ -223,6 +223,11 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
 .gantt tr.gantt-group td.full{background:rgba(184,137,43,.22);color:var(--gold);font-weight:700}
 .gantt .free{color:rgba(46,158,107,.55);font-size:12px}
 .gantt .g-plate{color:var(--gold)}
+.gantt tr.gantt-ext td.vname{background:#f3f6fc}
+.gantt tr.gantt-ext .g-plate{color:#1d4c94;font-weight:700}
+.gantt .bar.ext{background:#dfe8f8;color:#1d4c94}
+.gantt td.ext-off{color:#c4c8d0;background:#fafbfc}
+.gantt .g-ext{color:#1d4c94;font-weight:700}
 .week-nav{display:flex;align-items:center;gap:8px}
 .week-nav .wk-btn{width:30px;height:30px;border:1px solid var(--line-strong);background:var(--panel-solid);color:var(--ivory);border-radius:8px;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
 .week-nav .wk-btn:hover{background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
@@ -687,6 +692,8 @@ body.tv-mode{display:block;background:#0b1420}
 .pp-opt.is-busy b{color:#8a909c}
 .pp-tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px!important;font-weight:500}
 .pp-tag.free{background:#e3f2ea;color:#1f6b49!important}
+.pp-tag.ext{background:#e6eefa;color:#1d4c94!important}
+.pp-opt.pp-ext{border-top:1px solid #eeeff2;border-radius:0 0 10px 10px}
 .pp-tag.busy{background:#fdecea;color:#a32116!important;max-width:150px}
 .pp-empty{padding:16px 10px;font-size:13px;color:#5f6675}
 .plate-picker-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;padding:8px 6px 2px;border-top:1px solid #eeeff2;font-size:12px;color:#8a909c}
@@ -3025,6 +3032,7 @@ function reservationFormRecord(){
   const car=val('f-car'),pickup=val('f-pickup')||'사무실';
   const candidate={name:reservationCustomerName({name:val('f-name')}),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
   candidate.vehicleId=reservationVehicleId({car});
+  if(document.getElementById('f-car').dataset.external===car)candidate.externalVehicle=true;
   const selected=document.getElementById('f-car').dataset.fullPlate;
   if(selected&&PLATE_MAP[selected]&&car===`${PLATE_MAP[selected].n} (${selected.slice(-4)})`)candidate.vehicleId=selected;
   if(candidate.total!==null&&candidate.paid!==null)candidate.balance=Math.max(0,candidate.total-candidate.paid);
@@ -3192,7 +3200,7 @@ function platePickerQuery(){
 function setupPlatePicker(){
   let el=document.getElementById('plate-picker');if(el)return el;
   el=document.createElement('div');el.id='plate-picker';el.className='plate-picker';el.hidden=true;
-  el.innerHTML=`<label class="plate-picker-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="plate-picker-input" type="search" placeholder="번호 4자리 또는 차종 (예: 1868, 카니발)" aria-label="차량 검색" autocomplete="off" role="combobox" aria-controls="plate-picker-list" aria-expanded="true"></label><p class="plate-picker-hint" id="plate-picker-hint"></p><ul class="plate-picker-list" id="plate-picker-list" role="listbox" aria-label="차량 목록"></ul><div class="plate-picker-foot"><span>↑↓ 이동 · Enter 선택 · Esc 닫기</span><button type="button" id="plate-picker-manual" onmousedown="event.preventDefault()" onclick="platePickerManual()">외부 차량 직접 입력</button></div>`;
+  el.innerHTML=`<label class="plate-picker-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="plate-picker-input" type="search" placeholder="번호 또는 외부 업체·차량명 (예: 1219, 경산m렌트 쏠라티)" aria-label="차량 검색" autocomplete="off" role="combobox" aria-controls="plate-picker-list" aria-expanded="true"></label><p class="plate-picker-hint" id="plate-picker-hint"></p><ul class="plate-picker-list" id="plate-picker-list" role="listbox" aria-label="차량 목록"></ul><div class="plate-picker-foot"><span>↑↓ 이동 · Enter 선택 · Esc 닫기</span><button type="button" id="plate-picker-manual" onmousedown="event.preventDefault()" onclick="platePickerManual()">차량번호 직접 입력</button></div>`;
   document.body.appendChild(el);
   const input=el.querySelector('#plate-picker-input');
   input.addEventListener('input',()=>{platePicker.index=0;renderPlatePicker()});
@@ -3232,14 +3240,20 @@ function renderPlatePicker(rebuild=true){
   const form=platePicker.mode==='form',list=document.getElementById('plate-picker-list'),hint=document.getElementById('plate-picker-hint');
   const input=form?document.getElementById('f-car'):document.getElementById('plate-picker-input');
   if(rebuild){
-    const query=platePickerQuery(),m=platePickerMatches(r,query),timed=Number.isFinite(reservationTime(r.start))&&Number.isFinite(reservationTime(r.end));platePicker.items=m.rows;
+    const query=platePickerQuery(),m=platePickerMatches(r,query),timed=Number.isFinite(reservationTime(r.start))&&Number.isFinite(reservationTime(r.end));platePicker.items=m.rows.slice();
     const when=timed?`${fmtShort(r.start)} – ${fmtShort(r.end)} 기준`:'대여 시작·반납 일시를 넣으면 가능 여부가 표시됩니다';
     hint.textContent=m.base?`추천 · ${m.base} · ${when}`:query.trim()?`검색 결과 ${m.total}대 · ${when}`:`전체 차량 · ${when}`;
     list.innerHTML=m.rows.length?m.rows.map((it,i)=>{
       const busy=it.conflicts[0],tag=!timed?'':busy?`<span class="pp-tag busy">${esc(reservationCustomerName(busy))} ~${esc(fmtShort(busy.end))}</span>`:'<span class="pp-tag free">가능</span>';
       return `<li id="pp-opt-${i}" role="option" class="pp-opt${busy?' is-busy':''}" onmousedown="event.preventDefault()" onclick="assignPlateFromPicker(${i})"><b>${esc(it.plate)}</b><span>${esc(it.v.n)}</span>${tag}</li>`;
-    }).join(''):`<li class="pp-empty">${form?'등록 차량에 없습니다. 외부 렌터카라면 이대로 입력하세요.':'찾는 차량이 없습니다. 외부 차량은 아래에서 직접 입력하세요.'}</li>`;
-    if(platePicker.index>=m.rows.length)platePicker.index=m.rows.length?0:-1;
+    }).join(''):'';
+    // 우리 차량 목록에 없는 글자는 외부 업체 차량으로 그대로 입력할 수 있게 마지막에 둔다.
+    const text=query.trim(),exact=m.rows.some(it=>it.plate===text.replace(/\s/g,''));
+    if(text&&!exact){
+      const idx=platePicker.items.push({external:true,text})-1;
+      list.innerHTML+=`${m.rows.length?'':'<li class="pp-empty">우리 차량 목록에 없습니다.</li>'}<li id="pp-opt-${idx}" role="option" class="pp-opt pp-ext" onmousedown="event.preventDefault()" onclick="assignPlateFromPicker(${idx})"><b>＋ 외부 차량</b><span>“${esc(text)}” 그대로 입력</span><span class="pp-tag ext">외부</span></li>`;
+    }else if(!m.rows.length)list.innerHTML='<li class="pp-empty">번호나 외부 업체·차량명을 입력하세요.</li>';
+    if(platePicker.index>=platePicker.items.length)platePicker.index=platePicker.items.length?0:-1;
   }
   list.querySelectorAll('.pp-opt').forEach((li,i)=>li.setAttribute('aria-selected',String(i===platePicker.index)));
   const cur=platePicker.index>=0?document.getElementById('pp-opt-'+platePicker.index):null;
@@ -3251,11 +3265,22 @@ function closePlatePicker(returnFocus=false){
   if(returnFocus&&anchor&&document.contains(anchor))anchor.focus();
 }
 function platePickerManual(){
-  if(platePicker.mode==='form'){const car=document.getElementById('f-car');closePlatePicker();car?.focus();car?.select();return}
-  const id=platePicker.id;closePlatePicker();if(!id)return;closeMobileSheet();editRes(id);focusAfterPanel('f-car');
+  // 번호(우리 차는 위 목록에 뜸)나 외부 업체·차량명을 쓰게 입력칸으로 보낸다.
+  const input=platePicker.mode==='form'?document.getElementById('f-car'):document.getElementById('plate-picker-input');
+  document.getElementById('plate-picker-hint').textContent='번호를 쓰면 우리 차량이 위에 뜹니다. 목록에 없는 외부 차량은 업체·차량명을 쓰고 ‘외부 차량’을 누르세요.';
+  input?.focus();input?.select();
+}
+function externalCarText(text,r){
+  // '경산m렌트'처럼 차종 없이 쓰면 원래 예약 차종을 붙여 차종별 대수에 잡히게 한다.
+  const name=r?reservationVehicleName(r):'';const base=VANS.find(v=>name.includes(v));
+  return VANS.some(v=>text.includes(v))||!base?text:`${text} ${name}`;
 }
 function assignPlateFromPicker(i){
   const it=platePicker.items[i],r=platePickerRecord();if(!it||!r)return;
+  if(it.external){
+    if(platePicker.mode==='form'){const car=document.getElementById('f-car');car.value=externalCarText(it.text,{car:car.value});delete car.dataset.fullPlate;car.dataset.external=car.value;car.title='외부 차량';closePlatePicker();return}
+    snapshot();r.car=externalCarText(it.text,r);delete r.vehicleId;r.externalVehicle=true;closePlatePicker();save();render();toast(`외부 차량 “${r.car}”로 입력했습니다`);return;
+  }
   if(it.conflicts.length&&!confirm(`${it.plate}은(는) 이 시간에 ${it.conflicts.map(o=>reservationCustomerName(o)).join(', ')} 예약과 겹칩니다. 그래도 배정할까요?`))return;
   if(platePicker.mode==='form'){
     // 예약 입력 폼에서 고른 것과 같은 형식으로 채운다(reservationFormRecord 가 vehicleId 로 인식).
@@ -3522,6 +3547,24 @@ function ganttWeek(dir){
   else ganttWeekOffset+=dir;
   renderGantt();
 }
+/* 외부 업체 차량: 우리 차량 목록(PLATE_MAP)에 없는 차로 배차한 예약. 그 주에는 해당 차종 대수에 더한다.
+   차량번호가 아직 없는 미배정 예약은 외부 차량으로 보지 않는다. */
+function externalVehicleKey(r){
+  const id=reservationVehicleId(r);if(id&&PLATE_MAP[id])return '';
+  if(r.externalVehicle||id||/외부|렌트|렌터카/.test(String(r.car||'')))return id||String(r.car||'').replace(/\s+/g,' ').trim();
+  return '';
+}
+function weekExternalVehicles(base,fromDay,toDay){
+  const found=new Map();
+  data.forEach(r=>{
+    if(r.deletedAt||r.status==='cancelled'||!r.start||!r.end)return;
+    const key=externalVehicleKey(r);if(!key||carBase(r.car)!==base)return;
+    if(!(new Date(r.start)<=new Date(toDay+'T23:59')&&new Date(r.end)>=new Date(fromDay+'T00:00')))return;
+    if(!found.has(key)){const id=reservationVehicleId(r);found.set(key,{key,label:reservationVehicleName(r)+(id?' '+id:''),records:[]})}
+    found.get(key).records.push(r);
+  });
+  return [...found.values()];
+}
 function renderGantt(){
   const el=document.getElementById('gantt');if(!el)return;
   const now=new Date();const day=now.getDay();
@@ -3538,6 +3581,14 @@ function renderGantt(){
   }
   // 승합차만 (쏠라티/스타리아/스타렉스/카니발) — 차종·세부 그룹별로 정렬
   const plates=sortPlates(Object.keys(PLATE_MAP).filter(p=>PLATE_MAP[p].base!=='승용'&&PLATE_MAP[p].base!=='SUV'));
+  const fromDay=toLocalDT(cols[0]).slice(0,10),toDay=toLocalDT(cols[3]).slice(0,10);
+  const covers=(r,ds)=>new Date(r.start)<=new Date(ds+'T23:59')&&new Date(r.end)>=new Date(ds+'T00:00');
+  const extRows=base=>weekExternalVehicles(base,fromDay,toDay).map(x=>{
+    let row=`<tr class="gantt-ext"><td class="vname"><span class="g-v"><span class="g-name">${esc(x.label)}</span> <span class="g-plate">외부</span></span></td>`;
+    cols.forEach(d=>{const ds=toLocalDT(d).slice(0,10),hit=x.records.find(r=>covers(r,ds));
+      row+=hit?`<td><div class="bar ext" title="클릭하여 이름 수정: ${esc(reservationCustomerName(hit))}" onclick="editGanttName('${hit.id}')">${esc(reservationCustomerName(hit))}</div></td>`:'<td class="ext-off">–</td>'});
+    return row+'</tr>';
+  }).join('');
   let html='<table><thead><tr><th class="vname">차량</th>'+cols.map(d=>{
     const isT=toLocalDT(d).slice(0,10)===todayS;
     return `<th class="${isT?'col-today':''}"><span class="g-d">${d.getMonth()+1}/${d.getDate()}</span><span class="g-w">(${dn[d.getDay()]})</span></th>`;
@@ -3550,12 +3601,16 @@ function renderGantt(){
       const groupPlates=plates.filter(x=>plateGroup(x)===grp);
       const cnt=groupPlates.length;
       const groupBase=v.base;
-      const baseChanged=groupBase!==curBase;curBase=groupBase;
+      const baseChanged=groupBase!==curBase;
+      if(baseChanged&&curBase)html+=extRows(curBase); // 앞 차종의 외부 차량 줄
+      curBase=groupBase;
+      let extN=0;
       // base(차종)가 바뀌는 첫 세부그룹에서만 그날 부족/만차 계산 (전체 차종 기준)
       let dayCells;
       if(baseChanged){
         const basePlates=plates.filter(x=>PLATE_MAP[x].base===groupBase);
-        const baseCnt=basePlates.length;
+        extN=weekExternalVehicles(groupBase,fromDay,toDay).length;
+        const baseCnt=basePlates.length+extN; // 그 주에 들어온 외부 차량만큼 대수를 늘린다
         const baseSet=new Set(basePlates);
         dayCells=cols.map(d=>{
           const ds=toLocalDT(d).slice(0,10);
@@ -3564,7 +3619,7 @@ function renderGantt(){
             if(!r.start||!r.end)return false;
             if(!(new Date(r.start)<=new Date(ds+'T23:59')&&new Date(r.end)>=new Date(ds+'T00:00')))return false;
             const plate=reservationVehicleId(r);
-            if(plate)return baseSet.has(plate);
+            if(plate&&PLATE_MAP[plate])return baseSet.has(plate);
             return carBase(r.car)===groupBase;
           }).length;
           if(used>baseCnt)return `<td class="short">부족 ${used-baseCnt}대</td>`;
@@ -3574,7 +3629,7 @@ function renderGantt(){
       }else{
         dayCells=cols.map(()=>'<td></td>').join('');
       }
-      html+=`<tr class="gantt-group"><td class="vname"><span class="g-grp">${grp}</span> · ${cnt}대</td>${dayCells}</tr>`;
+      html+=`<tr class="gantt-group"><td class="vname"><span class="g-grp">${grp}</span> · ${cnt}대${extN?` <span class="g-ext">+외부 ${extN}</span>`:''}</td>${dayCells}</tr>`;
     }
     html+=`<tr><td class="vname"><span class="g-v"><span class="g-name">${esc(v.n)}</span> <span class="g-plate">${p.slice(-4)}</span></span></td>`;
     cols.forEach(d=>{
@@ -3586,6 +3641,7 @@ function renderGantt(){
     });
     html+='</tr>';
   });
+  if(curBase)html+=extRows(curBase);
   html+='</tbody></table>';el.innerHTML=html;
 }
 // 간트 셀에서 임차인명 바로 수정
