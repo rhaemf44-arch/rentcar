@@ -667,6 +667,198 @@ body.tv-mode{display:block;background:#0b1420}
 @media(max-width:900px){#tv-board{overflow-y:auto}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{height:auto;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
 
 </style>
+<style id="mobile-app-style">
+/* ===== 모바일 앱 (≤820px) =====
+   하단 탭 5개(오늘·예약·＋·스케줄·더보기), 오늘 업무, 예약 행 목록, 상세 시트, 더보기.
+   글자 12/13/15/20/24px, 간격 4px 단위, 화면 여백 16px, 누르는 영역 최소 44px. */
+.m-tabbar,.m-sheet,.m-only{display:none}
+@media(max-width:820px){
+  :root{--m-ink:#1b2030;--m-muted:#5f6675;--m-faint:#8a909c;--m-line:#e6e7eb;--m-bg:#f3f3f5;--m-gold-ink:#8a6414;--m-gold-soft:#f6eedc;--m-blue:#1d4c94;--m-blue-soft:#e6eefa;--m-green:#1f6b49;--m-green-soft:#e3f2ea;--m-red:#a32116;--m-red-soft:#fdecea;--m-ease:cubic-bezier(.23,1,.32,1);--m-drawer:cubic-bezier(.32,.72,0,1);--m-tab-h:64px}
+  body{background:var(--m-bg);-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;word-break:keep-all}
+  .m-only{display:revert}
+  .sidebar,.backdrop,.menu-btn{display:none!important}
+  .topbar{padding:12px 16px;min-height:56px;border-bottom:1px solid var(--m-line)}
+  .topbar h1{font-size:20px!important;font-weight:700;letter-spacing:-.01em;color:var(--m-ink)}
+  .sync-state{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#eef0f3;font-size:12px!important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sync-state:before{content:"";width:6px;height:6px;border-radius:50%;background:#c9a24a;flex:none}
+  .sync-state[data-state="saved"]{background:var(--m-green-soft)}
+  .sync-state[data-state="saved"]:before{background:#1f7a52}
+  .sync-state[data-state="error"]{background:var(--m-red-soft)}
+  .sync-state[data-state="error"]:before{background:var(--m-red)}
+  .main{min-width:0;max-width:100vw;overflow-x:clip}
+  .content{padding:16px 16px calc(var(--m-tab-h) + 32px + env(safe-area-inset-bottom))!important}
+  .toast{bottom:calc(var(--m-tab-h) + 16px + env(safe-area-inset-bottom))}
+
+  /* 하단 탭 */
+  .m-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:calc(var(--m-tab-h) + env(safe-area-inset-bottom));padding:0 4px env(safe-area-inset-bottom);background:rgba(255,255,255,.97);border-top:1px solid var(--m-line)}
+  .m-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;font:inherit;font-size:11px;font-weight:500;color:var(--m-muted);min-height:44px;cursor:pointer}
+  .m-tab svg{width:22px;height:22px}
+  .m-tab.on{color:var(--m-ink);font-weight:700}
+  .m-tab-add span{width:44px;height:44px;border-radius:14px;background:var(--m-ink);color:#fff;display:flex;align-items:center;justify-content:center}
+  .m-tab-add.on span{background:var(--m-gold-ink)}
+  .m-ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* 공통 조각 */
+  .m-st{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap;background:#eef0f3;color:var(--m-muted)}
+  .m-st-wait{background:var(--m-gold-soft);color:#6e4f0e}
+  .m-st-active{background:var(--m-blue-soft);color:var(--m-blue)}
+  .m-st-done{background:var(--m-green-soft);color:var(--m-green)}
+  .m-st-warn{background:var(--m-red-soft);color:var(--m-red)}
+  .m-st-next{background:var(--m-ink);color:#fff}
+  .m-st-cancel{background:#eef0f3;color:var(--m-faint);text-decoration:line-through}
+  .m-icon-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--m-line);background:#fff;color:var(--m-ink);display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .m-icon-btn svg{width:20px;height:20px}
+  .m-empty{padding:40px 16px;text-align:center;color:var(--m-muted);font-size:15px;line-height:1.6;background:#fff;border:1px dashed #d5d8de;border-radius:14px}
+  .m-empty small{display:block;margin-top:4px;font-size:13px;color:var(--m-faint)}
+  #view-today button,#view-more button,.m-sheet button,.m-row{transition:transform 140ms var(--m-ease)}
+  #view-today button:active,#view-more button:active,.m-sheet button:active,.m-row:active{transform:scale(.97)}
+
+  /* 오늘 업무 */
+  .m-today{display:flex;flex-direction:column;gap:16px}
+  .m-date{margin:0;font-size:13px;color:var(--m-muted)}
+  .m-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .m-stat{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:68px;padding:10px;border-radius:12px;border:1px solid #e6e7eb;background:#fff;font:inherit;text-align:left;color:var(--m-ink);cursor:pointer}
+  .m-stat span{font-size:12px;color:var(--m-muted)}
+  .m-stat b{font-size:24px;line-height:1.1;font-weight:700}
+  .m-stat.on{background:var(--m-ink);border-color:var(--m-ink);color:#fff}
+  .m-stat.on span{color:#c9cdd6}
+  .m-stat.warn b{color:var(--m-red)}
+  .m-stat.blue b{color:var(--m-blue)}
+  .m-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px;border-radius:12px;background:#e8e9ed}
+  .m-seg button{height:40px;border:0;border-radius:9px;background:transparent;font:inherit;font-size:15px;font-weight:500;color:var(--m-muted);cursor:pointer}
+  .m-seg button[aria-selected="true"]{background:#fff;color:var(--m-ink);font-weight:700;box-shadow:0 1px 2px rgba(20,25,40,.08)}
+  .m-tasks{display:flex;flex-direction:column;gap:8px}
+  .m-task{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px;border-radius:14px;border:1px solid #e6e7eb;background:#fff}
+  .m-task.is-next{border-color:var(--m-ink)}
+  .m-task.is-late{border-color:#f3b7b0;background:#fff8f7}
+  .m-task.is-done{background:#f7f7f9;opacity:.75}
+  .m-task-main{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:start;padding:0;border:0;background:none;font:inherit;text-align:left;color:var(--m-ink);min-width:0;cursor:pointer}
+  .m-task-time b{display:block;font-size:20px;font-weight:700;line-height:1.1}
+  .m-task-time span{font-size:12px;color:var(--m-muted)}
+  .m-task.is-late .m-task-time b{color:var(--m-red)}
+  .m-task-body{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .m-task-car{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:15px;white-space:nowrap}
+  .m-task-car span{overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .m-task-car b{color:var(--m-gold-ink);font-weight:700}
+  .m-task-car b.m-unassigned,.m-row-car b.m-unassigned{color:var(--m-red)}
+  .m-task-meta{font-size:13px;color:var(--m-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-task-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .m-task-actions{display:flex;flex-direction:column;gap:6px}
+  .m-banner{display:flex;align-items:center;gap:12px;padding:14px;border:0;border-radius:14px;background:var(--m-gold-soft);font:inherit;text-align:left;color:var(--m-ink);cursor:pointer;width:100%}
+  .m-banner>svg{width:20px;height:20px;color:var(--m-gold-ink);flex:none}
+  .m-banner span{flex:1;display:flex;flex-direction:column;gap:2px}
+  .m-banner b{font-size:15px}
+  .m-banner small{font-size:13px;color:#6e4f0e}
+
+  /* 예약 목록 */
+  #view-reservations .stats,#view-reservations .view-toggle,#view-reservations .dashboard-schedule>.card-h .btn-gold{display:none!important}
+  #view-reservations .dashboard-schedule{background:transparent;border:0;box-shadow:none}
+  #view-reservations .dashboard-schedule>.card-h{padding:0 0 12px!important;background:transparent;border:0}
+  #view-reservations .dashboard-schedule>.card-h h2{font-size:15px!important;color:var(--m-muted)}
+  #view-reservations .dashboard-schedule>.card-b{padding:0!important}
+  #view-reservations .toolbar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;margin-bottom:8px;min-width:0}
+  #view-reservations .dashboard-search{order:-1;flex:none!important;width:100%!important;min-height:0!important;height:44px;padding:0 12px!important;font-size:16px!important;border-radius:12px;background:#fff;border:1px solid var(--m-line)}
+  #view-reservations .dashboard-periods{display:flex!important;flex-wrap:nowrap!important;flex:none!important;min-width:0;max-width:100%!important;gap:8px!important;overflow-x:auto;scrollbar-width:none;margin:0;padding:0;width:auto!important}
+  #view-reservations .dashboard-periods::-webkit-scrollbar{display:none}
+  #view-reservations .dashboard-periods button{flex:none;height:36px;padding:0 14px!important;border-radius:999px;border:1px solid var(--m-line);background:#fff;font-size:13px!important;color:var(--m-ink);grid-column:auto!important}
+  #view-reservations .dashboard-periods button.on,#view-reservations .dashboard-periods button[aria-pressed="true"]{background:var(--m-ink);border-color:var(--m-ink);color:#fff;font-weight:500}
+  #view-reservations .dashboard-periods:has([data-metric][aria-pressed="true"]) [data-period].on{background:#fff;color:var(--m-ink);border-color:var(--m-line)}
+  #view-reservations .dashboard-periods [data-metric] b{color:var(--m-red);margin-left:4px}
+  #view-reservations .dashboard-periods [data-metric][aria-pressed="true"] b{color:#ffb4ab}
+  #view-reservations .dashboard-schedule>.card-h .btn{min-height:36px;padding:0 12px!important;font-size:13px}
+  #view-reservations .dashboard-filterline{font-size:13px!important;color:var(--m-muted)}
+  #view-reservations .schedule-table-wrap,#view-reservations .res-list{overflow:visible;max-height:none;border:0;background:transparent}
+  .m-day{display:flex;align-items:baseline;justify-content:space-between;padding:16px 4px 8px}
+  .m-day b{font-size:13px;font-weight:700;color:var(--m-ink)}
+  .m-day.today b{color:var(--m-gold-ink)}
+  .m-day span{font-size:12px;color:var(--m-muted)}
+  .m-rows{background:#fff;border:1px solid var(--m-line);border-radius:14px;overflow:hidden}
+  .m-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;min-height:72px;padding:12px 16px;border:0;border-bottom:1px solid #eeeff2;background:#fff;font:inherit;text-align:left;color:var(--m-ink);cursor:pointer}
+  .m-row:last-child{border-bottom:0}
+  .m-row-car{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden}
+  .m-row-car time{font-weight:700}
+  .m-row-car span{overflow:hidden;text-overflow:ellipsis}
+  .m-row-car b{color:var(--m-gold-ink)}
+  .m-row .m-st{justify-self:end}
+  .m-row-meta{font-size:13px;color:var(--m-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-row-money{justify-self:end;font-size:13px;font-weight:700;color:var(--m-muted);white-space:nowrap}
+  .m-row-money.due{color:var(--m-red)}
+
+  /* 예약 입력: 저장 버튼을 탭 위에 고정 */
+  #reservation-panel .reservation-actions{position:sticky!important;bottom:calc(var(--m-tab-h) + env(safe-area-inset-bottom));z-index:5;margin:0 -16px -16px!important;padding:12px 16px!important;background:#fff;border-top:1px solid var(--m-line)}
+  #reservation-panel .reservation-actions .btn{min-height:52px;font-size:16px}
+
+  /* 차량 스케줄 */
+  #view-schedule-board .card-h{flex-direction:column;align-items:stretch!important}
+  #view-schedule-board .card-h>h2{display:none}
+  #view-schedule-board .sb-controls{gap:8px}
+  #view-schedule-board .sb-controls select,#view-schedule-board .sb-controls input{min-height:44px;font-size:16px;padding:8px 12px}
+  #view-schedule-board .sb-controls input[type=search]{flex:1 1 100%}
+  #view-schedule-board .card-b{padding:0!important}
+  .sb-wrap{max-height:none;border:0;border-radius:0 0 14px 14px}
+  .sb-vname{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding:0 8px;line-height:1.25}
+  .sb-vname .plate{order:-1;font-size:13px}
+  .sb-vname .vn{font-size:11px;color:var(--m-muted);max-width:100%}
+  .sb-vname.corner{align-items:center;font-size:12px}
+  .sb-cell,.sb-vname{height:48px}
+  .sb-head{height:44px}
+  .sb-bar{font-size:12px!important}
+
+  /* 더보기 */
+  .m-more{display:flex;flex-direction:column;gap:20px}
+  .m-group h2{margin:0 0 8px 4px;font-size:13px!important;font-weight:700;color:var(--m-muted)}
+  .m-list{background:#fff;border:1px solid var(--m-line);border-radius:14px;overflow:hidden}
+  .m-item{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border:0;border-bottom:1px solid #eeeff2;background:#fff;font:inherit;font-size:15px;color:var(--m-ink);text-align:left;cursor:pointer}
+  .m-item:last-child{border-bottom:0}
+  .m-item>span{flex:1}
+  .m-item small{font-size:12px;color:var(--m-muted)}
+  .m-item .m-count{min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:#f0f1f4;color:var(--m-muted);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+  .m-item .m-count.alert{background:var(--m-red-soft);color:var(--m-red)}
+  .m-item>svg{width:18px;height:18px;color:#a3a8b3}
+  .m-company{margin:0 4px;font-size:12px;line-height:1.7;color:var(--m-muted)}
+
+  /* 상세 시트 */
+  .m-sheet{position:fixed;inset:0;z-index:70;display:block}
+  .m-sheet[hidden]{display:none}
+  .m-sheet-backdrop{position:absolute;inset:0;background:rgba(15,18,28,.45);opacity:0;transition:opacity 220ms var(--m-ease)}
+  .m-sheet.open .m-sheet-backdrop{opacity:1}
+  .m-sheet-panel{position:absolute;left:0;right:0;bottom:0;max-height:calc(100dvh - 48px);display:flex;flex-direction:column;background:#fff;border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform 320ms var(--m-drawer)}
+  .m-sheet.open .m-sheet-panel{transform:translateY(0)}
+  .m-sheet.closing .m-sheet-panel{transition-duration:220ms}
+  .m-sheet-grab{display:flex;justify-content:center;padding:8px 0 4px;touch-action:none;cursor:grab}
+  .m-sheet-grab span{width:36px;height:5px;border-radius:3px;background:#d5d7dd}
+  .m-sheet-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px 16px;display:flex;flex-direction:column;gap:16px}
+  .m-sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .m-sheet-head h2{margin:4px 0 0;font-size:20px!important;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+  .m-sheet-head h2 b{color:var(--m-gold-ink)}
+  .m-sheet-head p{margin:2px 0 0;font-size:15px;color:var(--m-muted)}
+  .m-sheet-close{width:44px;height:44px;border-radius:22px;border:0;background:#f3f3f5;display:flex;align-items:center;justify-content:center;color:var(--m-ink);flex:none;cursor:pointer}
+  .m-acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .m-act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:64px;border-radius:12px;border:0;background:#f3f3f5;font:inherit;font-size:12px;color:var(--m-ink);text-decoration:none;cursor:pointer}
+  .m-act svg{width:20px;height:20px}
+  .m-act[aria-disabled="true"]{opacity:.4;pointer-events:none}
+  .m-kv{margin:0}
+  .m-kv>div{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid #eeeff2;font-size:15px}
+  .m-kv dt{font-size:13px;color:var(--m-muted);padding-top:1px}
+  .m-kv dd{margin:0;overflow-wrap:anywhere}
+  .m-kv dd small{display:block;font-size:13px;color:var(--m-muted)}
+  .m-money{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px;border-radius:12px;background:#f8f8fa}
+  .m-money div{display:flex;flex-direction:column;gap:2px}
+  .m-money span{font-size:12px;color:var(--m-muted)}
+  .m-money b{font-size:15px}
+  .m-money .due span,.m-money .due b{color:var(--m-red)}
+  .m-sheet-foot{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #eeeff2}
+  .m-sheet-foot button{height:52px;border-radius:12px;font:inherit;font-size:16px;cursor:pointer}
+  .m-sheet-del{border:1px solid #f3c9c4;background:#fff;color:var(--m-red);font-size:15px!important}
+  .m-sheet-main{border:0;background:var(--m-ink);color:#fff;font-weight:700}
+  body.m-sheet-open{overflow:hidden}
+}
+@media(max-width:820px) and (prefers-reduced-motion:reduce){
+  .m-sheet-panel{transition:none}.m-sheet-backdrop{transition:opacity 120ms linear}
+  #view-today button:active,#view-more button:active,.m-sheet button:active,.m-row:active{transform:none}
+}
+@media(max-width:820px) and (hover:hover){.m-item:hover,.m-row:hover{background:#f8f8fa}}
+</style>
 </head>
 <body>
 <section id="tv-board" hidden aria-label="배차와 반납 예정 현황판">
@@ -750,6 +942,9 @@ body.tv-mode{display:block;background:#0b1420}
   </div>
 
   <div class="content">
+    <!-- ===== 모바일: 오늘 업무 / 더보기 (820px 이하에서만 사용) ===== -->
+    <div class="view" id="view-today"><div class="m-today" id="m-today"></div></div>
+    <div class="view" id="view-more"><div class="m-more" id="m-more"></div></div>
 
 
 
@@ -863,6 +1058,9 @@ body.tv-mode{display:block;background:#0b1420}
               <button data-period="tomorrow" onclick="setDashboardPeriod('tomorrow')">내일</button>
               <button data-period="week" onclick="setDashboardPeriod('week')">이번 주</button>
               <button data-period="all" onclick="setDashboardPeriod('all')">전체</button>
+              <button class="m-only" data-metric="unpaid" onclick="setDashboardMetric('unpaid')" aria-pressed="false">미수금<b id="m-chip-unpaid"></b></button>
+              <button class="m-only" data-metric="unassigned" onclick="setDashboardMetric('unassigned')" aria-pressed="false">미배정<b id="m-chip-unassigned"></b></button>
+              <button class="m-only" data-metric="attention" onclick="setDashboardMetric('attention')" aria-pressed="false">확인 필요<b id="m-chip-attention"></b></button>
             </div>
             <input class="dashboard-search" type="search" id="search" aria-label="예약 검색" placeholder="이름·차량번호·연락처·장소 검색" oninput="renderReservationList()">
             <div class="view-toggle" aria-label="목록 보기 방식">
@@ -1083,6 +1281,22 @@ body.tv-mode{display:block;background:#0b1420}
   </div>
 </div>
 
+<!-- ===== 모바일 하단 탭 · 예약 상세 시트 ===== -->
+<nav class="m-tabbar" aria-label="주요 메뉴">
+  <button class="m-tab" data-tab="today" onclick="mobileGo('today')"><svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>오늘</button>
+  <button class="m-tab" data-tab="reservations" onclick="mobileGo('reservations')"><svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>예약</button>
+  <button class="m-tab m-tab-add" data-tab="add" onclick="mobileGo('add')" aria-label="새 예약 입력"><span><svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></button>
+  <button class="m-tab" data-tab="schedule-board" onclick="mobileGo('schedule-board')"><svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>스케줄</button>
+  <button class="m-tab" data-tab="more" onclick="mobileGo('more')"><svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>더보기</button>
+</nav>
+<div class="m-sheet" id="m-sheet" hidden>
+  <div class="m-sheet-backdrop" onclick="closeMobileSheet()"></div>
+  <section class="m-sheet-panel" id="m-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="m-sheet-title">
+    <div class="m-sheet-grab" id="m-sheet-grab" aria-hidden="true"><span></span></div>
+    <div class="m-sheet-body" id="m-sheet-body"></div>
+    <div class="m-sheet-foot" id="m-sheet-foot"></div>
+  </section>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2982,6 +3196,9 @@ function render(){
   else if(current==='view-vehicles')renderVehicles();
   else if(current==='view-schedule-board')renderScheduleBoard();
   else if(current==='view-trash')renderTrash();
+  else if(current==='view-today')renderToday();
+  else if(current==='view-more')renderMore();
+  if(isMobileApp()){updateMobileMetricChips();if(mSheetId)renderMobileSheet()}
 }
 function paint(id,rows){
   const el=document.getElementById(id);if(!el)return;
@@ -3006,6 +3223,7 @@ window.addEventListener('reservation-trash-changed',()=>{const rows=typeof getDe
 function renderReservations(){renderReservationList()}
 function paintReservationList(rows){
   const el=document.getElementById('list');if(!el)return;
+  if(isMobileApp()){el.classList.remove('dashboard-card-grid');el.innerHTML=mobileReservationRows(rows);return}
   if(viewMode==='auto'||effectiveViewMode()==='card'){paint('list',rows);return}
   el.classList.remove('dashboard-card-grid');
   const t=todayStr();
@@ -3221,8 +3439,9 @@ function renderScheduleBoard(){
     return true;
   }));
   // 그리드 컬럼: 차량명(180px) + 날짜들
-  const colDay=Math.max(64,Math.floor(760/nDays)); // 날짜칸 최소폭
-  const vnameW=210;
+  const mobile=isMobileApp();
+  const colDay=mobile?44:Math.max(64,Math.floor(760/nDays)); // 날짜칸 최소폭
+  const vnameW=mobile?104:210;
   let html=`<div class="sb-grid" style="grid-template-columns:${vnameW}px repeat(${nDays},${colDay}px)">`;
   // 헤더 행
   html+=`<div class="sb-vname corner">차량 / 날짜</div>`;
@@ -3268,8 +3487,8 @@ function renderScheduleBoard(){
           const maxSpan=nDays-i;
           if(span>maxSpan)span=maxSpan;if(span<1)span=1;
           const st={wait:'',active:'active',done:'done'}[r.status]||'';
-          const label=esc(reservationCustomerName(r))+(r.phone?' / '+r.phone.replace(/(\d{3})-?\d{4}-?(\d{4})/,'$1-****-$2'):'');
-          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(reservationCustomerName(r))} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="editRes(${uiArg(r.id)})">${label}</div>`;
+          const label=esc(reservationCustomerName(r))+(r.phone&&!mobile?' / '+r.phone.replace(/(\d{3})-?\d{4}-?(\d{4})/,'$1-****-$2'):'');
+          barHtml+=`<div class="sb-bar ${st}" style="left:2px;width:calc(${span*100}% + ${(span-1)}px - 4px)" title="${esc(reservationCustomerName(r))} ${esc(r.car)} ${fmtShort(r.start)}~${fmtShort(r.end)}" onclick="${mobile?'openMobileSheet':'editRes'}(${uiArg(r.id)})">${label}</div>`;
         }
       });
       html+=`<div class="sb-cell ${cls}">${barHtml}</div>`;
@@ -3478,13 +3697,216 @@ function exportExcel(){
 }
 
 /* ===== 네비게이션 ===== */
-const TITLES={dashboard:'예약 입력',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
+const TITLES={today:'오늘 업무',more:'더보기',dashboard:'예약 입력',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
 function go(el){document.querySelectorAll('#nav a').forEach(a=>a.classList.remove('on'));el.classList.add('on');go2(el.dataset.v);closeNav()}
 function go2(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-'+v).classList.add('on');
   document.getElementById('page-title').textContent=TITLES[v]||v;
-  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));render()}
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));updateMobileTabs(v);render()}
 function openNav(){document.getElementById('sidebar').classList.add('open');document.getElementById('backdrop').classList.add('on')}
 function closeNav(){document.getElementById('sidebar').classList.remove('open');document.getElementById('backdrop').classList.remove('on')}
+
+/* ===== 모바일 앱 (820px 이하): 하단 탭 · 오늘 업무 · 예약 행 목록 · 상세 시트 · 더보기 ===== */
+function isMobileApp(){return window.matchMedia('(max-width:820px)').matches}
+const M_TAB_OF={today:'today',reservations:'reservations','schedule-board':'schedule-board',dashboard:'add'};
+const M_ICON={
+  phone:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+  nav:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 22 2l-9 19-2-8z"/></svg>',
+  msg:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg>',
+  edit:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  close:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  chevron:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'
+};
+let mTodayLane='pickup',mSheetId=null,mSheetReturnFocus=null,mSheetCloseTimer=null;
+
+function updateMobileTabs(v){
+  const tab=M_TAB_OF[v]||'more';
+  document.querySelectorAll('.m-tab').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+}
+function mobileGo(tab){
+  if(tab==='add'){clearForm();openReservationPanel('manual');updateMobileTabs('dashboard');window.scrollTo({top:0});return}
+  go2(tab);window.scrollTo({top:0});
+}
+function mDayLabel(day){
+  if(!day)return '날짜 미정';
+  const t=todayStr(),w='일월화수목금토'[new Date(day+'T12:00:00+09:00').getUTCDay()];
+  return `${Number(day.slice(5,7))}.${Number(day.slice(8,10))} (${w})${day===t?' 오늘':day===dashboardDayOffset(t,1)?' 내일':''}`;
+}
+function mStatus(r){
+  if(r.status!=='cancelled'&&r.status!=='done'&&dashboardAttentionReasons(r).length)return['확인 필요','m-st-warn'];
+  return{active:['운행중','m-st-active'],done:['완료','m-st-done'],cancelled:['취소','m-st-cancel']}[r.status]||['대기','m-st-wait'];
+}
+function mMoney(r){const b=reservationBalance(r);return b===null?['금액 미확인','']:b===0?['완납','']:['잔금 '+b.toLocaleString('ko-KR'),'due']}
+function mMapUrl(place){return place&&place!=='장소 미정'?'https://map.kakao.com/?q='+encodeURIComponent(place):''}
+
+/* 오늘 업무 */
+function setMobileTodayLane(lane){mTodayLane=lane==='return'?'return':'pickup';renderToday()}
+function mTaskCard(r,type,now,isNext){
+  const x=tvTaskTiming(r,type,now),v=tvVehicleDisplay(r),id=uiArg(r.id),phone=String(r.phone||'').replace(/[^+\d]/g,'');
+  const place=type==='return'?(r.ret||r.pickup||'장소 미정'):(r.pickup||'장소 미정'),map=mMapUrl(place);
+  let st=type==='return'?(x.done?'반납 완료':'반납 예정'):(x.done?(r.status==='done'?'반납 완료':'배차 완료'):'배차 대기'),cls=x.done?'m-st-done':type==='return'?'m-st-active':'m-st-wait';
+  if(x.late){st=`${tvDuration(now-x.time)} 지남`;cls='m-st-warn'}else if(isNext){st=x.time-now<60000?'다음 · 곧':`다음 · ${tvDuration(x.time-now)} 후`;cls='m-st-next'}
+  const extra=x.done?[]:dashboardAttentionReasons(r).filter(a=>!/경과|배차 확인/.test(a)).slice(0,1);
+  return `<article class="m-task${x.done?' is-done':''}${x.late?' is-late':''}${isNext?' is-next':''}">
+    <button class="m-task-main" onclick="openMobileSheet(${id})" aria-label="${esc(x.valid?x.value.slice(11,16):'')} ${esc(v.name||'')} ${esc(v.plate||'번호 미배정')} 상세 보기">
+      <span class="m-task-time"><b>${esc(x.valid?x.value.slice(11,16):'--:--')}</b><span>${type==='return'?'반납':'배차'}</span></span>
+      <span class="m-task-body">
+        <span class="m-task-car"><span>${esc(v.name||'차량 미정')}</span><b class="${v.plate?'':'m-unassigned'}">${esc(v.plate||'번호 미배정')}</b></span>
+        <span class="m-task-meta">${esc(reservationCustomerName(r))} · ${esc(place)}</span>
+        <span class="m-task-tags"><span class="m-st ${cls}">${esc(st)}</span>${extra.map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</span>
+      </span>
+    </button>
+    <div class="m-task-actions">${phone?`<a class="m-icon-btn" href="tel:${esc(phone)}" aria-label="${esc(reservationCustomerName(r))}에게 전화">${M_ICON.phone}</a>`:''}${map?`<a class="m-icon-btn" href="${esc(map)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(place)} 길찾기">${M_ICON.nav}</a>`:''}</div>
+  </article>`;
+}
+function renderToday(){
+  const el=document.getElementById('m-today');if(!el)return;
+  const now=Date.now(),t=todayStr(),g=tvBoardGroups(data,now,t);
+  const live=data.filter(r=>!r.deletedAt&&r.status!=='cancelled');
+  const active=live.filter(r=>r.status==='active').length,attention=live.filter(r=>dashboardAttentionReasons(r).length>0).length;
+  const type=mTodayLane,rows=type==='return'?g.returns:g.pickup;
+  const next=rows.find(r=>{const x=tvTaskTiming(r,type,now);return x.valid&&!x.done&&!x.late});
+  const tomorrow=dashboardDayOffset(t,1),tg=tvBoardGroups(data,now,tomorrow),due=data.filter(r=>dispatchNoticeDue(r,now)).length;
+  const stat=(key,label,n,cls,onclick)=>`<button class="m-stat ${cls}" onclick="${onclick}" aria-pressed="${cls.includes('on')}"><span>${label}</span><b>${n}</b></button>`;
+  el.innerHTML=`<p class="m-date">${esc(tvLongDate(t))}</p>
+    <section class="m-stats" aria-label="오늘 현황">
+      ${stat('pickup','배차',g.pickup.length,type==='pickup'?'on':'',"setMobileTodayLane('pickup')")}
+      ${stat('return','반납',g.returns.length,type==='return'?'on':'',"setMobileTodayLane('return')")}
+      ${stat('active','운행중',active,'blue',"setDashboardMetric('active')")}
+      ${stat('attention','확인 필요',attention,attention?'warn':'',"setDashboardMetric('attention')")}
+    </section>
+    <div class="m-seg" role="tablist" aria-label="배차 반납 전환">
+      <button role="tab" aria-selected="${type==='pickup'}" onclick="setMobileTodayLane('pickup')">배차 ${g.pickup.length}</button>
+      <button role="tab" aria-selected="${type==='return'}" onclick="setMobileTodayLane('return')">반납 ${g.returns.length}</button>
+    </div>
+    <section class="m-tasks" aria-label="오늘 ${type==='return'?'반납':'배차'} 목록">${rows.length?rows.map(r=>mTaskCard(r,type,now,r===next)).join(''):`<div class="m-empty">오늘 ${type==='return'?'반납':'배차'} 일정이 없습니다<small>예약 탭에서 다른 날짜를 확인하세요</small></div>`}</section>
+    ${tg.pickup.length||due?`<button class="m-banner" onclick="openMobileNoticeList()">${M_ICON.msg}<span><b>내일 배차 ${tg.pickup.length}건</b><small>${due?`하루 전 안내 문자 ${due}건 미발송`:'하루 전 안내 모두 보냄'}</small></span>${M_ICON.chevron}</button>`:''}`;
+}
+function openMobileNoticeList(){dispatchNoticeOnly=true;schedTab='all';document.querySelectorAll('#sched-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==='all'));go2('schedule');window.scrollTo({top:0})}
+
+/* 예약 행 목록 */
+function mobileReservationRows(rows){
+  if(!rows.length)return '<div class="m-empty">선택한 조건에 해당하는 예약이 없습니다<small>기간이나 필터를 바꿔 확인하세요</small></div>';
+  const byEnd=r=>dashboardMetric==='return'||(r.status==='active'&&!!r.end);
+  const groups=[];let cur=null;
+  rows.forEach(r=>{const day=String((byEnd(r)?r.end:r.start)||'').slice(0,10);if(!cur||cur.day!==day){cur={day,rows:[]};groups.push(cur)}cur.rows.push(r)});
+  const t=todayStr();
+  return groups.map(g=>`<div class="m-day${g.day===t?' today':''}"><b>${esc(mDayLabel(g.day))}</b><span>${g.rows.length}건</span></div><div class="m-rows">${g.rows.map(r=>{
+    const end=byEnd(r),v=tvVehicleDisplay(r),[st,cls]=mStatus(r),[money,mcls]=mMoney(r);
+    const when=String((end?r.end:r.start)||'').slice(11,16)||'--:--';
+    const meta=[reservationCustomerName(r),end?'반납 '+when:(r.end?'~'+fmtShort(r.end):''),end?(r.ret||r.pickup||''):(r.pickup||'')].filter(Boolean).join(' · ');
+    return `<button class="m-row" onclick="openMobileSheet(${uiArg(r.id)})"><span class="m-row-car"><time>${esc(when)}</time><span>${esc(v.name||'차량 미정')}</span><b class="${v.plate?'':'m-unassigned'}">${esc(v.plate||'미배정')}</b></span><span class="m-st ${cls}">${esc(st)}</span><span class="m-row-meta">${esc(meta)}</span><span class="m-row-money ${mcls}">${esc(money)}</span></button>`;
+  }).join('')}</div>`).join('');
+}
+function updateMobileMetricChips(){
+  const live=data.filter(r=>r.status!=='cancelled');
+  const n={unpaid:live.filter(r=>reservationBalance(r)>0).length,unassigned:live.filter(r=>dashboardOpenRecord(r)&&!reservationVehicleId(r)).length,attention:live.filter(r=>dashboardAttentionReasons(r).length>0).length};
+  Object.entries(n).forEach(([k,v])=>{const b=document.getElementById('m-chip-'+k);if(b)b.textContent=v||''});
+}
+
+/* 예약 상세 시트 */
+function openMobileSheet(id){
+  const r=data.find(x=>x.id===id);if(!r){toast('예약을 찾을 수 없습니다.');return}
+  clearTimeout(mSheetCloseTimer);
+  const sheet=document.getElementById('m-sheet');
+  if(sheet.hidden)mSheetReturnFocus=document.activeElement;
+  mSheetId=id;renderMobileSheet();
+  sheet.classList.remove('closing');sheet.hidden=false;document.body.classList.add('m-sheet-open');
+  document.getElementById('m-sheet-panel').style.transform='';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>sheet.classList.add('open')));
+  setTimeout(()=>document.getElementById('m-sheet-close')?.focus({preventScroll:true}),50);
+}
+function closeMobileSheet(){
+  const sheet=document.getElementById('m-sheet');if(!sheet||sheet.hidden)return;
+  mSheetId=null;sheet.classList.add('closing');sheet.classList.remove('open');document.body.classList.remove('m-sheet-open');
+  document.getElementById('m-sheet-panel').style.transform='';
+  clearTimeout(mSheetCloseTimer);mSheetCloseTimer=setTimeout(()=>{sheet.hidden=true;sheet.classList.remove('closing')},220);
+  const back=mSheetReturnFocus;mSheetReturnFocus=null;if(back&&document.contains(back))back.focus({preventScroll:true});
+}
+function mobileSheetAction(action){
+  const id=mSheetId;if(!id)return;
+  if(action==='edit'){closeMobileSheet();editRes(id);updateMobileTabs('dashboard');window.scrollTo({top:0});return}
+  if(action==='notice'){closeMobileSheet();openDispatchNotice(id);return}
+  if(action==='delete'){delRes(id);return}
+  if(action==='pickup')setReservationStatus(id,'active');
+  if(action==='return')setReservationStatus(id,'done');
+}
+function renderMobileSheet(){
+  const r=mSheetId?data.find(x=>x.id===mSheetId):null;if(!r){closeMobileSheet();return}
+  const v=tvVehicleDisplay(r),[st,cls]=mStatus(r),reasons=dashboardAttentionReasons(r),phone=String(r.phone||'').replace(/[^+\d]/g,'');
+  const destination=r.status==='active'?(r.ret||r.pickup):r.pickup,map=mMapUrl(destination||'');
+  const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit),balance=reservationBalance(r);
+  const won=n=>n===null?'-':n.toLocaleString('ko-KR');
+  const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
+  document.getElementById('m-sheet-body').innerHTML=`
+    <header class="m-sheet-head"><div>
+      <div class="m-task-tags"><span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
+      <h2 id="m-sheet-title">${esc(v.name||'차량 미정')} <b>${esc(v.plate||'번호 미배정')}</b></h2>
+      <p>${esc(reservationCustomerName(r))}${r.phone?' · '+esc(r.phone):''}</p>
+    </div><button class="m-sheet-close" id="m-sheet-close" onclick="closeMobileSheet()" aria-label="닫기">${M_ICON.close}</button></header>
+    <div class="m-acts">
+      ${act('전화',M_ICON.phone,{href:phone?'tel:'+phone:'',disabled:!phone})}
+      ${act('길찾기',M_ICON.nav,{href:map,blank:true,disabled:!map})}
+      ${act('문자·카톡',M_ICON.msg,{onclick:"mobileSheetAction('notice')"})}
+      ${act('수정',M_ICON.edit,{onclick:"mobileSheetAction('edit')"})}
+    </div>
+    <dl class="m-kv">
+      <div><dt>배차</dt><dd><b>${esc(fmtShort(r.start))}</b><small>${esc(r.pickup||'장소 미정')}</small></dd></div>
+      <div><dt>반납</dt><dd><b>${esc(fmtShort(r.end))}</b><small>${esc(r.ret||r.pickup||'장소 미정')}</small></dd></div>
+      ${r.days?`<div><dt>기간</dt><dd>${esc(r.days)}일</dd></div>`:''}
+      <div><dt>보험</dt><dd>${esc(r.ins||'미정')}</dd></div>
+      ${r.memo?`<div><dt>메모</dt><dd style="white-space:pre-wrap">${esc(r.memo)}</dd></div>`:''}
+    </dl>
+    <div class="m-money"><div><span>총액</span><b>${won(total)}</b></div><div><span>입금</span><b>${won(paid)}</b></div><div class="${balance>0?'due':''}"><span>잔금</span><b>${balance===null?'미확인':won(balance)}</b></div></div>`;
+  const main=r.status==='active'?['반납 완료 처리',"mobileSheetAction('return')"]:r.status==='wait'||!r.status?['배차 완료 처리',"mobileSheetAction('pickup')"]:['예약 수정',"mobileSheetAction('edit')"];
+  document.getElementById('m-sheet-foot').innerHTML=`<button class="m-sheet-del" onclick="mobileSheetAction('delete')">삭제</button><button class="m-sheet-main" onclick="${main[1]}">${main[0]}</button>`;
+}
+(()=>{
+  const grab=document.getElementById('m-sheet-grab'),panel=document.getElementById('m-sheet-panel');if(!grab||!panel)return;
+  let startY=null,dy=0;
+  grab.addEventListener('pointerdown',e=>{startY=e.clientY;dy=0;panel.style.transition='none';grab.setPointerCapture(e.pointerId)});
+  grab.addEventListener('pointermove',e=>{if(startY===null)return;dy=Math.max(0,e.clientY-startY);panel.style.transform=`translateY(${dy}px)`});
+  const end=()=>{if(startY===null)return;startY=null;panel.style.transition='';if(dy>100)closeMobileSheet();else panel.style.transform=''};
+  grab.addEventListener('pointerup',end);grab.addEventListener('pointercancel',end);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mSheetId){e.preventDefault();e.stopPropagation();closeMobileSheet()}},true);
+})();
+
+/* 더보기 */
+function renderMore(){
+  const el=document.getElementById('m-more');if(!el)return;
+  const count=id=>Number(document.getElementById(id)?.textContent||0);
+  const due=data.filter(r=>dispatchNoticeDue(r)).length;
+  const item=(label,onclick,opts={})=>`<button class="m-item" onclick="${onclick}"><span>${label}</span>${opts.note?`<small>${opts.note}</small>`:''}${opts.count!==undefined?`<b class="m-count${opts.alert&&opts.count?' alert':''}">${opts.count}</b>`:''}${M_ICON.chevron}</button>`;
+  el.innerHTML=`
+    <section class="m-group"><h2>업무</h2><div class="m-list">
+      ${item('일정표 · 인쇄',"go2('schedule')")}
+      ${item('주말 가용성',"go2('gantt')")}
+      ${item('배차 안내 문자','openMobileNoticeList()',{count:due,alert:true})}
+      ${item('TV 현황판','setTVMode(true)',{note:'TV·PC용'})}
+    </div></section>
+    <section class="m-group"><h2>기록</h2><div class="m-list">
+      ${item('지난 예약',"go2('past')",{count:count('nav-past')})}
+      ${item('예약 누락 검수',"go2('audit')",{count:count('nav-audit'),alert:true})}
+      ${item('휴지통',"go2('trash')",{count:count('nav-trash')})}
+    </div></section>
+    <section class="m-group"><h2>관리</h2><div class="m-list">
+      ${item('차량 관리',"go2('vehicles')",{count:count('nav-vehicles')})}
+      ${item('예약 일괄 입력','openJSONPaste()',{note:'PC 권장'})}
+      ${item('JSON 백업','exportJSON()')}
+      ${item('JSON 가져오기','importJSON()')}
+    </div></section>
+    <p class="m-company">경일렌트카 · 대표 장성달<br>010-4164-2820 · 사업자 607-87-00253</p>`;
+}
+function openMobileHome(){
+  if(!isMobileApp()||tvMode)return;
+  const days=document.getElementById('sb-days');if(days)days.value='7';
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-today').classList.add('on');
+  document.getElementById('page-title').textContent=TITLES.today;updateMobileTabs('today');
+}
+window.matchMedia('(max-width:820px)').addEventListener('change',()=>{
+  const cur=document.querySelector('.view.on')?.id;
+  if(!isMobileApp()){closeMobileSheet();if(cur==='view-today'||cur==='view-more')go2('dashboard');else render()}
+  else render();
+});
 
 /* ===== 파서 자체 테스트 (A·B·C형 8컬럼 검증) ===== */
 function runParserTestLegacy(){return runParserTest()}
@@ -4033,14 +4455,14 @@ function doLogin(){
     console.error('익명 로그인 실패:',err);
     toast('서버 연결 실패 — 오프라인 모드로 사용합니다');
     document.getElementById('login-screen').style.display='none';
-    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();render();tick();setInterval(tick,30000);
+    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
     const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
   });
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
 function initApp(){
-  loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();render();tick();setInterval(tick,30000);
+  loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
   const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
   startFirestoreSync();
   migrateToFirestore();
