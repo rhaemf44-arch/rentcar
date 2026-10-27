@@ -1052,7 +1052,7 @@ body.tv-mode{display:block;background:#0b1420}
               </div>
               <div class="reservation-row-location">
                 <div class="field"><label for="f-ins-price">보험료 포함 여부</label><select id="f-ins-price"><option value="">미정</option><option value="included">포함 (자포)</option><option value="excluded">별도 (자별)</option></select></div>
-                <div class="field"><label for="f-payment">결제수단</label><select id="f-payment"><option value="">미정</option><option>계좌이체</option><option>카드</option><option>현금</option><option>현장결제</option><option>기타</option></select></div>
+                <div class="field"><label for="f-payment">결제수단</label><select id="f-payment"><option value="">미정</option><option>계좌이체</option><option>카드</option><option>현금</option><option>현장결제</option><option>문화누리카드</option><option>기타</option></select></div>
               </div>
               <div class="reservation-row-meta">
                 <div class="field"><label for="f-total">총금액 (원)</label><input id="f-total" inputmode="decimal" placeholder="예: 300,000" oninput="updateFinanceBalance()"></div>
@@ -1824,11 +1824,11 @@ function importedDateRules(text,kv,year){
   }
   // 월 1회 표기, 구분자 유무 모두 허용: 6월27일09시28일20시 / 4월20일 오전9시-21일 오후8시
   if(!start){
-    m=text.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)\s*(?:[-~～－]|부터|에서|→)?\s*(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)/);
+    m=text.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)\s*(?:[-~～－]|부터|에서|→)?\s*(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?|(?![\d:.]))/);
     if(m){
-      const sm=Number(m[1]),sd=Number(m[2]),em=m[7]?Number(m[7]):sm,ed=Number(m[8]);let ey=Number(year);
+      const sm=Number(m[1]),sd=Number(m[2]),ed=Number(m[8]);let em=m[7]?Number(m[7]):sm,ey=Number(year);
       start=importedDT(year,sm,sd,importedTo24(m[4],m[3]),m[5]||m[6]||0);
-      if(m[7]&&em<sm)ey++;else if(!m[7]&&ed<sd)em=sm+1;
+      if(m[7]&&em<sm)ey++;else if(!m[7]&&ed<sd){em=sm+1;if(em>12){em=1;ey++}}
       end=importedDT(ey,em,ed,importedTo24(m[10],m[9]),m[11]||m[12]||0);explicit=true;
     }
   }
@@ -1839,8 +1839,8 @@ function importedDateRules(text,kv,year){
   }
   // 당일 종료시각: 5월1일07시당일20시 / 24일08시당일19시
   if(!start){
-    m=text.match(/(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시)\s*당일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시)/);
-    if(m){const mo=m[1]||currentMonth;start=importedDT(year,mo,m[2],importedTo24(m[4],m[3]),m[5]||0);end=importedDT(year,mo,m[2],importedTo24(m[7],m[6]),m[8]||0);explicit=true}
+    m=text.match(/(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})\s*분)?)\s*[-~～]?\s*당일\s*(오전|오후)?\s*(\d{1,2})(?::(\d{2})|시)/);
+    if(m){const mo=m[1]||currentMonth;start=importedDT(year,mo,m[2],importedTo24(m[4],m[3]),m[5]||m[6]||0);end=importedDT(year,mo,m[2],importedTo24(m[8],m[7]),m[9]||0);explicit=true}
   }
   // 같은 날 시각 범위: 5월1일07시~20시
   if(!start){
@@ -1901,7 +1901,7 @@ function parseImportedRules(raw,year){
   const carNames=['스타렉스 리무진','니로플러스','팰리세이드','올뉴카니발','뉴카니발','스타리아','스타렉스','쏠라티','솔라티','카니발','쏘렌토','모하비','싼타페','스포티지','투싼','셀토스','코나','베뉴','넥쏘','캐스퍼','그랜저','쏘나타','소나타','아반떼','아테온','아이오닉6','아이오닉5','아이오닉','제네시스','카운티','마이티','이스타나','무쏘','렉스턴','코란도','티볼리','포터','봉고','레이','G90','G80','G70','GV90','GV80','GV70','GV60','EV9','EV6','EV3','K9','K8','K5','K4','K3'];
   const carRaw=pick('차량','차량명','이용차량')||raw;let car='';for(const c of carNames){if(carRaw.toUpperCase().includes(c.toUpperCase())){car=c.replace('솔라티','쏠라티').replace('소나타','쏘나타');break}}
   const grade=raw.match(/(경형|소형|준중형|중형|준대형|대형|SUV|승합|미니밴|경차)\s*급?/i);if(!car&&grade)car=grade[1]+'급';
-  const gen=carRaw.match(/(\d+\.\d+\s*세(?:대)?|\d+\s*세대|F\/?L|페이스리프트|[A-Z]{1,3}\d[A-Z0-9]*)/i);const seat=carRaw.match(/(\d+(?:\s*[-~]\s*\d+)?)\s*(?:인승|명)/);
+  const gen=carRaw.match(/(\d+\.\d+\s*세(?:대)?|\d+\s*세대|F\/?L|페이스리프트|[A-Z]{1,3}\d[A-Z0-9]*)/i);const seat=carRaw.match(/(\d+(?:\s*[-~]\s*\d+)?)\s*인승/);
   if(gen&&!car.includes(gen[1]))car=[car,gen[1].replace(/\s/g,'').replace(/세$/,'세대')].filter(Boolean).join(' ');
   if(seat&&!car.includes('인승'))car=[car,seat[1].replace(/\s/g,'')+'인승'].filter(Boolean).join(' ');
   const fuel=raw.match(/(PHEV|HEV|하이브리드|디젤|LPG|가솔린|전기)/i);if(fuel)notes.push('연료 '+fuel[1]);
@@ -1927,7 +1927,7 @@ function parseImportedRules(raw,year){
       .filter(l=>/[가-힣]+(?:로|길|동|리|층|호)\s*\d|(?:공원|체육관|경기장|마트|병원|학교|역|터미널|공항|호텔|아파트|빌라|빌딩|센터|지점|주차장|광장|사거리|입구|앞)$/.test(l));
     if(place.length)pickup=place[0];
   }
-  let pickupDefault=false;if(!pickup){pickup='사무실';pickupDefault=true}if(!ret||sameReservationLocation(ret))ret=pickup;
+  let pickupDefault=false;if(!pickup){pickupDefault=true;notes.push('배차지 확인 필요')}if(!ret||sameReservationLocation(ret))ret=pickup;
   const memo=[...notes,total!=null?`총액 ${Number(total).toLocaleString()}원`:'',deposit!=null?`계약금 ${Number(deposit).toLocaleString()}원`:'',balance!=null?`잔금 ${Number(balance).toLocaleString()}원`:'',payment].filter(Boolean).join(' · ');
   return{name,phone,car,plate,start:dates.start,end:dates.end,insurance,insuranceExplicit,total,deposit,balance,payment_method:payment,pickup,return_location:ret,pickupDefault,pickupExplicit:!!pickupRaw,returnExplicit:!!returnRaw,memo,warnings:dates.warnings};
 }
@@ -1955,32 +1955,45 @@ function mergeImportedRuleResult(local,rule){
 // 기존 정규식 파서: DOM을 수정하지 않고 표준 객체만 반환한다.
 // 사이트가 보내는 "[경일렌트카] 예약 완료" 같은 "항목 : 값" 확인 문자. 라벨을 그대로 읽고,
 // 계좌·문의처·안내문 같은 회사 정보는 고객 정보로 오인하지 않게 무시한다.
-const CONFIRM_LABELS=['예약번호','예약자명','예약자','연락처','차량','유종','배차일시','반차일시','반납일시','이용기간','배차주소','회차주소','반납주소','보험','자차면책금','자차한도','계약금','잔금','총합계','총금액','입금계좌'];
+const CONFIRM_LABELS=['예약번호','예약자명','예약자','고객명','연락처','대표연락처','차량','차량정보','유종','배차일시','예약시작','반차일시','반납일시','예약종료','일정','이용기간','배차주소','배차장소','픽업장소','픽업','배차지점','회차주소','회차장소','반납주소','보험','보험유형','자차면책금','자차한도','계약금','잔금','총합계','총금액','금액','결제상태','결제방법','입금계좌'];
 function parseConfirmationFields(raw){
+  if(/\[카모아\]|제1운전자명/.test(raw))return null; // 카모아 알림은 전용 규칙으로 읽는다
+  if(!/예약번호\s*[:：]|\[경일렌트카|홈페이지\s*예약접수/.test(raw))return null;
   const f={};
   for(const line of String(raw||'').split('\n')){
-    const m=line.match(/^\s*([가-힣]{2,5})\s*[:：]\s*(.*?)\s*$/);
+    const m=line.match(/^\s*[-*•]?\s*([가-힣]{2,5})\s*[:：]\s*(.*?)\s*$/);
     if(m&&CONFIRM_LABELS.includes(m[1])&&!(m[1] in f))f[m[1]]=m[2];
   }
-  return Object.keys(f).length>=5&&(f['배차일시']||f['반차일시']||f['반납일시'])?f:null;
+  return Object.keys(f).length>=5&&(f['배차일시']||f['예약시작']||f['일정']||f['반차일시']||f['반납일시'])?f:null;
 }
 function parseConfirmationTemplate(raw,f){
   const yr=new Date().getFullYear(),notes=[];
   const won=v=>{if(!v)return null;const m=String(v).match(/[\d,.]+\s*만?/);return m?toManwon(m[0].replace(/\s/g,'')+(/만/.test(m[0])?'원':'')):null};
-  const nameRaw=(f['예약자명']||f['예약자']||'').trim(),name=/^[-–—_.\s]*$|^없음$/.test(nameRaw)?'':nameRaw;
-  const phone=normPhone((String(f['연락처']||'').match(/01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/)||[''])[0]);
-  const carText=String(f['차량']||'').trim();
+  const nameRaw=(f['예약자명']||f['예약자']||f['고객명']||'').trim(),name=/^[-–—_.\s]*$|^없음$/.test(nameRaw)?'':nameRaw.replace(/^[-–—]\s*/,'');
+  const phone=normPhone((String(f['연락처']||f['대표연락처']||'').match(/01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/)||[''])[0]);
+  const carText=String(f['차량']||f['차량정보']||'').trim();
   const fulls=carText.match(/\d{2,3}[가-힣]\s?\d{4}/),plate=fulls&&PLATE_MAP[fulls[0].replace(/\s/g,'')]?fulls[0].replace(/\s/g,''):'';
   const car=carText.replace(/\d{2,3}[가-힣]\s?\d{4}/,'').replace(/[()]/g,'').trim().replace('솔라티','쏠라티');
-  const isVan=VANS.some(v=>car.includes(v)),so=parseMD(f['배차일시'],yr),eo=parseMD(f['반차일시']||f['반납일시'],yr);
-  const start=mdToDT(so,null,9),end=mdToDT(eo,so?so.mo:null,isVan?20:(so?so.h:9));
+  const isVan=VANS.some(v=>car.includes(v));
+  // '일정 : A ~ B'(홈페이지 접수·일부 확인문자)는 범위를 나눠 읽는다.
+  let sRaw=f['배차일시']||f['예약시작']||'',eRaw=f['반차일시']||f['반납일시']||f['예약종료']||'';
+  if(!sRaw&&f['일정']){const parts=String(f['일정']).split(/\s*[~～]\s*/);sRaw=parts[0]||'';eRaw=eRaw||parts[1]||''}
+  const so=parseMD(sRaw,yr),eo=parseMD(eRaw,yr);
+  if(/미정/.test(sRaw+eRaw))notes.push('배차·반납 시간 미정 — 기본시간(08:00~20:00) 적용, 확인 필요');
+  const start=mdToDT(so,null,8),end=mdToDT(eo,so?so.mo:null,isVan||/미정/.test(eRaw)?20:(so&&so.h!=null?so.h:20));
   let days=null;
   if(start&&end){const d=Math.ceil((new Date(end)-new Date(start))/86400000);if(d>=0)days=d||1}
-  const pickup=String(f['배차주소']||'').trim();
-  let ret=String(f['회차주소']||f['반납주소']||'').trim();
+  let pickup=String(f['배차주소']||f['배차장소']||f['픽업장소']||f['픽업']||'').trim();
+  let ret=String(f['회차주소']||f['회차장소']||f['반납주소']||'').trim();
+  // 홈페이지 접수: '배차지점: 배차 A / 회차 B'
+  if(!pickup&&f['배차지점']){const m=String(f['배차지점']).match(/배차\s*([^/]+?)\s*(?:\/\s*회차\s*(.+))?$/);if(m){pickup=m[1].trim();if(m[2]&&!ret)ret=m[2].trim()}else pickup=String(f['배차지점']).trim()}
+  if(/^(?:미정|추후|차후)/.test(pickup))pickup='';
+  if(/^(?:미정|추후|차후)/.test(ret)){ret='';notes.push('회차지 확인 필요')}
   if(!ret||/동일|같음|상동/.test(ret))ret=pickup;
-  const deposit=won(f['계약금']),total=won(f['총합계']||f['총금액']);
-  let balance=won(f['잔금']);
+  if(!pickup)notes.push('배차지 확인 필요');
+  const deposit=won(f['계약금'])??won((String(f['잔금']||'').match(/계약금\s*([\d,]+\s*만?)/)||[])[1]);
+  const total=won(f['총합계']||f['총금액']||f['금액']);
+  let balance=won(String(f['잔금']||'').replace(/계약금.*$/,''));
   if(balance==null&&total!=null&&deposit!=null)balance=Math.max(0,total-deposit);
   const memo=[f['예약번호']?`예약번호 ${f['예약번호'].trim()}`:'',f['유종']?`연료 ${f['유종'].trim()}`:'',
     f['자차면책금']?`면책금 ${f['자차면책금'].trim()}`:'',f['자차한도']?`자차한도 ${f['자차한도'].trim()}`:''].filter(Boolean).join(' · ');
@@ -1989,12 +2002,127 @@ function parseConfirmationTemplate(raw,f){
   if(!car&&!plate)notes.push('차량 정보를 찾지 못했습니다');
   if(!phone)notes.push('연락처를 찾지 못했습니다');
   if(!name)notes.push('예약자명이 비어 있습니다');
-  const out={name,phone,car,plate,start,end,days,insurance:normalizeInsurance(f['보험']),pickup,return_location:ret,returnExplicit:!!ret,
-    deposit,balance,total,payment_method:f['입금계좌']?'이체':'',memo,warnings:notes,format:'확인문자'};
+  const payText=String(f['결제방법']||'')+' '+String(f['결제상태']||'');
+  const payment=/문카|문화누리/.test(payText)?'문화누리카드':/카드/.test(payText)?'카드':/현금/.test(payText)?'현금':/현장/.test(payText)?'후불':f['입금계좌']?'이체':'';
+  const out={name,phone,car,plate,start,end,days,insurance:normalizeInsurance(f['보험']||f['보험유형']),pickup,return_location:ret,returnExplicit:!!ret,
+    deposit,balance,total,payment_method:payment,memo,warnings:notes,format:'확인문자'};
   out.confidence=scoreResult(out);
   return out;
 }
-function parseRawToObject(raw){
+// ===== 예약파싱 지침 v2 =====
+// 실제 카톡·일정표로 확정한 규칙만 둔다. 지침 문서(고객 사례 포함)는 저장소 밖에 비공개로 보관한다.
+const PREV_DAY_DISPATCH_RE=/전날\s*(?:배차|출고|사무실)|전일\s*출고|하루\s*전\s*선?배차|잔날\s*배차|전날에\s*차량\s*가져/;
+// 소개처 고정 연락처. 번호를 공개 코드에 적지 않도록 숫자열의 FNV-1a 해시로만 비교한다.
+const PARTNER_PHONES={'3d3491bc':{label:'홍수진소장',customer:'홍수진고객'}};
+function guidePhoneKey(digits){let x=0x811c9dc5;for(const c of String(digits)){x^=c.charCodeAt(0);x=Math.imul(x,0x01000193)>>>0}return x.toString(16)}
+// 예약확인 문자의 안내문·계좌 줄은 고객 정보나 금액으로 읽지 않는다.
+const GUIDE_NOTICE_RE=/배차시간은\s*전날\s*다시\s*연락|면허증\s*지참|^\s*[-*•]?\s*문의\s*[:：]|^\s*[-*•]?\s*경일렌트카\s*[:：]\s*010|자차보험\s*면책사항|실내\s*클리닝|입금\s*계좌|^\s*[-*•]?\s*예금주|(?:하나은행|농협|IM뱅크|iM뱅크|대구은행|카카오뱅크|국민은행|신한은행|우리은행)\s*[\d-]{6,}|도보\s*\d+\s*분\s*거리|관리자\s*페이지에서\s*확인|^\s*\[Web발신\]\s*$|^\s*안녕하세요|정상적으로\s*접수되었습니다|^\s*감사합니다\.?\s*$|^\s*■\s*(?:차량\s*인수\s*안내|문의|입금\s*계좌)|예약취소\s*또는\s*조기\s*반납|운전면허증을\s*반드시/;
+function cleanReservationText(raw){return String(raw||'').split(/\r?\n/).filter(l=>!GUIDE_NOTICE_RE.test(l)).join('\n').trim()}
+const GUIDE_SURNAMES='김이박최정강조윤장임한오서신권황안송류홍전고문양손배백허유남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용';
+const GUIDE_BAD_NAME=/^(?:이름|고객|고객명|발신|아파트|친구|지인|소장|사장님?|만원|자포|예약|입금|완납|배차|회차|감사합니다|동생|형님|선배|후배|산격|카모아)$|(?:아파트|APT|맨션|타운|빌라|동|로|길|구|역|점|주차장|교회|학교|팀|당일)$|^시/;
+const GUIDE_COMPANY=/(법인|꽃집|렌트카|카센타|카센터|카크리닉|모터스|재활원|병원|약국|회사|식당|협회|산우회|노동자회|여성의전화|복지회|복지관|그룹홈|어린이집|건설|물류|상사)/;
+function guideIsPersonName(s){return /^[가-힣]{2,3}$/.test(s)&&GUIDE_SURNAMES.includes(s[0])&&!GUIDE_BAD_NAME.test(s)}
+// 사장님 연락처 카드 "[이름] …": 사람 이름, '회사명 사람이름', 회사명, 또는 빈칸(날짜·주소만 있을 때).
+function guideNameFromCard(raw){
+  const m=String(raw).match(/\[이름\]\s*([^\n]*)/);if(!m)return null;
+  const body=m[1].trim();if(!body||/^\d/.test(body))return '';
+  const run=(body.match(/^[가-힣]+/)||[''])[0],comp=run.match(GUIDE_COMPANY);
+  if(comp){
+    const end=comp.index+comp[0].length,company=run.slice(0,end),tail=run.slice(end);
+    for(const n of [3,2]){const nm=tail.slice(-n);if(tail.length>=n&&guideIsPersonName(nm))return `${company}${tail.slice(0,-n)} ${nm}`}
+    return company;
+  }
+  for(const n of [3,2]){const nm=run.slice(0,n);if((run.length===n||/^\s/.test(body.slice(n)))&&guideIsPersonName(nm))return nm}
+  return '';
+}
+function guideAddMonths(dt,n){if(!dt)return dt;const d=new Date(dt);d.setMonth(d.getMonth()+n);return toLocalDT(d)}
+function guideDT(y,mo,d,h,mi){const x=new Date(y,mo-1,d,h,mi||0);return isNaN(x)?'':toLocalDT(x)}
+// 월이 없는 날짜: 작성일(=붙여넣는 날) 기준, 일(日)이 오늘보다 작으면 다음 달.
+function guideMonthFor(day,now){return Number(day)<now.getDate()?now.getMonth()+2:now.getMonth()+1}
+function applyParsingGuide(raw,r){
+  r={...r,warnings:[...(r.warnings||[])]};const now=new Date(),text=String(raw||''),warn=w=>{if(!r.warnings.includes(w))r.warnings.push(w)};
+  const memo=[];const structured=r.format==='확인문자';
+  // ── 연락처: 소개처 고정 번호 ──
+  const phones=[...text.matchAll(/(?:\+82\s*|0)1[016789][\s.-]?\d{3,4}[\s.-]?\d{4}/g)].map(m=>m[0].replace(/^\+82\s*/,'0').replace(/\D/g,''));
+  const partnerDigits=phones.find(d=>PARTNER_PHONES[guidePhoneKey(d)]);
+  if(partnerDigits){
+    const partner=PARTNER_PHONES[guidePhoneKey(partnerDigits)];r.phone=normPhone(partnerDigits);r.referrer=partner.label;
+    const others=[...new Set(phones.filter(d=>d!==partnerDigits))].map(normPhone);
+    if(others.length){memo.push('손님번호 '+others.join(', '));r.memo=String(r.memo||'').replace(/추가연락처 [^·]*(?: · |$)/,'')}
+    if(!guideIsPersonName(String(r.name||''))){const line=text.split(/\r?\n/).map(s=>s.trim()).find(guideIsPersonName);r.name=line||partner.customer}
+  }
+  // ── 임차인명 ──
+  if(!structured){
+    const card=guideNameFromCard(text),bad=!r.name||GUIDE_BAD_NAME.test(String(r.name).trim());
+    if(card!==null&&(bad||/\s/.test(card)||GUIDE_COMPANY.test(card)))r.name=card;
+    else if(bad){const drv=text.match(/제1운전자명\s*[:：]\s*([가-힣]{2,5})/),rel=text.match(/([가-힣]{2,3})\s*(?:친구|지인)/);r.name=drv?drv[1]:rel&&guideIsPersonName(rel[1])?rel[1]:''}
+  }
+  // ── 날짜 ──
+  if(!structured){
+    const night=text.match(/(?:^|[^\d])(\d{1,2})\s*밤\s*(\d{1,2})\s*시?\s*[-~]?\s*(\d{1,2})\s*밤\s*(\d{1,2})/);
+    const chain=text.match(/(\d{1,2})\s*월\s*(\d{1,2})((?:\s*-\s*\d{1,2}){2,})\s*일/);
+    const dot=text.match(/(\d{1,2})\.\s*(\d{1,2})\.?\s*(?:\(?[월화수목금토일]\)?)?\s*(오전|아침|오후|저녁|밤)?[^~\n\d]{0,10}~\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*(?:\(?[월화수목금토일]\)?)?\s*(오전|아침|오후|저녁|밤)?/);
+    const hourOf=(w,def)=>w==='오전'||w==='아침'?8:w==='오후'?13:w==='저녁'?20:w==='밤'?21:def;
+    const explicitMonth=/\d{1,2}\s*월|(?<![\d.])\d{1,2}\s*[./]\s*\d{1,2}(?!\s*(?:세|인승)|\d)|20\d{2}/.test(text);
+    if(night){
+      // "18밤20" = 18일 20시
+      const sm=guideMonthFor(night[1],now);let y=now.getFullYear();if(sm>12)y++;
+      r.start=guideDT(y,sm>12?sm-12:sm,+night[1],+night[2],0);r.end=guideDT(y,sm>12?sm-12:sm,+night[3],+night[4],0);
+      if(+night[3]<+night[1])r.end=guideAddMonths(r.end,1);
+    }else if(chain){
+      const days=[chain[2],...chain[3].split('-').map(s=>s.trim()).filter(Boolean)];
+      r.start=guideDT(now.getFullYear(),+chain[1],+days[0],8,0);r.end=guideDT(now.getFullYear(),+chain[1],+days[days.length-1],20,0);
+      if(r.end<r.start)r.end=guideAddMonths(r.end,1);warn('시간 미표기로 08:00~20:00 기본값 적용');
+    }else if(dot&&!/\d\s*(?::\d{2}|시)/.test(dot[0])){
+      const y=now.getFullYear();r.start=guideDT(y,+dot[1],+dot[2],hourOf(dot[3],8),0);r.end=guideDT(y,+dot[4],+dot[5],hourOf(dot[6],20),0);
+      if(!dot[3]||!dot[6])warn('시간 미표기로 기본값 적용');
+    }else if(r.start&&!explicitMonth){
+      const s=new Date(r.start);
+      if(s.getMonth()===now.getMonth()&&s.getDate()<now.getDate()){r.start=guideAddMonths(r.start,1);r.end=guideAddMonths(r.end,1);r.warnings=r.warnings.filter(w=>!/현재 월/.test(w));warn('월 미표기: 오늘보다 앞선 날짜라 다음 달로 적용')}
+    }
+    // 깨진 일시(예: '1일 … 30'을 30시로 읽음)는 'N월 D일'에서 다시 만든다.
+    const md=text.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/),broken=v=>v&&isNaN(new Date(v));
+    if(md&&(broken(r.start)||broken(r.end))){r.start=guideDT(now.getFullYear(),+md[1],+md[2],8,0);r.end=r.start.slice(0,10)+'T20:00';warn('시간 미표기로 08:00~20:00 기본값 적용')}
+    if(r.start&&r.end&&r.end<r.start)r.end=guideAddMonths(r.end,1);
+    // 시각이 전혀 없는 단일 날짜: 승합 기본 08:00~20:00
+    if(r.start&&!/\d{1,2}\s*(?:시|:\d{2})|오전|오후|아침|저녁|밤/.test(text)){
+      const d=r.start.slice(0,10);r.start=d+'T08:00';if(!r.end||r.end.slice(0,10)===d)r.end=d+'T20:00';warn('시간 미표기로 08:00~20:00 기본값 적용');
+    }
+  }
+  // ── 차량: 카니발4세대 F/L = 카니발4.5 ──
+  r.car=String(r.car||'').replace(/카니발\s*4\s*세대\s*F\s*\/?\s*L/i,'카니발4.5');
+  if(/카니발\s*4\s*세대\s*F\s*\/?\s*L/i.test(text))r.car=r.car.replace(/카니발\s*4\s*세대/,'카니발4.5');
+  // ── 장소: '주소:' 라벨이 있으면 우선 ──
+  const addr=text.match(/^\s*주소\s*[:：]\s*(.+)$/m);if(addr&&!/[구동로길]\s|\d/.test(String(r.pickup||'')))r.pickup=addr[1].trim();
+  // ── 금액 ──
+  if(!structured){
+    const zapo=text.match(/(?<![A-Za-z\d])(\d{1,3})[ \t]*(?:만원?)?[ \t]*(?:현금?)?[ \t]*자포|자포[ \t]*(\d{1,3})(?!\d)/);
+    const munka=text.match(/(?<![A-Za-z\d])(\d{1,3})[ \t]*문카|문카[ \t]*(\d{1,3})(?!\d)/);
+    const vat=text.match(/(?<![A-Za-z\d])(\d{1,4})[ \t]*(?:부포|부가세\s*포함)|부가세\s*포함\s*(\d{1,3})\s*만/);
+    const carNum=text.match(/(?:쏠라티|솔라티|스타리아|스타렉스|카니발|투산|투싼|싼타페|쏘렌토|셀토스|아반떼|소나타|쏘나타|그랜저|k5|k3|cn7|gn7|g80|중형|준중형|준준형|소형)[ \t]*(\d{1,3})(?![\d.:]|[ \t]*(?:인승|명|세|일|시|대|년|월|밴|벤))/i);
+    const n=m=>m?Number(m[1]||m[2]):null;
+    if(/완납\s*[\d,]{5,}/.test(text)){}
+    else if(zapo)r.total=n(zapo)*10000;
+    else if(munka)r.total=n(munka)*10000;
+    else if(vat){const v=n(vat);if(v>=100){r.total=null;warn(`금액 단위 확인 필요 (부가세 포함 ${v})`)}else{r.total=v*10000;memo.push('부가세 포함')}}
+    else if(r.total==null&&carNum)r.total=n(carNum)*10000;
+    if(vat&&!/부가세 포함/.test(memo.join()))memo.push('부가세 포함');
+  }
+  if(/(?:^|[^미])완납/.test(text)&&r.total!=null){r.deposit=r.total;r.balance=0}
+  if(r.total!=null&&r.balance!=null&&r.deposit==null&&r.balance<=r.total)r.deposit=r.total-r.balance;
+  if(r.total!=null&&r.deposit!=null&&r.balance==null&&r.deposit<=r.total)r.balance=r.total-r.deposit;
+  // ── 결제수단 ──
+  if(/문카|문화누리/.test(text))r.payment_method='문화누리카드';
+  // ── 전날배차: 대여일시는 그대로, 배차칸 태그 ──
+  if(PREV_DAY_DISPATCH_RE.test(text)&&!String(r.pickup||'').includes('전날배차'))r.pickup=[r.pickup,'전날배차'].filter(Boolean).join(' / ');
+  // ── 메모 정리(중복 제거) ──
+  const parts=[...String(r.memo||'').split(' · '),...memo].map(s=>s.trim()).filter(Boolean);
+  r.memo=[...new Set(parts)].join(' · ');
+  if(r.start&&r.end){const d=Math.ceil((new Date(r.end)-new Date(r.start))/86400000);if(d>=0)r.days=d||1}
+  r.confidence=scoreResult(r);return r;
+}
+function parseRawToObject(raw){const cleaned=cleanReservationText(raw);return applyParsingGuide(cleaned,parseRawToObjectBase(cleaned))}
+function parseRawToObjectBase(raw){
   raw=String(raw||'').trim();
   const confirmFields=parseConfirmationFields(raw);
   if(confirmFields)return parseConfirmationTemplate(raw,confirmFields);
@@ -2106,8 +2234,8 @@ function parseRawToObject(raw){
       else{const d=new Date(start);d.setDate(d.getDate()+1);end=toLocalDT(d)}
     }
   }
-  // 전날출고
-  if(/전날\s*출고/.test(raw)&&start){const d=new Date(start);d.setDate(d.getDate()-1);d.setHours(20,0);start=toLocalDT(d);tags.push('전날배차')}
+  // 전날배차: 대여일시는 원래 사용일 그대로 두고 태그만 붙인다(전날 20시 전 인도).
+  if(PREV_DAY_DISPATCH_RE.test(raw))tags.push('전날배차');
   // 일수
   const dm=raw.match(/(\d+)\s*일\s*(사용|대여|렌트)/)||raw.match(/(\d+)\s*박/);if(dm)days=dm[1];
   else if(start&&end){const d=Math.ceil((new Date(end)-new Date(start))/86400000);if(d>=0)days=d||1}
@@ -2535,6 +2663,8 @@ function parseKakaoDateRange(text,baseDate){
   let m=t.match(/(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})\s*[~\-]\s*(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})/);
   if(m){start=kakaoMakeDate(base,+m[1],+m[2],+m[3],+m[4],warnings,'대여');end=kakaoMakeDate(base,+m[5],+m[6],+m[7],+m[8],warnings,'반납')}
   if(!start){m=t.match(/(\d{1,2})월\s*(\d{1,2})일?\s*(\d{1,2})시\s*-\s*\d{1,2}\s*-\s*(\d{1,2})일\s*(\d{1,2})시/);if(m){start=kakaoMakeDate(base,+m[1],+m[2],+m[3],0,warnings,'대여');end=kakaoMakeDate(base,+m[1],+m[4],+m[5],0,warnings,'반납');warnings.push('중간 날짜가 포함된 연속 대여로 처리함')}}
+  // 같은 날 시각 범위: 26일06시-21시 (반납 시각을 날짜로 오인하지 않게 먼저 본다)
+  if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일\s*(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~\-]\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);if(m){const mm=+(m[1]||base.getMonth()+1);start=kakaoMakeDate(base,mm,+m[2],+m[3],+(m[4]||0),warnings,'대여');end=kakaoMakeDate(base,mm,+m[2],+m[5],+(m[6]||0),warnings,'반납')}}
   if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~\-]\s*(?:(\d{1,2})월)?\s*(\d{1,2})일?\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);if(m){let sm=+(m[1]||base.getMonth()+1),em=+(m[5]||sm);if(!m[5]&&+m[6]<+m[2])em=sm===12?1:sm+1;start=kakaoMakeDate(base,sm,+m[2],+m[3],+(m[4]||0),warnings,'대여');end=kakaoMakeDate(base,em,+m[6],+m[7],+(m[8]||0),warnings,'반납')}}
   if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일\s*(\d{1,2})시\s*(\d{1,2})일\s*(\d{1,2})시/);if(m){let sm=+(m[1]||base.getMonth()+1),em=+m[4]<+m[2]?(sm===12?1:sm+1):sm;start=kakaoMakeDate(base,sm,+m[2],+m[3],0,warnings,'대여');end=kakaoMakeDate(base,em,+m[4],+m[5],0,warnings,'반납')}}
   if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일\s*(\d{1,2})시(?:\s*(\d{1,2})분)?[^\n]{0,12}당일\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);if(m){const mm=+(m[1]||base.getMonth()+1);start=kakaoMakeDate(base,mm,+m[2],+m[3],+(m[4]||0),warnings,'대여');end=kakaoMakeDate(base,mm,+m[2],+m[5],+(m[6]||0),warnings,'반납')}}
@@ -2545,7 +2675,7 @@ function parseKakaoDateRange(text,baseDate){
   if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일\s*(오전|아침|저녁)/);if(m){const h=m[3]==='저녁'?20:9;start=kakaoMakeDate(base,+(m[1]||base.getMonth()+1),+m[2],h,0,warnings,'대여');warnings.push(`${m[3]}의 정확한 시간이 없어 ${String(h).padStart(2,'0')}:00으로 처리함`)}}
   if(!start){m=t.match(/(?:(\d{1,2})월)?\s*(\d{1,2})일\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);if(m)start=kakaoMakeDate(base,+(m[1]||base.getMonth()+1),+m[2],+m[3],+(m[4]||0),warnings,'대여')}
   if(start&&!end){const same=t.match(/당일\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);if(same){const d=new Date(start);end=kakaoMakeDate(d,d.getMonth()+1,d.getDate(),+same[1],+(same[2]||0),warnings,'반납')}}
-  if(/전날\s*배차/.test(t)&&start){const d=new Date(start);d.setDate(d.getDate()-1);d.setHours(20,0,0,0);start=toLocalDT(d);warnings.push('전날 배차 시간이 없어 전날 20:00으로 처리함')}
+  if(PREV_DAY_DISPATCH_RE.test(t)&&start)warnings.push('전날배차: 대여일시는 원래 사용일 기준, 전날 20시 전 인도');
   const days=start&&end?Math.max(1,Math.ceil((new Date(end)-new Date(start))/86400000)):null;
   return{start,end,days,warnings};
 }
@@ -4129,6 +4259,8 @@ function runParserTestLegacy(){return runParserTest()}
 /* 개발용 익명 가상정보로만 검증하며 실제 API를 호출하지 않습니다. */
 function runParserTest(){
   const year=new Date().getFullYear(),month=String(new Date().getMonth()+1).padStart(2,'0');
+  // 월이 없는 날짜는 지침 v2대로 오늘보다 앞선 날이면 다음 달이다.
+  const ym=day=>{const m=guideMonthFor(day,new Date());return `${m>12?year+1:year}-${String(m>12?m-12:m).padStart(2,'0')}`};
   const base={name:'',phone:'',car:'',plate:'',start:'',end:'',days:null,insurance:'',pickup:'',return_location:'',
     deposit:null,balance:null,total:null,payment_method:'',memo:'',confidence:'HIGH',warnings:[]};
   const samples=[
@@ -4145,14 +4277,14 @@ function runParserTest(){
       ai:{...base,name:'가상나',phone:'010-0000-0004',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,days:2,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드',memo:'75자포'},
       expected:{name:'가상나',phone:'010-0000-0004',car:'카니발 4.5세대 9인승',start:`${year}-07-10T08:00`,end:`${year}-07-11T20:00`,insurance:'자포',pickup:'동대구 사무실 / 카모아',total:182000,payment_method:'카드'}},
     {name:'테스트 5',raw:'10일08시 쏠라티 가상꽃집콜 30자포 010-0000-0005 당일20시 계15 잔60',
-      ai:{...base,name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,days:1,insurance:'자포',deposit:150000,balance:600000,memo:'30자포',warnings:['월이 없어 현재 월로 처리함']},
-      expected:{name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${year}-${month}-10T08:00`,end:`${year}-${month}-10T20:00`,insurance:'자포',deposit:150000,balance:600000}},
+      ai:{...base,name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${ym(10)}-10T08:00`,end:`${ym(10)}-10T20:00`,days:1,insurance:'자포',deposit:150000,balance:600000,memo:'30자포',warnings:['월이 없어 현재 월로 처리함']},
+      expected:{name:'가상꽃집 고객',phone:'010-0000-0005',car:'쏠라티',start:`${ym(10)}-10T08:00`,end:`${ym(10)}-10T20:00`,insurance:'자포',deposit:150000,balance:600000}},
     {name:'테스트 6 · 축약 반납일',raw:'[이름] 7월14일20시 15일 21시 쏠라티\n신차콜 25만원자차 보험\n8월 15일08 시 15일20시 25자포\n두건 50 예약 감사합니다\n대구 가상구 테스트로 3\n[폰] 010-0000-0006',
       ai:{...base},
       expected:{phone:'010-0000-0006',car:'쏠라티',start:`${year}-07-14T20:00`,end:`${year}-07-15T21:00`,insurance:'자포'}},
     {name:'테스트 7 · 첨부 태그형',raw:'[이름] 20일9시-21일20시 4.5세카니발7-9인승30자포\n가상다\n[휴대전화] 010-0000-0007',
       ai:{...base},
-      expected:{name:'가상다',phone:'010-0000-0007',car:'카니발 4.5세대 7-9인승',start:`${year}-${month}-20T09:00`,end:`${year}-${month}-21T20:00`,insurance:'자포',total:300000}},
+      expected:{name:'가상다',phone:'010-0000-0007',car:'카니발 4.5세대 7-9인승',start:`${ym(20)}-20T09:00`,end:`${ym(20)}-21T20:00`,insurance:'자포',total:300000}},
     {name:'테스트 8 · 첨부 구조화형',raw:'- 고객명 : 가상라\n- 연락처 : 010-0000-0008\n- 시작일시 : 2026.08.18 09:00\n- 반납일시 : 2026.08.20 18:00\n- 차량명 : 카니발 4세대 9인승\n- 보험 : 완전면책\n- 고객 결제금액 : 467,000원\n- 배차주소 : (차고지 방문) 대구역\n- 반차주소 : 대구역',
       ai:{...base},
       expected:{name:'가상라',phone:'010-0000-0008',car:'카니발 4세대 9인승',start:'2026-08-18T09:00',end:'2026-08-20T18:00',insurance:'완전자차',pickup:'대구역',return_location:'대구역',total:467000}},
