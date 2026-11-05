@@ -835,6 +835,29 @@ body.tv-mode{display:block;background:#0b1420}
   .sb-head{height:44px}
   .sb-bar{font-size:12px!important}
 
+  #view-gantt .card-h>h2{display:none}
+  #view-gantt .card-h{padding:8px}
+  #view-gantt .week-nav{width:100%;flex-wrap:nowrap;gap:4px}
+  #view-gantt .wk-btn,#view-gantt .wk-today{min-width:44px;min-height:44px}
+  #view-gantt .wk-label{flex:1;min-width:0}
+  #view-gantt .card-b{padding:0!important}
+  #gantt table{table-layout:fixed;min-width:0;width:100%}
+  #gantt th.vname{width:30%;min-width:0}
+  #gantt .vname{padding:4px 6px;line-height:1.3;overflow-wrap:anywhere}
+  #gantt th .dow,#gantt .vehicle-detail{display:block;font-size:11px;font-weight:500}
+  #gantt .sat{color:var(--m-blue)}
+  #gantt .sun{color:var(--m-red)}
+  #gantt .vehicle-number{font-size:15px;color:var(--m-ink)}
+  #gantt .vehicle-detail{color:var(--m-muted)}
+  #gantt .gantt-group td.vname{letter-spacing:0}
+  #gantt .track{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(44px,auto);align-items:stretch}
+  #gantt .track::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to right,transparent 0 calc(25% - 1px),var(--line) calc(25% - 1px) 25%)}
+  #gantt .track .free{align-self:center;color:var(--m-green);font-size:14px}
+  #gantt .track button{z-index:1;min-width:0;padding:4px 2px;border:0;background:transparent;font:inherit;cursor:pointer}
+  #gantt .track .bar{margin:0;padding:4px 2px;min-height:28px;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.25}
+  #gantt .key{padding:8px;color:var(--m-muted);font-size:12px;text-align:right}
+  #gantt .key-mark{display:inline-block;vertical-align:middle;width:16px;height:9px;border-radius:3px;background:#D8BC85;margin-left:8px}
+
   /* 더보기 */
   .m-more{display:flex;flex-direction:column;gap:20px}
   .m-group h2{margin:0 0 8px 4px;font-size:13px!important;font-weight:700;color:var(--m-muted)}
@@ -1412,7 +1435,6 @@ const PLATE_MAP={
  '127호1862':{n:'G80 스포츠 3.5 가솔린',seat:'',fuel:'가솔린',base:'승용'},
  '127호1758':{n:'K5 DL3 LPG',seat:'',fuel:'LPG',base:'승용'},
  '127호1653':{n:'GN7 그랜저 하이브리드',seat:'',fuel:'HEV',base:'승용'},
- '127호1643':{n:'스타리아 LPG 9인승',seat:'9인승',fuel:'LPG',base:'스타리아'},
  '127호1616':{n:'GV70 디젤',seat:'',fuel:'디젤',base:'SUV'},
  '127호1528':{n:'투싼 디젤',seat:'',fuel:'디젤',base:'SUV'},
  '127호1500':{n:'K5 DL3 LPG',seat:'',fuel:'LPG',base:'승용'},
@@ -1440,7 +1462,25 @@ const PLATE_MAP={
 const DEFAULT_PLATE_MAP=JSON.parse(JSON.stringify(PLATE_MAP));
 const PLATE_STORE='ky_platemap_v1';
 function savePlateMap(){try{localStorage.setItem(PLATE_STORE,JSON.stringify(PLATE_MAP))}catch(e){}refreshReservationVehicleOptions()}
-function loadPlateMap(){try{const s=localStorage.getItem(PLATE_STORE);if(s){const o=JSON.parse(s);for(const k in PLATE_MAP)delete PLATE_MAP[k];Object.assign(PLATE_MAP,o)}}catch(e){}}
+function loadPlateMap(){
+  try{
+    const stored=localStorage.getItem(PLATE_STORE);
+    if(stored){
+      const vehicles=JSON.parse(stored);
+      for(const plate of Object.keys(PLATE_MAP))delete PLATE_MAP[plate];
+      Object.assign(PLATE_MAP,vehicles);
+    }
+    // Existing devices keep a full custom fleet. Apply the removal once there too.
+    const migration='ky_fleet_retired_127ho1643_v1';
+    if(!localStorage.getItem(migration)){
+      if(Object.hasOwn(PLATE_MAP,'127호1643')){
+        delete PLATE_MAP['127호1643'];
+        localStorage.setItem(PLATE_STORE,JSON.stringify(PLATE_MAP));
+      }
+      localStorage.setItem(migration,'1');
+    }
+  }catch(e){}
+}
 function resetPlateMap(){
   if(!confirm('차량 목록을 기본값으로 복원할까요?\n삭제하거나 수정한 차량 정보가 모두 초기화됩니다.'))return;
   for(const k in PLATE_MAP)delete PLATE_MAP[k];Object.assign(PLATE_MAP,JSON.parse(JSON.stringify(DEFAULT_PLATE_MAP)));
@@ -3669,6 +3709,26 @@ function ganttWeek(dir){
   else ganttWeekOffset+=dir;
   renderGantt();
 }
+// A same-day return and pickup share a date column but need separate booking bars.
+function weekendTrack(bookings, dateKeys){
+  const laneEnds=[];
+  const occupied=new Set();
+  const bars=[];
+  for(const booking of bookings){
+    const first=dateKeys.findIndex(day=>booking.start<=day+'T23:59' && booking.end>=day+'T00:00');
+    if(first===-1)continue;
+    let last=first;
+    while(last+1<dateKeys.length && booking.end>=dateKeys[last+1]+'T00:00')last++;
+    let lane=laneEnds.findIndex(end=>end<first);
+    if(lane===-1)lane=laneEnds.length;
+    laneEnds[lane]=last;
+    for(let day=first;day<=last;day++)occupied.add(day);
+    const name=esc(reservationCustomerName(booking)||'예약');
+    bars.push(`<button type="button" data-booking="${esc(booking.id)}" aria-label="${dateKeys[first]} ~ ${dateKeys[last]} ${name} · 임차인명 수정" style="grid-area:${lane+1}/${first+1}/span 1/${last+2}"><span class="bar">${name}</span></button>`);
+  }
+  const free=dateKeys.map((day,i)=>occupied.has(i)?'':`<span class="free" aria-label="${day} 가용" style="grid-area:1/${i+1}">○</span>`);
+  return `<td colspan="4"><div class="track">${free.join('')}${bars.join('')}</div></td>`;
+}
 function renderGantt(){
   const el=document.getElementById('gantt');if(!el)return;
   const now=new Date();const day=now.getDay();
@@ -3685,8 +3745,28 @@ function renderGantt(){
   }
   // 승합차만 (쏠라티/스타리아/스타렉스/카니발) — 차종·세부 그룹별로 정렬
   const plates=sortPlates(Object.keys(PLATE_MAP).filter(p=>PLATE_MAP[p].base!=='승용'&&PLATE_MAP[p].base!=='SUV'));
+  const mobile=isMobileApp();
+  const dateKeys=cols.map(d=>toLocalDT(d).slice(0,10));
+  const byPlate=new Map();
+  if(mobile){
+    for(const booking of data){
+      if(booking.status==='cancelled'||!booking.start||!booking.end)continue;
+      const start=new Date(booking.start),end=new Date(booking.end);
+      if(!Number.isFinite(+start)||!Number.isFinite(+end))continue;
+      const first=toLocalDT(start),last=toLocalDT(end);
+      if(first>dateKeys[3]+'T23:59'||last<dateKeys[0]+'T00:00')continue;
+      const plate=reservationVehicleId(booking);
+      if(!byPlate.has(plate))byPlate.set(plate,[]);
+      byPlate.get(plate).push({...booking,start:first,end:last});
+    }
+    for(const bookings of byPlate.values())bookings.sort((a,b)=>a.start.localeCompare(b.start));
+  }
   let html='<table><thead><tr><th class="vname">차량</th>'+cols.map(d=>{
     const isT=toLocalDT(d).slice(0,10)===todayS;
+    if(mobile){
+      const day=d.getDay(),tone=day===0?'sun':day===6?'sat':'';
+      return `<th class="${isT?'col-today':tone}">${d.getMonth()+1}/${d.getDate()}<span class="dow">${dn[day]}</span></th>`;
+    }
     return `<th class="${isT?'col-today':''}">${d.getMonth()+1}/${d.getDate()}(${dn[d.getDay()]})</th>`;
   }).join('')+'</tr></thead><tbody>';
   let curGroup='';let curBase='';
@@ -3721,7 +3801,12 @@ function renderGantt(){
       }else{
         dayCells=cols.map(()=>'<td></td>').join('');
       }
-      html+=`<tr class="gantt-group"><td class="vname">${grp} · ${cnt}대</td>${dayCells}</tr>`;
+      html+=`<tr class="gantt-group"><td class="vname">${esc(grp)} · ${cnt}대</td>${dayCells}</tr>`;
+    }
+    if(mobile){
+      const detail=[v.seat,v.fuel==='HEV'?'하이브리드':v.fuel].filter(Boolean).join(' · ')||v.n;
+      html+=`<tr><td class="vname" title="${esc(p)} · ${esc(v.n)}"><b class="vehicle-number">${esc(p.slice(-4))}</b><span class="vehicle-detail">${esc(detail)}</span></td>${weekendTrack(byPlate.get(p)||[],dateKeys)}</tr>`;
+      return;
     }
     html+=`<tr><td class="vname">${v.n} <span style="color:var(--gold)">${p.slice(-4)}</span></td>`;
     cols.forEach(d=>{
@@ -3733,7 +3818,13 @@ function renderGantt(){
     });
     html+='</tr>';
   });
-  html+='</tbody></table>';el.innerHTML=html;
+  html+='</tbody></table>';
+  if(mobile)html+='<div class="key">○ 가용 <i class="key-mark"></i> 예약</div>';
+  el.innerHTML=html;
+  el.onclick=mobile?event=>{
+    const button=event.target.closest('button[data-booking]');
+    if(button)editGanttName(button.dataset.booking);
+  }:null;
 }
 // 간트 셀에서 임차인명 바로 수정
 function editGanttName(id){
