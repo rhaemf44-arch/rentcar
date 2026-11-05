@@ -905,6 +905,12 @@ body.tv-mode{display:block;background:#0b1420}
   .m-sheet-grab{display:flex;justify-content:center;padding:8px 0 4px;touch-action:none;cursor:grab}
   .m-sheet-grab span{width:36px;height:5px;border-radius:3px;background:#d5d7dd}
   .m-sheet-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px 16px;display:flex;flex-direction:column;gap:16px}
+  #m-sheet-body .reservation-form-grid{grid-template-columns:minmax(0,1fr);gap:16px}
+  #m-sheet-body .reservation-form-grid>div:not(.field){grid-template-columns:minmax(0,1fr)}
+  #m-sheet-body .reservation-actions{display:none}
+  #m-sheet-body .field :is(input,select,textarea){min-width:0;width:100%;max-width:100%;min-height:44px;font-size:16px;box-sizing:border-box}
+  .m-sheet-cancel{background:#fff;border:1px solid #d5d7dd;color:var(--m-ink)}
+  body.m-sheet-open .toast{z-index:125;bottom:calc(80px + env(safe-area-inset-bottom))}
   .m-sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
   .m-sheet-head h2{margin:4px 0 0;font-size:20px!important;font-weight:700;letter-spacing:-.01em;line-height:1.3}
   .m-sheet-head h2 b{color:var(--m-gold-ink)}
@@ -3311,6 +3317,13 @@ function saveRes(){
     render();toast('기기 저장에 실패했습니다. 입력 내용은 유지됩니다. 창을 닫지 말고 백업해 주세요.');return;
   }
   const position=editReturnPosition;
+  if(mSheetEditing){
+    finishMobileSheetEdit();
+    render();
+    document.getElementById('m-sheet-edit')?.focus({preventScroll:true});
+    toast('예약을 기기에 저장했습니다. 상단에서 서버 저장 상태를 확인하세요.');
+    return;
+  }
   clearForm();closeReservationPanel();
   if(position){
     go2(position.view);
@@ -3335,17 +3348,20 @@ function clearForm(){
   document.getElementById('reservation-panel-title').textContent='예약 입력';
   const status=document.getElementById('ai-parse-status');status.textContent='';status.classList.remove('on');updateFinanceBalance();
 }
-function editRes(id,position=captureEditReturnPosition()){
-  const original=data.find(x=>x.id===id);if(!original)return;
+function fillReservationEdit(original,position){
   const r=normalizeReservationLocationRecord(original);clearForm();
   editReturnPosition=position;
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   set('f-ins',reservationInsurance(r)==='완전면책'?'완전자차':'일반면책');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
   const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
-  editId=id;_editingOriginal=JSON.parse(JSON.stringify(original));_editFormBaseline=reservationFormRecord();
+  editId=original.id;_editingOriginal=JSON.parse(JSON.stringify(original));_editFormBaseline=reservationFormRecord();
   document.getElementById('save-btn').textContent='수정 저장';document.getElementById('edit-hint').textContent='예약 수정';
-  if(typeof openReservationPanel==='function')openReservationPanel('manual');else go2('dashboard');
+}
+function editRes(id,position=captureEditReturnPosition()){
+  const original=data.find(x=>x.id===id);if(!original)return;
+  fillReservationEdit(original,position);
+  openReservationPanel('manual');
 }
 function setReservationStatus(id,status){
   const r=data.find(x=>x.id===id);if(!r||!['wait','active','done','cancelled'].includes(status)||r.status===status)return;
@@ -3521,7 +3537,9 @@ function closePlatePicker(returnFocus=false){
 }
 function platePickerManual(){
   if(platePicker.mode==='form'){const car=document.getElementById('f-car');closePlatePicker();car?.focus();car?.select();return}
-  const id=platePicker.id;closePlatePicker();if(!id)return;const position=closeMobileSheet();editRes(id,position);focusAfterPanel('f-car');
+  const id=platePicker.id;closePlatePicker();if(!id)return;
+  if(mSheetId===id)startMobileSheetEdit();else editRes(id);
+  focusAfterPanel('f-car');
 }
 function assignPlateFromPicker(i){
   const it=platePicker.items[i],r=platePickerRecord();if(!it||!r)return;
@@ -4232,7 +4250,7 @@ const M_ICON={
   chevron:'<svg class="m-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'
 };
 let mTodayLane='pickup',mSheetId=null,mSheetReturnFocus=null,mSheetCloseTimer=null;
-let mSheetEditOrigin=null;
+let mSheetEditing=false;
 
 function updateMobileTabs(v){
   const tab=M_TAB_OF[v]||'more';
@@ -4326,7 +4344,6 @@ function openMobileSheet(id){
   const sheet=document.getElementById('m-sheet');
   if(sheet.hidden||sheet.classList.contains('closing')){
     mSheetReturnFocus=document.activeElement;
-    mSheetEditOrigin=captureEditReturnPosition();
   }
   mSheetId=id;renderMobileSheet();
   sheet.classList.remove('closing');sheet.hidden=false;document.body.classList.add('m-sheet-open');
@@ -4336,18 +4353,49 @@ function openMobileSheet(id){
 }
 function closeMobileSheet(){
   const sheet=document.getElementById('m-sheet');if(!sheet||sheet.hidden)return;
+  if(mSheetEditing)finishMobileSheetEdit();
   mSheetId=null;sheet.classList.add('closing');sheet.classList.remove('open');document.body.classList.remove('m-sheet-open');
   document.getElementById('m-sheet-panel').style.transform='';
   clearTimeout(mSheetCloseTimer);mSheetCloseTimer=setTimeout(()=>{sheet.hidden=true;sheet.classList.remove('closing')},220);
   const back=mSheetReturnFocus;mSheetReturnFocus=null;if(back&&document.contains(back))back.focus({preventScroll:true});
-  const position=mSheetEditOrigin;mSheetEditOrigin=null;
-  return position;
 }
 /* 예약 입력 패널은 다음 프레임에 '고객명'으로 포커스를 옮긴다. 그 뒤(두 프레임 뒤)에 원하는 칸으로 옮겨야 덮어쓰이지 않는다. */
 function focusAfterPanel(id){requestAnimationFrame(()=>requestAnimationFrame(()=>{const el=document.getElementById(id);if(!el)return;el.focus({preventScroll:true});el.scrollIntoView({block:'center'})}))}
+function startMobileSheetEdit(){
+  const record=data.find(r=>r.id===mSheetId);
+  if(!record||mSheetEditing)return;
+  const body=document.getElementById('m-sheet-body');
+  const grid=document.querySelector('#reservation-form-tabpanel .reservation-form-grid');
+  fillReservationEdit(record,null);
+  mSheetEditing=true;
+  body.innerHTML='<header class="m-sheet-head"><h2 id="m-sheet-title" tabindex="-1">예약 수정</h2></header>';
+  body.append(grid);
+  const foot=document.getElementById('m-sheet-foot');
+  foot.innerHTML='<button type="button" class="m-sheet-cancel" onclick="cancelMobileSheetEdit()">취소</button>';
+  const saveButton=document.getElementById('save-btn');
+  saveButton.classList.add('m-sheet-main');
+  foot.append(saveButton);
+  body.scrollTop=0;
+  document.getElementById('m-sheet-title').focus({preventScroll:true});
+}
+function finishMobileSheetEdit(){
+  const grid=document.querySelector('#m-sheet-body .reservation-form-grid');
+  const saveButton=document.getElementById('save-btn');
+  closePlatePicker();
+  saveButton.classList.remove('m-sheet-main');
+  grid.querySelector('.reservation-actions').prepend(saveButton);
+  document.querySelector('#reservation-form-tabpanel .card-b').append(grid);
+  mSheetEditing=false;
+  clearForm();
+}
+function cancelMobileSheetEdit(){
+  finishMobileSheetEdit();
+  renderMobileSheet();
+  document.getElementById('m-sheet-edit')?.focus({preventScroll:true});
+}
 function mobileSheetAction(action){
   const id=mSheetId;if(!id)return;
-  if(action==='edit'){const position=closeMobileSheet();editRes(id,position);updateMobileTabs('dashboard');window.scrollTo({top:0});return}
+  if(action==='edit'){startMobileSheetEdit();return}
   if(action==='notice'){closeMobileSheet();openDispatchNotice(id);return}
   if(action==='delete'){delRes(id);return}
   if(action==='pickup'){
@@ -4359,12 +4407,13 @@ function mobileSheetAction(action){
   if(action==='return')setReservationStatus(id,'done');
 }
 function renderMobileSheet(){
+  if(mSheetEditing)return; // Keep the draft while server updates refresh the schedule.
   const r=mSheetId?data.find(x=>x.id===mSheetId):null;if(!r){closeMobileSheet();return}
   const v=tvVehicleDisplay(r),[st,cls]=mStatus(r),reasons=dashboardAttentionReasons(r),phone=String(r.phone||'').replace(/[^+\d]/g,'');
   const destination=r.status==='active'?(r.ret||r.pickup):r.pickup,map=mMapUrl(destination||'');
   const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit),balance=reservationBalance(r);
   const won=n=>n===null?'-':n.toLocaleString('ko-KR');
-  const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
+  const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.id?`id="${attrs.id}"`:''} ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
   document.getElementById('m-sheet-body').innerHTML=`
     <header class="m-sheet-head"><div>
       <div class="m-task-tags"><span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
@@ -4376,7 +4425,7 @@ function renderMobileSheet(){
       ${act('전화',M_ICON.phone,{href:phone?'tel:'+phone:'',disabled:!phone})}
       ${act('길찾기',M_ICON.nav,{href:map,blank:true,disabled:!map})}
       ${act('문자·카톡',M_ICON.msg,{onclick:"mobileSheetAction('notice')"})}
-      ${act('수정',M_ICON.edit,{onclick:"mobileSheetAction('edit')"})}
+      ${act('수정',M_ICON.edit,{id:'m-sheet-edit',onclick:"mobileSheetAction('edit')"})}
     </div>
     <dl class="m-kv">
       <div><dt>배차</dt><dd><b>${esc(fmtShort(r.start))}</b><small>${esc(r.pickup||'장소 미정')}</small></dd></div>
