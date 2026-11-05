@@ -1376,6 +1376,12 @@ body.tv-mode{display:block;background:#0b1420}
   <button type="button" class="btn btn-ghost" onclick="document.getElementById('sms-device-dialog').close()">닫기</button>
   <p id="sms-device-note" role="status"></p>
 </dialog>
+<dialog id="sms-team-dialog" aria-labelledby="sms-team-heading" style="margin:auto;width:min(92vw,400px);padding:20px;border:1px solid #dedfe5;border-radius:12px">
+  <h2 id="sms-team-heading">직원용 예약관리</h2>
+  <p id="sms-team-status" role="status" style="margin:14px 0">문자 발송 권한을 확인하고 있습니다.</p>
+  <button type="button" id="sms-team-retry" class="btn btn-ghost" onclick="openStaffSmsLink()" hidden>다시 확인</button>
+  <button type="button" class="btn btn-gold" onclick="document.getElementById('sms-team-dialog').close()">닫기</button>
+</dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -5412,6 +5418,34 @@ async function requestSmsApi(payload){
   if(!response.ok)throw new Error(result.message||'뿌리오 발송 서비스에 연결할 수 없습니다.');
   return result;
 }
+let joiningStaffSms=false;
+async function openStaffSmsLink(){
+  const fragment=location.hash;
+  if(!fragment.startsWith('#sms-team=')||joiningStaffSms)return;
+  const dialog=document.getElementById('sms-team-dialog');
+  const status=document.getElementById('sms-team-status');
+  const retry=document.getElementById('sms-team-retry');
+  if(!dialog.open)dialog.showModal();
+  retry.hidden=true;
+  if(!auth.currentUser){
+    status.textContent='예약관리 로그인 연결을 기다리고 있습니다. 연결 후 자동으로 진행합니다.';
+    retry.hidden=false;
+    return;
+  }
+  joiningStaffSms=true;
+  status.textContent='이 브라우저의 문자 발송 권한을 확인하고 있습니다.';
+  try{
+    const result=await requestSmsApi({action:'join-team',invite:fragment.slice('#sms-team='.length)});
+    status.textContent=result.message;
+    if(location.hash===fragment)history.replaceState(null,'',location.pathname+location.search);
+  }catch(error){
+    status.textContent=error.message||'연결을 확인하고 다시 시도하세요.';
+    retry.hidden=false;
+  }finally{joiningStaffSms=false;}
+}
+window.addEventListener('hashchange',openStaffSmsLink);
+if(location.hash.startsWith('#sms-team='))openStaffSmsLink();
+auth.onAuthStateChanged(user=>{if(user)openStaffSmsLink();});
 async function checkSmsConnection(button){
   const output=document.getElementById('dispatch-notice-result');
   if(!auth.currentUser){output.textContent='예약관리 로그인 연결을 확인하세요.';return;}

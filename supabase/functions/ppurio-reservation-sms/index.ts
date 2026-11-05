@@ -25,12 +25,22 @@ async function ppurio(path: string, authorization: string, payload: object, clie
   });
   return {status:response.status, data:await response.json()};
 }
-async function ledger(query: string, method: string, body?: object) {
+async function database(path: string, method: string, body?: object) {
   const secret = env("SUPABASE_SERVICE_ROLE_KEY");
-  return fetch(env("SUPABASE_URL") + "/rest/v1/ppurio_requests" + query, {
+  return fetch(env("SUPABASE_URL") + "/rest/v1/" + path, {
     method, headers: { apikey: secret, Authorization: "Bearer " + secret, "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(6000)
   });
+}
+function ledger(query: string, method: string, body?: object) {
+  return database("ppurio_requests" + query, method, body);
+}
+async function staffDevice(uid: string) {
+  if (env("PPURIO_STAFF_UIDS").split(",").map(s=>s.trim()).includes(uid)) return true;
+  const query = new URLSearchParams({uid:"eq."+uid,select:"uid",limit:"1"});
+  const result = await database("ppurio_staff_devices?"+query, "GET");
+  if (!result.ok) throw new Error("membership lookup");
+  return (await result.json()).some((row:{uid:string})=>row.uid===uid);
 }
 
 Deno.serve(async req => {
@@ -42,12 +52,24 @@ Deno.serve(async req => {
     const {payload} = await jwtVerify(token, keys, { algorithms: ["RS256"], issuer: "https://securetoken.google.com/" + project, audience: project, requiredClaims:["sub","iat","exp"] });
     uid = payload.sub!;
   } catch { return reply(401, "예약관리 로그인 상태를 확인하고 다시 열어주세요."); }
-  const approved = env("PPURIO_STAFF_UIDS").split(",").map(s=>s.trim()).includes(uid);
-  if (!approved) return reply(403, "직원 기기 승인이 필요합니다. 기기 등록번호: " + uid);
+  let input;
+  try { input=await req.json(); } catch { return reply(400,"요청 내용을 확인하세요."); }
+  if(!input || typeof input!=="object")return reply(400,"요청 내용을 확인하세요.");
+  try {
+    if (input.action==="join-team") {
+      if(typeof input.invite!=="string" || !/^[a-f0-9]{64}$/.test(input.invite))return reply(400,"직원용 링크 전체를 열어주세요.");
+      const hash = Buffer.from(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(input.invite))).toString("hex");
+      const response = await database("rpc/redeem_ppurio_staff_link","POST",{invite_hash:hash,device_uid:uid});
+      if(!response.ok)throw new Error("join");
+      if(await response.json()!==true)return reply(403,"사용 기간이 끝났거나 해제된 직원용 링크입니다. 새 링크를 요청하세요.");
+      return reply(200,"이 브라우저에서 뿌리오 문자를 보낼 수 있습니다.");
+    }
+    if(!await staffDevice(uid))return reply(403,"직원용 예약관리 링크를 이 브라우저에서 한 번 열어주세요.");
+  }catch{return reply(503,"직원 권한을 확인할 수 없습니다. 잠시 후 다시 시도하세요.");}
   const account=env("PPURIO_ACCOUNT"), key=env("PPURIO_API_KEY"), from=digits(env("PPURIO_FROM")), proxyUrl=env("FIXIE_URL");
   if (!account || !key || !/^0\d{7,10}$/.test(from) || !/^https?:\/\//.test(proxyUrl)) return reply(503,"뿌리오 계정·발신번호·고정 IP 연결 설정이 필요합니다.");
   try {
-    const {action,reservationId,kind,phone,body} = await req.json();
+    const {action,reservationId,kind,phone,body} = input;
     const authorization="Basic "+Buffer.from(account+":"+key).toString("base64");
     if(action==="check"){
       const proxy=createPpurioClient(proxyUrl);
