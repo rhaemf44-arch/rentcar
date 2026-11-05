@@ -1,0 +1,107 @@
+import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
+import { HttpsProxyAgent } from "npm:https-proxy-agent@7.0.6";
+import { request } from "node:https";
+import { Buffer } from "node:buffer";
+
+const origin = "https://rhaemf44-arch.github.io";
+const project = "ky-rent-system";
+const keys = createRemoteJWKSet(new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"));
+const headers = { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Cache-Control": "no-store" };
+const reply = (status: number, message: string, extra = {}) => Response.json({ message, ...extra }, { status, headers });
+const env = (key: string) => Deno.env.get(key)?.trim() || "";
+const digits = (value: string) => value.replace(/[\s()-]/g, "").replace(/^\+820?/, "0");
+
+// Both credential exchange and submission must leave from the registered IPs.
+function ppurio(path: string, authorization: string, payload: object, proxy: HttpsProxyAgent<string>): Promise<{status: number, data: Record<string, string>}> {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const req = request("https://message.ppurio.com/v1/" + path, {
+      method: "POST", agent: proxy, signal: AbortSignal.timeout(12000),
+      headers: { Authorization: authorization, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+    }, res => {
+      let raw = "";
+      res.setEncoding("utf8");
+      res.on("error", reject);
+      res.on("data", part => { raw += part; if (raw.length > 65536) req.destroy(new Error("response too large")); });
+      res.on("end", () => { try { resolve({status: res.statusCode || 0, data: JSON.parse(raw)}); } catch { reject(new Error("provider response")); } });
+    });
+    req.on("error", reject);
+    req.end(body);
+  });
+}
+
+async function ledger(query: string, method: string, body?: object) {
+  const secret = env("SUPABASE_SERVICE_ROLE_KEY");
+  return fetch(env("SUPABASE_URL") + "/rest/v1/ppurio_requests" + query, {
+    method, headers: { apikey: secret, Authorization: "Bearer " + secret, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(6000)
+  });
+}
+
+Deno.serve(async req => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
+  if (req.method !== "POST") return reply(405, "POST 요청이 필요합니다.");
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer /, "");
+  let uid: string;
+  try {
+    const {payload} = await jwtVerify(token, keys, { algorithms: ["RS256"], issuer: "https://securetoken.google.com/" + project, audience: project, requiredClaims:["sub","iat","exp"] });
+    uid = payload.sub!;
+  } catch { return reply(401, "예약관리 로그인 상태를 확인하고 다시 열어주세요."); }
+  const approved = env("PPURIO_STAFF_UIDS").split(",").map(s=>s.trim()).includes(uid);
+  if (!approved) return reply(403, "직원 기기 승인이 필요합니다. 기기 등록번호: " + uid);
+  const account=env("PPURIO_ACCOUNT"), key=env("PPURIO_API_KEY"), from=digits(env("PPURIO_FROM")), proxyUrl=env("FIXIE_URL");
+  if (!account || !key || !/^0\d{7,10}$/.test(from) || !/^https?:\/\//.test(proxyUrl)) return reply(503,"뿌리오 계정·발신번호·고정 IP 연결 설정이 필요합니다.");
+  try {
+    const {action,reservationId,kind,phone,body} = await req.json();
+    const authorization="Basic "+Buffer.from(account+":"+key).toString("base64");
+    if(action==="check"){
+      const proxy=new HttpsProxyAgent(proxyUrl);
+      try{
+        const check=await ppurio("token",authorization,{},proxy);
+        if(check.status===200 && check.data.token)return reply(200,"뿌리오 연결을 확인했습니다. 문자 발송을 사용할 수 있습니다.");
+        return reply(502,"인증에 실패했습니다. 뿌리오 연동 IP와 API 인증키를 확인하세요.");
+      }catch{return reply(502,"고정 IP 경유 연결을 확인할 수 없습니다.");}
+      finally{proxy.destroy();}
+    }
+    if (typeof reservationId!=="string" || !/^[^/\s]{1,128}$/.test(reservationId) || !["confirmation","reminder"].includes(kind) || typeof phone!=="string" || !/^01[016789]\d{7,8}$/.test(phone) || typeof body!=="string" || !body.trim() || body.length>2000) return reply(400,"예약, 수신번호 또는 내용을 확인하세요.");
+    const doc = await fetch("https://firestore.googleapis.com/v1/projects/"+project+"/databases/(default)/documents/reservations/"+encodeURIComponent(reservationId),{headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(6000)});
+    if(!doc.ok) return reply(409,"서버에서 예약을 확인할 수 없습니다.");
+    const {fields:f}=await doc.json();
+    const start=f?.start?.stringValue || "";
+    const when=Date.parse(/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?$/.test(start)?start+"+09:00":start);
+    if(!f || f.deletedAt?.stringValue || ["cancelled","done","active"].includes(f.status?.stringValue) || !(when>Date.now()) || digits(f.phone?.stringValue||"")!==phone) return reply(409,"예약 상태와 저장된 고객 휴대폰 번호를 확인하세요.");
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify([reservationId,kind,phone,body])));
+    const id=Buffer.from(digest).toString("hex");
+    const query="?id=eq."+id;
+    const proxy=new HttpsProxyAgent(proxyUrl);
+    const claim=await ledger("","POST",{id,state:"processing"});
+    if(claim.status===409){
+      const existing=await ledger(query+"&select=state","GET");
+      const rows=existing.ok?await existing.json():[];
+      return rows[0]?.state==="accepted"?reply(200,"이 문자는 이미 뿌리오에 접수됐습니다.",{accepted:true}):reply(409,"이미 요청한 문자입니다. 재발송 전에 뿌리오 발송결과를 확인하세요.");
+    }
+    if(!claim.ok) return reply(503,"발송 기록을 준비하지 못했습니다.");
+    let submitted=false;
+    try {
+      const auth=await ppurio("token",authorization,{},proxy);
+      if(auth.status!==200 || !auth.data.token) throw new Error("token");
+      // Korean characters occupy two bytes in domestic SMS; use LMS if in doubt.
+      const bytes=Array.from(body).reduce((n,c)=>n+(c.charCodeAt(0)>127?2:1),0);
+      if(bytes>2000){await ledger(query,"DELETE");return reply(400,"장문 문자 길이를 초과했습니다. 내용을 줄여 주세요.");}
+      submitted=true;
+      const result=await ppurio("message","Bearer "+auth.data.token,{account,from,messageType:bytes>90?"LMS":"SMS",content:body,duplicateFlag:"N",targetCount:1,targets:[{to:phone}],refKey:id.slice(0,32)},proxy);
+      if(result.status>=200 && result.status<300 && result.data.messageKey && (!result.data.code || String(result.data.code)==="1000")){
+        const saved=await ledger(query,"PATCH",{state:"accepted",provider_id:result.data.messageKey});
+        return reply(200,saved.ok?"뿌리오 발송 접수 완료":"뿌리오에 접수됐습니다. 접수 기록은 뿌리오 발송결과에서 확인하세요.",{accepted:true});
+      }
+      if(result.status>=400 && result.status<500 && result.data.code){
+        await ledger(query,"DELETE");
+        return reply(422,"뿌리오가 발송을 거절했습니다. 발신번호·잔액·발송 권한을 확인하세요. ("+String(result.data.code).replace(/[^\d]/g,"").slice(0,8)+")");
+      }
+      throw new Error("unknown");
+    } catch {
+      if(!submitted){await ledger(query,"DELETE");return reply(502,"뿌리오 인증에 실패했습니다. 등록 IP와 인증키를 확인하세요.");}
+      return reply(502,"접수 여부를 확인할 수 없습니다. 중복 발송 방지를 위해 뿌리오 발송결과를 먼저 확인하세요.");
+    } finally { proxy.destroy(); }
+  } catch { return reply(503,"발송 처리 상태를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요."); }
+});
