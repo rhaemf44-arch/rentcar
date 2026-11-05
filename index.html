@@ -197,6 +197,9 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
 .sched-groups{display:flex;flex-direction:column;gap:16px}
 .sched-day{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel-solid)}
 .sched-day.today{border-color:rgba(184,137,43,.5)}
+.schedule-range{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0;color:var(--ivory-dim);font-size:13px}
+.schedule-range label{display:inline-flex;align-items:center;gap:6px;margin:0;cursor:pointer}
+.schedule-range input{width:16px;height:16px;margin:0}
 .sched-day-h{display:flex;align-items:center;gap:12px;padding:11px 16px;background:#F7F8FA;border-bottom:1px solid var(--line)}
 .sched-day.today .sched-day-h{background:#FCF6E6}
 .sched-day-h .d-label{font-weight:700;font-size:14px}
@@ -1164,6 +1167,7 @@ body.tv-mode{display:block;background:#0b1420}
             <div><strong>배차 하루 전 안내</strong><p id="dispatch-notice-summary" role="status"></p><small>예약의 ‘문자·카톡’에서 안내를 보내고 문자 발송내역을 확인하세요.</small></div>
             <button class="btn btn-ghost btn-sm" id="dispatch-notice-filter" aria-pressed="false" onclick="toggleDispatchNoticeFilter()">24시간 내 안내 필요</button>
           </div>
+          <div class="schedule-range"><span id="schedule-range-label"></span><label><input type="checkbox" id="schedule-include-earlier" onchange="renderSchedule()">이전 일정 포함</label></div>
           <div class="res-list" id="sched-list" style="max-height:none"></div>
         </div>
       </div>
@@ -3672,9 +3676,12 @@ function insertBetween(idx){
 /* ===== 일정표: 날짜별 그룹 + 날짜 사이 추가버튼 ===== */
 function renderSchedule(){
   const el=document.getElementById('sched-list');if(!el)return;
-  const now=new Date();
+  const today=todayStr(),yesterday=dashboardDayOffset(today,-1);
+  const includeEarlier=document.getElementById('schedule-include-earlier').checked;
+  document.getElementById('schedule-range-label').textContent=includeEarlier?'배차일 기준 · 전체 기간':`배차일 기준 · ${Number(yesterday.slice(5,7))}월 ${Number(yesterday.slice(8))}일부터`;
   let rows=data.filter(r=>{
     if(r.status==='cancelled')return false;
+    if(!includeEarlier && r.start && r.start.slice(0,10)<yesterday)return false;
     if(schedTab==='done')return r.status==='done';
     // 예정시간만 지난 운행중·대기 예약은 업무 목록에 유지
     if(r.status==='done'&&r.end&&reservationTime(r.end)<Date.now())return false;
@@ -3685,7 +3692,11 @@ function renderSchedule(){
   updateDispatchNoticeSummary();
   if(dispatchNoticeOnly)rows=rows.filter(r=>dispatchNoticeDue(r));
   // 날짜별 그룹
-  const groups={};
+  const groups=Object.create(null);
+  if(!includeEarlier && !dispatchNoticeOnly){
+    groups[yesterday]=[];
+    groups[today]=[];
+  }
   rows.forEach(r=>{const d=(r.start||'미정').slice(0,10);(groups[d]=groups[d]||[]).push(r)});
   const dates=Object.keys(groups).sort();
   const D=['일','월','화','수','목','금','토'];
@@ -3694,11 +3705,11 @@ function renderSchedule(){
   // 맨 위 새 날짜 추가
   html+=`<button class="add-date-btn top" onclick="addForDate('')">＋ 새 예약 추가</button>`;
   dates.forEach(ds=>{
-    const isToday=ds===todayStr();
+    const isToday=ds===today;
     html+=`<div class="sched-day ${isToday?'today':''}">
-      <div class="sched-day-h"><span class="d-label">${dayLabel(ds)}</span><span class="d-count">${groups[ds].length}건</span>
+      <div class="sched-day-h"><span class="d-label">${dayLabel(ds)}${isToday?' · 오늘':ds===yesterday?' · 어제':''}</span><span class="d-count">${groups[ds].length}건</span>
         <button class="add-here" onclick="addForDate('${ds==='미정'?'':ds}')" title="이 날짜에 예약 추가">＋ 추가</button></div>
-      ${effectiveViewMode()==='card'?'<div style="padding:12px;display:grid;gap:10px">'+groups[ds].map(r=>resCard(r,true)).join('')+'</div>':resTable(groups[ds],true)}
+      ${!groups[ds].length?'':effectiveViewMode()==='card'?'<div style="padding:12px;display:grid;gap:10px">'+groups[ds].map(r=>resCard(r,true)).join('')+'</div>':resTable(groups[ds],true)}
     </div>`;
   });
   if(!dates.length)html+='<div class="empty" style="padding:30px">표시할 예약이 없습니다. 위 ＋ 버튼으로 추가하세요.</div>';
