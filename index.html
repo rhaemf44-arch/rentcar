@@ -3214,6 +3214,7 @@ function confirmReservationWarnings(r,records=data){
   return true;
 }
 let _editingOriginal=null,_editFormBaseline=null;
+let scheduleEditScrollY=null;
 function populateFinanceForm(r){
   const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
   set('f-total',total??'');set('f-paid',paid??'');set('f-balance',reservationBalance(r)??'');
@@ -3265,9 +3266,16 @@ function saveRes(){
     document.getElementById('save-btn').textContent='저장 다시 시도';
     render();toast('기기 저장에 실패했습니다. 입력 내용은 유지됩니다. 창을 닫지 말고 백업해 주세요.');return;
   }
-  clearForm();if(typeof closeReservationPanel==='function')closeReservationPanel();render();toast('예약을 기기에 저장했습니다. 상단에서 서버 저장 상태를 확인하세요.');
+  const returnScrollY=scheduleEditScrollY;
+  clearForm();closeReservationPanel();
+  if(returnScrollY!==null){
+    go2('schedule');
+    window.scrollTo(0,returnScrollY);
+  }else render();
+  toast('예약을 기기에 저장했습니다. 상단에서 서버 저장 상태를 확인하세요.');
 }
 function clearForm(){
+  scheduleEditScrollY=null;
   reservationFormVersion++;
   ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price'].forEach(i=>set(i,''));
   document.getElementById('f-ins').value='일반면책';document.getElementById('f-status').value='wait';
@@ -3280,7 +3288,10 @@ function clearForm(){
 }
 function editRes(id){
   const original=data.find(x=>x.id===id);if(!original)return;
+  const fromSchedule=document.getElementById('view-schedule').classList.contains('on');
+  const returnScrollY=fromSchedule?window.scrollY:null;
   const r=normalizeReservationLocationRecord(original);clearForm();
+  scheduleEditScrollY=returnScrollY;
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   set('f-ins',['일반면책','완전자차'].includes(r.ins)?r.ins:'');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
