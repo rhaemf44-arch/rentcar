@@ -5,7 +5,7 @@ const origin = "https://rhaemf44-arch.github.io";
 const project = "ky-rent-system";
 const keys = createRemoteJWKSet(new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"));
 const headers = { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Cache-Control": "no-store" };
-const reply = (status: number, message: string, extra = {}) => Response.json({ message, ...extra }, { status, headers });
+const reply = (status: number, message: string, extra = {}) => Response.json({ message, ...(status>=400?{outcome:"failed"}:{}), ...extra }, { status, headers });
 const env = (key: string) => Deno.env.get(key)?.trim() || "";
 const digits = (value: string) => value.replace(/[\s()-]/g, "").replace(/^\+820?/, "0");
 
@@ -25,15 +25,26 @@ async function ppurio(path: string, authorization: string, payload: object, clie
   });
   return {status:response.status, data:await response.json()};
 }
-async function database(path: string, method: string, body?: object) {
+async function database(path: string, method: string, body?: object, count=false) {
   const secret = env("SUPABASE_SERVICE_ROLE_KEY");
   return fetch(env("SUPABASE_URL") + "/rest/v1/" + path, {
-    method, headers: { apikey: secret, Authorization: "Bearer " + secret, "Content-Type": "application/json" },
+    method, headers: { apikey: secret, Authorization: "Bearer " + secret, "Content-Type": "application/json", ...(count?{Prefer:"count=exact"}:{}) },
     body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(6000)
   });
 }
-function ledger(query: string, method: string, body?: object) {
-  return database("ppurio_requests" + query, method, body);
+function ledger(query: string, method: string, body?: object, count=false) {
+  return database("ppurio_requests" + query, method, body, count);
+}
+function exactCount(response: Response) {
+  const match=response.headers.get("content-range")?.match(/\/(\d+)$/);
+  return match ? Number(match[1]) : null;
+}
+async function acceptedCount(reservationId: string) {
+  try {
+    const filter=new URLSearchParams({reservation_id:"eq."+reservationId,state:"eq.accepted",select:"id",limit:"1"});
+    const response=await ledger("?"+filter,"HEAD",undefined,true);
+    return response.ok ? exactCount(response) : null;
+  } catch {return null;}
 }
 async function staffDevice(uid: string) {
   if (env("PPURIO_STAFF_UIDS").split(",").map(s=>s.trim()).includes(uid)) return true;
@@ -74,10 +85,10 @@ Deno.serve(async req => {
       if(!reservation.ok || (await reservation.json()).fields?.deletedAt?.stringValue)return reply(403,"이 예약의 발송내역을 열 수 없습니다.");
       const pageSize=25;
       const query=new URLSearchParams({reservation_id:"eq."+reservationId,state:"eq.accepted",select:"id,kind:notice_kind,phone:recipient,body:message_body,at:accepted_at",order:"accepted_at.desc,id.desc",limit:String(pageSize+1),offset:String(offset)});
-      const result=await ledger("?"+query,"GET");
+      const result=await ledger("?"+query,"GET",undefined,true);
       if(!result.ok)throw new Error("history");
       const rows=await result.json();
-      return reply(200,"문자 발송내역",{history:rows.slice(0,pageSize),nextOffset:rows.length>pageSize?offset+pageSize:null});
+      return reply(200,"문자 발송내역",{history:rows.slice(0,pageSize),total:exactCount(result),nextOffset:rows.length>pageSize?offset+pageSize:null});
     }catch{return reply(503,"발송내역을 불러오지 못했습니다. 다시 확인해 주세요.");}
   }
   const account=env("PPURIO_ACCOUNT"), key=env("PPURIO_API_KEY"), from=digits(env("PPURIO_FROM")), proxyUrl=env("FIXIE_URL");
@@ -102,14 +113,20 @@ Deno.serve(async req => {
     const start=f?.start?.stringValue || "";
     const when=Date.parse(/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?$/.test(start)?start+"+09:00":start);
     if(!f || f.deletedAt?.stringValue || ["cancelled","done","active"].includes(f.status?.stringValue) || !(when>Date.now()) || digits(f.phone?.stringValue||"")!==phone) return reply(409,"예약 상태와 저장된 고객 휴대폰 번호를 확인하세요.");
-    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify([reservationId,kind,phone,body])));
+    // One confirmed click is one attempt. Older tabs retain their existing replay key.
+    const attempt=input.attemptId;
+    if(attempt!==undefined && (typeof attempt!=="string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attempt)))return reply(400,"발송 요청 번호가 올바르지 않습니다.");
+    const identity=attempt===undefined?[reservationId,kind,phone,body]:["sms-attempt",reservationId,uid,attempt];
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(identity)));
     const id=Buffer.from(digest).toString("hex");
     const query="?id=eq."+id;
     const claim=await ledger("","POST",{id,state:"processing",reservation_id:reservationId,notice_kind:kind,recipient:phone,message_body:body});
     if(claim.status===409){
-      const existing=await ledger(query+"&select=state,accepted_at","GET");
+      const existing=await ledger(query+"&select=state,accepted_at,notice_kind,recipient,message_body","GET");
       const rows=existing.ok?await existing.json():[];
-      return rows[0]?.state==="accepted"?reply(200,"이미 전송 접수된 문자입니다.",{accepted:true,duplicate:true,id,at:rows[0].accepted_at||null}):reply(409,"이미 요청한 문자입니다. 재발송 전에 뿌리오 발송결과를 확인하세요.");
+      const prior=rows[0];
+      if(attempt && prior && (prior.notice_kind!==kind || prior.recipient!==phone || prior.message_body!==body))return reply(409,"발송 요청 번호가 다른 문자에 사용됐습니다.");
+      return prior?.state==="accepted"?reply(200,"문자 발송 성공",{accepted:true,duplicate:true,id,at:prior.accepted_at||null,total:await acceptedCount(reservationId)}):reply(409,"처리 중인 요청입니다. 발송내역에서 결과를 확인해 주세요.",{outcome:"unknown"});
     }
     if(!claim.ok) return reply(503,"발송 기록을 준비하지 못했습니다.");
     let submitted=false;
@@ -131,16 +148,16 @@ Deno.serve(async req => {
         for(let attempt=0;attempt<2 && !recorded;attempt++){
           try{recorded=(await ledger(query,"PATCH",patch)).ok;}catch{/* The client also retains the receipt if storage is unavailable. */}
         }
-        return reply(200,recorded?"문자 전송 접수 완료":"문자는 전송 접수됐습니다. 서버 내역 저장이 지연되어 예약에 접수 기록을 보관합니다.",{accepted:true,id,at,recorded});
+        return reply(200,recorded?"문자 발송 성공":"문자 발송 성공 · 서버 내역 저장 지연",{accepted:true,id,at,recorded,total:await acceptedCount(reservationId)});
       }
-      if(result.status>=400 && result.status<500 && result.data.code){
+      if(result.status<500 && result.data.code && String(result.data.code)!=="1000" && !result.data.messageKey){
         await ledger(query,"DELETE");
         return reply(422,"뿌리오가 발송을 거절했습니다. 발신번호·잔액·발송 권한을 확인하세요. ("+String(result.data.code).replace(/[^\d]/g,"").slice(0,8)+")");
       }
       throw new Error("unknown");
     } catch {
       if(!submitted){await ledger(query,"DELETE");return reply(502,"뿌리오 인증에 실패했습니다. 등록 IP와 인증키를 확인하세요.");}
-      return reply(502,"접수 여부를 확인할 수 없습니다. 중복 발송 방지를 위해 뿌리오 발송결과를 먼저 확인하세요.");
+      return reply(502,"접수 여부를 확인할 수 없습니다. 뿌리오 발송결과를 먼저 확인하세요.",{outcome:"unknown"});
     } finally { proxy?.close(); }
-  } catch { return reply(503,"발송 처리 상태를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요."); }
+  } catch { return reply(503,"발송 처리 상태를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요.",{outcome:"unknown"}); }
 });
