@@ -66,6 +66,20 @@ Deno.serve(async req => {
     }
     if(!await staffDevice(uid))return reply(403,"직원용 예약관리 링크를 이 브라우저에서 한 번 열어주세요.");
   }catch{return reply(503,"직원 권한을 확인할 수 없습니다. 잠시 후 다시 시도하세요.");}
+  if(input.action==="history"){
+    const {reservationId,offset=0}=input;
+    if(typeof reservationId!=="string" || !/^[^/\s]{1,128}$/.test(reservationId) || /^\.{1,2}$/.test(reservationId) || !Number.isSafeInteger(offset) || offset<0)return reply(400,"예약 정보를 확인하세요.");
+    try{
+      const reservation=await fetch("https://firestore.googleapis.com/v1/projects/"+project+"/databases/(default)/documents/reservations/"+encodeURIComponent(reservationId)+"?mask.fieldPaths=deletedAt",{headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(6000)});
+      if(!reservation.ok || (await reservation.json()).fields?.deletedAt?.stringValue)return reply(403,"이 예약의 발송내역을 열 수 없습니다.");
+      const pageSize=25;
+      const query=new URLSearchParams({reservation_id:"eq."+reservationId,state:"eq.accepted",select:"id,kind:notice_kind,phone:recipient,body:message_body,at:accepted_at",order:"accepted_at.desc,id.desc",limit:String(pageSize+1),offset:String(offset)});
+      const result=await ledger("?"+query,"GET");
+      if(!result.ok)throw new Error("history");
+      const rows=await result.json();
+      return reply(200,"문자 발송내역",{history:rows.slice(0,pageSize),nextOffset:rows.length>pageSize?offset+pageSize:null});
+    }catch{return reply(503,"발송내역을 불러오지 못했습니다. 다시 확인해 주세요.");}
+  }
   const account=env("PPURIO_ACCOUNT"), key=env("PPURIO_API_KEY"), from=digits(env("PPURIO_FROM")), proxyUrl=env("FIXIE_URL");
   if (!account || !key || !/^0\d{7,10}$/.test(from) || !/^https?:\/\//.test(proxyUrl)) return reply(503,"뿌리오 계정·발신번호·고정 IP 연결 설정이 필요합니다.");
   try {
@@ -91,11 +105,11 @@ Deno.serve(async req => {
     const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify([reservationId,kind,phone,body])));
     const id=Buffer.from(digest).toString("hex");
     const query="?id=eq."+id;
-    const claim=await ledger("","POST",{id,state:"processing"});
+    const claim=await ledger("","POST",{id,state:"processing",reservation_id:reservationId,notice_kind:kind,recipient:phone,message_body:body});
     if(claim.status===409){
-      const existing=await ledger(query+"&select=state","GET");
+      const existing=await ledger(query+"&select=state,accepted_at","GET");
       const rows=existing.ok?await existing.json():[];
-      return rows[0]?.state==="accepted"?reply(200,"이 문자는 이미 뿌리오에 접수됐습니다.",{accepted:true}):reply(409,"이미 요청한 문자입니다. 재발송 전에 뿌리오 발송결과를 확인하세요.");
+      return rows[0]?.state==="accepted"?reply(200,"이미 전송 접수된 문자입니다.",{accepted:true,duplicate:true,id,at:rows[0].accepted_at||null}):reply(409,"이미 요청한 문자입니다. 재발송 전에 뿌리오 발송결과를 확인하세요.");
     }
     if(!claim.ok) return reply(503,"발송 기록을 준비하지 못했습니다.");
     let submitted=false;
@@ -110,8 +124,14 @@ Deno.serve(async req => {
       submitted=true;
       const result=await ppurio("message","Bearer "+auth.data.token,{account,from,messageType:bytes>90?"LMS":"SMS",content:body,duplicateFlag:"N",targetCount:1,targets:[{to:phone}],refKey:id.slice(0,32)},proxy);
       if(result.status>=200 && result.status<300 && result.data.messageKey && (!result.data.code || String(result.data.code)==="1000")){
-        const saved=await ledger(query,"PATCH",{state:"accepted",provider_id:result.data.messageKey});
-        return reply(200,saved.ok?"뿌리오 발송 접수 완료":"뿌리오에 접수됐습니다. 접수 기록은 뿌리오 발송결과에서 확인하세요.",{accepted:true});
+        const at=new Date().toISOString();
+        const patch={state:"accepted",provider_id:result.data.messageKey,accepted_at:at};
+        // Retry only the database update. Provider acceptance is already final.
+        let recorded=false;
+        for(let attempt=0;attempt<2 && !recorded;attempt++){
+          try{recorded=(await ledger(query,"PATCH",patch)).ok;}catch{/* The client also retains the receipt if storage is unavailable. */}
+        }
+        return reply(200,recorded?"문자 전송 접수 완료":"문자는 전송 접수됐습니다. 서버 내역 저장이 지연되어 예약에 접수 기록을 보관합니다.",{accepted:true,id,at,recorded});
       }
       if(result.status>=400 && result.status<500 && result.data.code){
         await ledger(query,"DELETE");
