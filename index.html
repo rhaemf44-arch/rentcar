@@ -5164,6 +5164,10 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
       <div class="field"><label for="dispatch-notice-phone">고객 휴대폰 번호</label><input type="tel" id="dispatch-notice-phone" autocomplete="off" inputmode="tel" placeholder="010-0000-0000" oninput="editDispatchNotice()"><p class="dispatch-notice-help">번호 1개를 입력하세요. 여기서 바꾼 번호는 안내문자에만 사용됩니다.</p></div>
       <div class="field"><div class="dispatch-notice-message-label"><label for="dispatch-notice-body">안내 내용 · 직접 수정 가능</label><button class="btn btn-ghost btn-sm" onclick="regenerateDispatchNotice()">예약 정보로 다시 작성</button></div><textarea id="dispatch-notice-body" maxlength="2000" spellcheck="false" oninput="editDispatchNotice()"></textarea><p class="dispatch-notice-help" id="dispatch-notice-length"></p><p class="dispatch-notice-help">보험·면책금·보상한도와 차량별 주의사항을 계약 조건에 맞게 확인하세요. 클리닝 비용은 정확한 금액을 확인해 추가하세요. 내부 메모는 문자에 포함하지 않습니다.</p></div>
       <div class="dispatch-notice-warning" id="dispatch-notice-warning" role="status"></div>
+      <div id="dispatch-missing-actions" hidden>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="selectMissingNoticeField()">본문에서 수정하기</button>
+        <span id="dispatch-contract-option" hidden><button class="btn btn-ghost btn-sm" type="button" onclick="useContractInsuranceNotice()">보험 유형은 계약서 확인으로 안내</button></span>
+      </div>
       <label class="dispatch-notice-review"><input type="checkbox" id="dispatch-notice-reviewed" onchange="refreshDispatchNotice()"><span>받는 고객, 배차·반차 장소, 차량 주의사항과 보험 내용을 확인했습니다.</span></label>
       <details id="dispatch-notice-sent-record" class="dispatch-notice-sent-record" hidden><summary>최근 보낸 기록 보기</summary><div id="dispatch-notice-sent-meta"></div><pre id="dispatch-notice-sent-body"></pre></details>
     </div>
@@ -5320,6 +5324,25 @@ function closeDispatchNotice(){
   if(dispatchNoticeReturnFocus&&typeof dispatchNoticeReturnFocus.focus==='function')dispatchNoticeReturnFocus.focus();
 }
 function editDispatchNotice(){if(dispatchNoticeState)dispatchNoticeState.revision++;document.getElementById('dispatch-notice-reviewed').checked=false;document.getElementById('dispatch-notice-result').textContent='';refreshDispatchNotice()}
+function missingNoticeFields(body){
+  return [...new Set(body.match(/\[[^\[\]\n]*확인 필요\]/g)||[])];
+}
+function selectMissingNoticeField(){
+  const field=document.getElementById('dispatch-notice-body');
+  const [first]=missingNoticeFields(field.value);
+  if(!first)return;
+  const start=field.value.indexOf(first);
+  field.focus();
+  field.setSelectionRange(start,start+first.length);
+}
+function useContractInsuranceNotice(){
+  const field=document.getElementById('dispatch-notice-body');
+  const pending='[보험 유형 확인 필요]';
+  if(dispatchNoticeKind()!=='reminder'||!field.value.includes(pending))return;
+  field.value=field.value.replaceAll(pending,'배차 시 계약서에서 보험 유형을 확인해 주세요.');
+  editDispatchNotice();
+  document.getElementById('dispatch-notice-reviewed').focus();
+}
 function dispatchNoticeValidation(options={}){
   const r=dispatchNoticeState&&data.find(x=>x.id===dispatchNoticeState.id),phone=normalizeDispatchPhone(document.getElementById('dispatch-notice-phone').value),body=document.getElementById('dispatch-notice-body').value.trim(),channel=dispatchNoticeChannel(),recipient=document.getElementById('dispatch-notice-recipient').value.trim(),errors=[];
   if(!r||r.deletedAt)errors.push('예약이 삭제되었거나 존재하지 않습니다.');
@@ -5335,7 +5358,8 @@ function dispatchNoticeValidation(options={}){
   if(dispatchNoticeKind()==='confirmation'&&dispatchNoticeState?.fieldsDirty)errors.push('추가 입력값이 변경되었습니다. ‘입력값으로 안내문 생성’을 눌러 주세요.');
   if(!body)errors.push('문자 내용을 입력해 주세요.');
   if(body.length>2000)errors.push('문자 내용은 2,000자 이내로 작성해 주세요.');
-  if(/\[[^\]\n]*확인 필요\]/.test(body))errors.push('문자 안의 [확인 필요] 항목을 실제 정보로 수정해 주세요.');
+  const missing=missingNoticeFields(body);
+  if(missing.length)errors.push('발송 전 확인할 항목: '+missing.map(s=>s.slice(1,-1).replace(/ 확인 필요$/,'')).join(', '));
   return{r,phone,body,channel,recipient,errors};
 }
 function refreshDispatchNotice(){
@@ -5354,6 +5378,9 @@ function refreshDispatchNotice(){
   if(sent&&!selectedNoticeSentCurrent(r))notes.push('기존 발송 확인 이후 예약 정보가 변경되었거나 기록 저장에 실패했습니다. 다시 확인해 주세요.');
   if(r&&[r.pickup,r.ret].some(v=>/^(사무실|배달)$/.test(String(v||'').trim())))notes.push('장소가 ‘사무실/배달’로만 기재되어 있습니다. 고객이 알 수 있는 지점·주소를 문자에 적어 주세요.');
   document.getElementById('dispatch-notice-warning').textContent=notes.join('\n');
+  const missing=missingNoticeFields(body);
+  document.getElementById('dispatch-missing-actions').hidden=missing.length===0;
+  document.getElementById('dispatch-contract-option').hidden=confirmation||!missing.includes('[보험 유형 확인 필요]');
   document.getElementById('dispatch-notice-length').textContent=`${body.length.toLocaleString('ko-KR')} / 2,000자 · ${channel==='kakao'?'고객 대화방과 내용을 확인한 뒤 전송하세요.':'장문 문자 요금은 사용하는 통신사·문자 앱 기준입니다.'}`;
   document.getElementById('dispatch-notice-launch').disabled=!!errors.length||!reviewed;
   document.getElementById('dispatch-notice-launch').hidden=channel!=='sms';
