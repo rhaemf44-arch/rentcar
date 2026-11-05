@@ -818,6 +818,7 @@ body.tv-mode{display:block;background:#0b1420}
   #reservation-panel,#reservation-panel .card,#reservation-form-tabpanel,#reservation-parser-tabpanel{overflow:visible!important}
   #reservation-panel .reservation-actions{position:sticky!important;bottom:calc(var(--m-tab-h) + env(safe-area-inset-bottom));z-index:5;margin:0 -16px -16px!important;padding:12px 16px!important;background:#fff;border-top:1px solid var(--m-line)}
   #reservation-panel .reservation-actions .btn{min-height:52px;font-size:16px}
+  #reservation-panel .parser-panel #raw{min-height:clamp(144px,27vh,240px);font-size:16px}
 
   /* 차량 스케줄 */
   #view-schedule-board .card-h{flex-direction:column;align-items:stretch!important}
@@ -1021,14 +1022,14 @@ body.tv-mode{display:block;background:#0b1420}
       <section class="reservation-panel" id="reservation-panel" role="region" aria-labelledby="reservation-panel-title">
         <div class="reservation-panel-head"><div><h2 id="reservation-panel-title">예약 입력</h2><p id="dashboard-date">예약 내용을 입력하고 저장하세요.</p></div></div>
         <div class="reservation-input-tabs" role="tablist" aria-label="예약 입력 방법">
-          <button id="reservation-tab-manual" type="button" role="tab" aria-controls="reservation-form-tabpanel" aria-selected="true" tabindex="0" onclick="setReservationInputTab('manual')" onkeydown="handleReservationTabKey(event,'manual')">직접 입력</button>
-          <button id="reservation-tab-paste" type="button" role="tab" aria-controls="reservation-parser-tabpanel" aria-selected="false" tabindex="-1" onclick="setReservationInputTab('paste')" onkeydown="handleReservationTabKey(event,'paste')">카톡·문자 붙여넣기</button>
+          <button id="reservation-tab-paste" type="button" role="tab" aria-controls="reservation-parser-tabpanel" aria-selected="true" tabindex="0" onclick="setReservationInputTab('paste')" onkeydown="handleReservationTabKey(event,'paste')">카톡·문자 붙여넣기</button>
+          <button id="reservation-tab-manual" type="button" role="tab" aria-controls="reservation-form-tabpanel" aria-selected="false" tabindex="-1" onclick="setReservationInputTab('manual')" onkeydown="handleReservationTabKey(event,'manual')">직접 입력</button>
         </div>
         <div class="reservation-panel-body"><div class="dashboard-input-layout">
-        <section class="card parser-panel" id="reservation-parser-tabpanel" role="tabpanel" aria-labelledby="reservation-tab-paste" hidden>
+        <section class="card parser-panel" id="reservation-parser-tabpanel" role="tabpanel" aria-labelledby="reservation-tab-paste">
           <div class="card-h"><h2>카카오 · 문자 자동 입력</h2><span class="hint">붙여넣기 → 입력</span></div>
           <div class="card-b">
-            <textarea id="raw" placeholder="예약 문자나 카카오톡 원문을 여기에 붙여넣으세요. 자동 입력 후 고객명, 일정, 차량과 금액을 확인하세요."></textarea>
+            <textarea id="raw" aria-label="예약 카톡 또는 문자 원문" placeholder="카톡이나 예약 문자를 여기에 붙여넣으세요."></textarea>
             <div class="parse-actions parser-primary-actions">
               <button class="btn btn-gold" id="smart-parse-btn" onclick="smartParse()">자동 입력</button>
               <button class="btn btn-ghost" onclick="clearRawInput()">지우기</button>
@@ -1047,7 +1048,7 @@ body.tv-mode{display:block;background:#0b1420}
           </div>
         </section>
 
-        <section class="card reservation-form-panel" id="reservation-form-tabpanel" role="tabpanel" aria-labelledby="reservation-tab-manual">
+        <section class="card reservation-form-panel" id="reservation-form-tabpanel" role="tabpanel" aria-labelledby="reservation-tab-manual" hidden>
           <div class="card-h"><h2>예약 등록</h2><span class="hint" id="edit-hint"></span></div>
           <div class="card-b">
             <div class="reservation-form-grid">
@@ -1112,7 +1113,7 @@ body.tv-mode{display:block;background:#0b1420}
     </section>
       <section class="card dashboard-schedule">
         <div class="card-h"><h2 id="dashboard-list-title">예정 예약 · 운행중</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" onclick="clearForm();openReservationPanel('manual')">＋ 예약 추가</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" onclick="clearForm();openReservationPanel()">＋ 예약 추가</button>
             <button class="btn btn-ghost btn-sm" onclick="undo()" id="undo-btn">되돌리기</button>
             <button class="btn btn-ghost btn-sm" onclick="exportExcel()">엑셀</button>
           </div>
@@ -3477,7 +3478,7 @@ let dashboardPeriod='upcoming',dashboardMetric='all';
 function refreshReservationVehicleOptions(){
   const options=document.getElementById('vehicle-options');if(options)options.innerHTML=sortPlates(Object.keys(PLATE_MAP)).map(p=>`<option value="${esc(PLATE_MAP[p].n+' ('+p+')')}">${esc(p)}</option>`).join('');
 }
-function setReservationInputTab(mode='manual',focus=false){
+function setReservationInputTab(mode='paste',focus=false){
   const selected=mode==='paste'?'paste':'manual';
   const panel=document.getElementById('reservation-panel');if(!panel)return;
   panel.hidden=false;
@@ -3491,14 +3492,14 @@ function setReservationInputTab(mode='manual',focus=false){
 function handleReservationTabKey(event,current){
   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
   event.preventDefault();
-  const next=event.key==='Home'?'manual':event.key==='End'?'paste':current==='manual'?'paste':'manual';
+  const next=event.key==='Home'?'paste':event.key==='End'?'manual':current==='manual'?'paste':'manual';
   setReservationInputTab(next);document.getElementById('reservation-tab-'+next).focus();
 }
-function openReservationPanel(mode='manual'){
+function openReservationPanel(mode='paste'){
   if(!document.getElementById('view-dashboard').classList.contains('on'))go2('dashboard');
   setReservationInputTab(mode,true);
 }
-function closeReservationPanel(){setReservationInputTab('manual')}
+function closeReservationPanel(){setReservationInputTab(editId?'manual':'paste')}
 function dashboardDayOffset(day,offset){const d=new Date(day+'T12:00:00+09:00');d.setUTCDate(d.getUTCDate()+offset);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
 function dashboardRange(){const t=todayStr();if(['upcoming','all'].includes(dashboardPeriod))return null;if(dashboardPeriod==='tomorrow'){const d=dashboardDayOffset(t,1);return[d,d]}if(dashboardPeriod==='week'){const weekday=new Date(t+'T12:00:00+09:00').getUTCDay();return[dashboardDayOffset(t,-((weekday+6)%7)),dashboardDayOffset(t,6-((weekday+6)%7))]}return[t,t]}
 function dashboardOpenRecord(r){return r.status!=='cancelled'&&r.status!=='done'}
@@ -4126,7 +4127,11 @@ function exportExcel(){
 
 /* ===== 네비게이션 ===== */
 const TITLES={today:'오늘 업무',more:'더보기',dashboard:'예약 입력',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
-function go(el){document.querySelectorAll('#nav a').forEach(a=>a.classList.remove('on'));el.classList.add('on');go2(el.dataset.v);closeNav()}
+function go(el){
+  go2(el.dataset.v);
+  if(el.dataset.v==='dashboard'&&!editId)setReservationInputTab('paste');
+  closeNav();
+}
 function go2(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-'+v).classList.add('on');
   document.getElementById('page-title').textContent=TITLES[v]||v;
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));updateMobileTabs(v);render()}
@@ -4151,7 +4156,7 @@ function updateMobileTabs(v){
   document.querySelectorAll('.m-tab').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
 }
 function mobileGo(tab){
-  if(tab==='add'){clearForm();openReservationPanel('manual');updateMobileTabs('dashboard');window.scrollTo({top:0});return}
+  if(tab==='add'){clearForm();openReservationPanel();updateMobileTabs('dashboard');window.scrollTo({top:0});return}
   go2(tab);window.scrollTo({top:0});
 }
 function mDayLabel(day){
