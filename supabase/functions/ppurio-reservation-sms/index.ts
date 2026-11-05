@@ -1,6 +1,4 @@
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
-import { HttpsProxyAgent } from "npm:https-proxy-agent@7.0.6";
-import { request } from "node:https";
 import { Buffer } from "node:buffer";
 
 const origin = "https://rhaemf44-arch.github.io";
@@ -12,24 +10,21 @@ const env = (key: string) => Deno.env.get(key)?.trim() || "";
 const digits = (value: string) => value.replace(/[\s()-]/g, "").replace(/^\+820?/, "0");
 
 // Both credential exchange and submission must leave from the registered IPs.
-function ppurio(path: string, authorization: string, payload: object, proxy: HttpsProxyAgent<string>): Promise<{status: number, data: Record<string, string>}> {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify(payload);
-    const req = request("https://message.ppurio.com/v1/" + path, {
-      method: "POST", agent: proxy, signal: AbortSignal.timeout(12000),
-      headers: { Authorization: authorization, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
-    }, res => {
-      let raw = "";
-      res.setEncoding("utf8");
-      res.on("error", reject);
-      res.on("data", part => { raw += part; if (raw.length > 65536) req.destroy(new Error("response too large")); });
-      res.on("end", () => { try { resolve({status: res.statusCode || 0, data: JSON.parse(raw)}); } catch { reject(new Error("provider response")); } });
-    });
-    req.on("error", reject);
-    req.end(body);
-  });
+function createPpurioClient(value: string) {
+  const url = new URL(value);
+  return Deno.createHttpClient({proxy:{
+    url: url.origin,
+    basicAuth:{username:decodeURIComponent(url.username),password:decodeURIComponent(url.password)}
+  }});
 }
-
+async function ppurio(path: string, authorization: string, payload: object, client: Deno.HttpClient) {
+  const response = await fetch("https://message.ppurio.com/v1/" + path, {
+    client, method:"POST", redirect:"error", signal:AbortSignal.timeout(12000),
+    headers:{Authorization:authorization,"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+  return {status:response.status, data:await response.json()};
+}
 async function ledger(query: string, method: string, body?: object) {
   const secret = env("SUPABASE_SERVICE_ROLE_KEY");
   return fetch(env("SUPABASE_URL") + "/rest/v1/ppurio_requests" + query, {
@@ -55,13 +50,14 @@ Deno.serve(async req => {
     const {action,reservationId,kind,phone,body} = await req.json();
     const authorization="Basic "+Buffer.from(account+":"+key).toString("base64");
     if(action==="check"){
-      const proxy=new HttpsProxyAgent(proxyUrl);
+      const proxy=createPpurioClient(proxyUrl);
       try{
         const check=await ppurio("token",authorization,{},proxy);
         if(check.status===200 && check.data.token)return reply(200,"뿌리오 연결을 확인했습니다. 문자 발송을 사용할 수 있습니다.");
-        return reply(502,"인증에 실패했습니다. 뿌리오 연동 IP와 API 인증키를 확인하세요.");
+        const code=String(check.data.code||check.status).replace(/[^0-9]/g,"").slice(0,8);
+        return reply(502,"인증에 실패했습니다. 뿌리오 연동 IP와 API 인증키를 확인하세요. ("+code+")");
       }catch{return reply(502,"고정 IP 경유 연결을 확인할 수 없습니다.");}
-      finally{proxy.destroy();}
+      finally{proxy.close();}
     }
     if (typeof reservationId!=="string" || !/^[^/\s]{1,128}$/.test(reservationId) || !["confirmation","reminder"].includes(kind) || typeof phone!=="string" || !/^01[016789]\d{7,8}$/.test(phone) || typeof body!=="string" || !body.trim() || body.length>2000) return reply(400,"예약, 수신번호 또는 내용을 확인하세요.");
     const doc = await fetch("https://firestore.googleapis.com/v1/projects/"+project+"/databases/(default)/documents/reservations/"+encodeURIComponent(reservationId),{headers:{Authorization:"Bearer "+token},signal:AbortSignal.timeout(6000)});
@@ -73,7 +69,6 @@ Deno.serve(async req => {
     const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify([reservationId,kind,phone,body])));
     const id=Buffer.from(digest).toString("hex");
     const query="?id=eq."+id;
-    const proxy=new HttpsProxyAgent(proxyUrl);
     const claim=await ledger("","POST",{id,state:"processing"});
     if(claim.status===409){
       const existing=await ledger(query+"&select=state","GET");
@@ -82,7 +77,9 @@ Deno.serve(async req => {
     }
     if(!claim.ok) return reply(503,"발송 기록을 준비하지 못했습니다.");
     let submitted=false;
+    let proxy: Deno.HttpClient | undefined;
     try {
+      proxy=createPpurioClient(proxyUrl);
       const auth=await ppurio("token",authorization,{},proxy);
       if(auth.status!==200 || !auth.data.token) throw new Error("token");
       // Korean characters occupy two bytes in domestic SMS; use LMS if in doubt.
@@ -102,6 +99,6 @@ Deno.serve(async req => {
     } catch {
       if(!submitted){await ledger(query,"DELETE");return reply(502,"뿌리오 인증에 실패했습니다. 등록 IP와 인증키를 확인하세요.");}
       return reply(502,"접수 여부를 확인할 수 없습니다. 중복 발송 방지를 위해 뿌리오 발송결과를 먼저 확인하세요.");
-    } finally { proxy.destroy(); }
+    } finally { proxy?.close(); }
   } catch { return reply(503,"발송 처리 상태를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요."); }
 });
