@@ -1067,7 +1067,7 @@ body.tv-mode{display:block;background:#0b1420}
               <div class="reservation-row-meta">
                 <div class="field"><label for="f-days">일수</label><input id="f-days" type="number" min="1" placeholder="3"></div>
                 <div class="field"><label>보험</label>
-                  <select id="f-ins"><option value="">미정</option><option value="일반면책" selected>일반면책</option><option value="완전자차">완전면책</option></select>
+                  <select id="f-ins"><option value="일반면책" selected>일반면책</option><option value="완전자차">완전면책</option></select>
                 </div>
                 <div class="field"><label>상태</label>
                   <select id="f-status"><option value="wait">대기</option><option value="active">운행중</option><option value="done">완료</option><option value="cancelled">취소</option></select>
@@ -2362,6 +2362,19 @@ function parseRawToObjectBase(raw){
   return mergeImportedRuleResult(local,parseImportedRules(raw,yr));
 }
 
+function coverageLabel(value){
+  switch(String(value??'').trim()){
+    case '완전':case '완전자차':case '완전면책':return '완전면책';
+    case '일반':case '일반자차':case '일반면책':return '일반면책';
+    default:return '';
+  }
+}
+function reservationInsurance(r){return coverageLabel(r.ins)||coverageLabel(r.insurance)||'일반면책'}
+function normalizeStoredCoverage(r,legacyInsurance=r.insurance){
+  const legacyFee=[r.ins,legacyInsurance].find(v=>v==='자포'||v==='자별');
+  if(!r.insuranceFee&&legacyFee)r.insuranceFee=legacyFee==='자포'?'included':'excluded';
+  r.ins=(coverageLabel(r.ins)||coverageLabel(legacyInsurance))==='완전면책'?'완전자차':'일반면책';
+}
 const INSURANCE_VALUES=['','자포','자별','완전자차','일반면책'];
 function normalizeInsurance(v){
   v=String(v||'').trim();
@@ -2547,7 +2560,7 @@ function applyParsedResult(r){
   const plate=resolvePlate(r.plate),car=(plate&&PLATE_MAP[plate]?PLATE_MAP[plate].n:r.car)||'';
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
   set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
-  document.getElementById('f-ins').value=['완전자차','일반면책'].includes(r.insurance)?r.insurance:'일반면책';
+  // Insurance is selected by staff; parsing must preserve the form selection.
   populateFinanceForm(r);
   set('f-memo',[r.memo,buildFinancialMemo(r,r.memo)].filter(Boolean).join(' · '));
   applyLocationPairToForm(r.pickup,r.return_location);
@@ -2877,7 +2890,7 @@ function renderKakaoAnalysis(messageCount=0,clusterCount=0){
 }
 function kakaoDisplayName(e){return reservationCustomerName({name:[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||e.name||''})}
 function kakaoCarField(e,existing=''){const source=String(e.car||existing||'').trim(),p=resolvePlate(e.plate)||e.plate||reservationVehicleId({car:source}),car=source?reservationVehicleName({car:source}):'';return [car,p?`(${p})`:''].filter(Boolean).join(' ')}
-function fillKakaoEventForm(e){clearForm();populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);document.getElementById('f-ins').value=['일반면책','완전자차'].includes(e.insurance)?e.insurance:'일반면책';set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
+function fillKakaoEventForm(e){clearForm();populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
 function chooseKakaoMatch(e){
   const matches=matchKakaoReservation(e).filter(m=>m.score>=50);if(!matches.length)return null;const top=matches[0],second=matches[1];if(top.score>=80&&(!second||top.score-second.score>=30))return data.find(r=>r.id===top.reservationId);
   const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${reservationCustomerName(r)} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
@@ -2892,7 +2905,7 @@ function applyKakaoRow(i){
   snapshot();const before=JSON.parse(JSON.stringify(target)),changed=[];const setField=(key,val)=>{if(val!==''&&val!=null&&target[key]!==val){target[key]=val;changed.push(key)}};
   if(e.action==='CANCEL'){setField('status','cancelled')}
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
-  if(e.action==='UPDATE'){if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance'))setField('ins',e.insurance)}
+  if(e.action==='UPDATE'){if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
   if(['UPDATE','LOCATION_UPDATE'].includes(e.action)){if(e.pickup)setField('pickup',e.pickup);if(e.returnLocation)setField('ret',e.returnLocation)}
   if(e.action==='PAYMENT_UPDATE'){if(e.total!=null)setField('total',e.total);if(e.deposit!=null){setField('deposit',e.deposit);setField('paid',e.deposit)}if(e.balance!=null){setField('balance',e.balance);if(moneyNumber(target.total)!==null)setField('paid',Math.max(0,moneyNumber(target.total)-e.balance));else setField('paid',null)}if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
   const extra=[e.memo,...(e.operationNotes||[]),buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod}),e.paymentStatus?`결제상태 ${e.paymentStatus}`:''].filter(Boolean).join(' · ');if(extra&&!String(target.memo||'').includes(extra))setField('memo',[target.memo,extra].filter(Boolean).join(' · '));
@@ -2913,7 +2926,7 @@ function kakaoEventToReservation(e){
     start:e.start||'',
     end:e.end||'',
     days:e.days||'',
-    ins:e.insurance||'',
+    ins:'일반면책',
     status:'wait',
     pickup:e.pickup||'사무실',
     ret:e.returnLocation||e.pickup||'사무실',
@@ -3265,6 +3278,7 @@ function saveRes(){
     if(!current){toast('다른 화면에서 삭제된 예약입니다. 신규 예약으로 확인해 주세요.');return}
     if(_editFormBaseline&&_editingOriginal){const merged=mergeReservationForm(current,form,_editFormBaseline,_editingOriginal);if(merged.error){toast(merged.error);return}r=merged.record}else r={...current,...r};
   }
+  normalizeStoredCoverage(r);
   const invalid=validateReservation(r);if(invalid){toast(invalid);return}
   if(!confirmReservationWarnings(r))return;
   snapshot();if(editId)data[data.findIndex(x=>x.id===editId)]=r;else data.unshift(r);
@@ -3304,7 +3318,7 @@ function editRes(id,position=captureEditReturnPosition()){
   const r=normalizeReservationLocationRecord(original);clearForm();
   editReturnPosition=position;
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
-  set('f-ins',['일반면책','완전자차'].includes(r.ins)?r.ins:'');set('f-status',r.status||'wait');set('f-memo',r.memo);
+  set('f-ins',reservationInsurance(r)==='완전면책'?'완전자차':'일반면책');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
   const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
   editId=id;_editingOriginal=JSON.parse(JSON.stringify(original));_editFormBaseline=reservationFormRecord();
@@ -3364,7 +3378,7 @@ function resCard(r,withNotice=false){
   const alerts=dashboardAttentionReasons(r);
   return `<article class="res ${today?'today':''} ${conflict?'conflict':''}">
     <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(reservationCustomerName(r))}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
-    <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(r.ins||'미정')}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<details class="full res-memo"><summary>메모 보기</summary><div class="res-memo-content">${esc(r.memo)}</div></details>`:''}</div>
+    <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(reservationInsurance(r))}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<details class="full res-memo"><summary>메모 보기</summary><div class="res-memo-content">${esc(r.memo)}</div></details>`:''}</div>
     ${alerts.length?`<div class="res-alert">${esc(alerts.join(' · '))}</div>`:''}
     <div class="res-actions">${phone?`<a class="res-action" href="tel:${esc(phone)}">전화</a>`:''}${mapUrl?`<a class="res-action" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">길찾기</a>`:''}${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r)}<button class="link" onclick="editRes(${id})">수정</button><button class="link del" onclick="delRes(${id})">삭제</button></div>
   </article>`;
@@ -4165,7 +4179,7 @@ function exportExcel(){
     const carName=reservationVehicleName(r);
     return {대여예정일시:fmt(r.start)==='-'?'':fmt(r.start),반납예정일시:fmt(r.end)==='-'?'':fmt(r.end),
       차량:carName,차량번호:plate,임차인명:reservationCustomerName(r),임차인연락처:r.phone,배차:r.pickup,회차:r.ret||r.pickup||'사무실',
-      잔금:r.balance||'',보험:r.ins,무보험차상해:'불가',일수:r.days,상태:map[r.status]||r.status};
+      잔금:r.balance||'',보험:reservationInsurance(r),무보험차상해:'불가',일수:r.days,상태:map[r.status]||r.status};
   });
   const ws=XLSX.utils.json_to_sheet(out);
   ws['!cols']=[{wch:15},{wch:15},{wch:14},{wch:10},{wch:14},{wch:15},{wch:26},{wch:22},{wch:12},{wch:8},{wch:10},{wch:5},{wch:7}];
@@ -4348,7 +4362,7 @@ function renderMobileSheet(){
       <div><dt>배차</dt><dd><b>${esc(fmtShort(r.start))}</b><small>${esc(r.pickup||'장소 미정')}</small></dd></div>
       <div><dt>반납</dt><dd><b>${esc(fmtShort(r.end))}</b><small>${esc(r.ret||r.pickup||'장소 미정')}</small></dd></div>
       ${r.days?`<div><dt>기간</dt><dd>${esc(r.days)}일</dd></div>`:''}
-      <div><dt>보험</dt><dd>${esc(r.ins||'미정')}</dd></div>
+      <div><dt>보험</dt><dd>${esc(reservationInsurance(r))}</dd></div>
       ${r.memo?`<div><dt>메모</dt><dd style="white-space:pre-wrap">${esc(r.memo)}</dd></div>`:''}
     </dl>
     <div class="m-money"><div><span>총액</span><b>${won(total)}</b></div><div><span>입금</span><b>${won(paid)}</b></div><div class="${balance>0?'due':''}"><span>잔금</span><b>${balance===null?'미확인':won(balance)}</b></div></div>`;
@@ -4712,7 +4726,7 @@ function auditEventToReservation(e){
   const car=[e.car||'',plate?`(${plate})`:''].filter(Boolean).join(' ');
   return normalizeReservationLocationRecord({
     id:uid(),name,phone:e.phone||'',car,start:e.start||'',end:e.end||'',days:e.days||'',
-    ins:e.insurance||'',status:'wait',pickup:e.pickup||'사무실',ret:e.returnLocation||e.pickup||'사무실',
+    ins:'일반면책',status:'wait',pickup:e.pickup||'사무실',ret:e.returnLocation||e.pickup||'사무실',
     total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
@@ -5072,6 +5086,7 @@ function normalizeJSONPasteRecord(raw,index){
   const fields=['name','phone','car','vehicleId','start','end','days','ins','insuranceFee','paymentMethod','pickup','ret','memo','sourceFile','sourceRow','sourceBatch'];
   fields.forEach(key=>{if(Object.prototype.hasOwnProperty.call(raw,key))r[key]=jsonPasteText(raw[key],key,errors,key==='memo'?20000:2000)});
   for(const key of ['name','phone','car','vehicleId','start','end','ins','insuranceFee','paymentMethod'])r[key]=String(r[key]||'').trim();
+  normalizeStoredCoverage(r,raw.insurance);
   if(!Object.prototype.hasOwnProperty.call(raw,'ret')&&Object.prototype.hasOwnProperty.call(raw,'returnLocation'))r.ret=jsonPasteText(raw.returnLocation,'반납 장소',errors,2000);
   r.memo=String(r.memo||'');
   r.status=raw.status==null||raw.status===''?'wait':String(raw.status);
@@ -5137,7 +5152,7 @@ function renderJSONPastePlan(plan){
   const money=v=>v==null?'미정':Number(v).toLocaleString('ko-KR')+'원';
   const rowHTML=plan.rows.map(row=>{
     const r=row.record||{},warning=[row.conflicts.length?`차량 일정 ${row.conflicts.length}건 겹침`:'',row.tight?'준비시간 1시간 미만':''].filter(Boolean).join(' · ');
-    return`<tr><td>${row.index}</td><td><span class="json-paste-tag ${row.status}">${row.status==='new'?'추가 대상':row.status==='duplicate'?'중복 제외':'오류 제외'}</span><small>${esc(row.reason)}</small>${warning?`<small class="json-paste-warning">${esc(warning)}</small>`:''}</td><td>${esc(reservationCustomerName(r))}<small>${esc(r.phone||'연락처 미기재')}</small></td><td>${esc(r.car||'-')}</td><td>${esc(r.start||'-')}<small>~ ${esc(r.end||'-')}</small></td><td>총 ${esc(money(r.total))}<small>입금 ${esc(money(r.paid))}</small><small>잔금 ${esc(money(r.balance))}</small></td><td>${esc(r.ins||'보험 미기재')}<small>${esc(r.paymentMethod||'결제수단 미기재')}</small></td><td>배차 ${esc(r.pickup||'-')}<small>반납 ${esc(r.ret||'-')}</small></td><td><details><summary>메모·ID 확인</summary><div class="json-paste-memo">${esc(r.memo||'메모 없음')}</div><small>${esc(r.id||'ID 없음')}</small></details></td></tr>`;
+    return`<tr><td>${row.index}</td><td><span class="json-paste-tag ${row.status}">${row.status==='new'?'추가 대상':row.status==='duplicate'?'중복 제외':'오류 제외'}</span><small>${esc(row.reason)}</small>${warning?`<small class="json-paste-warning">${esc(warning)}</small>`:''}</td><td>${esc(reservationCustomerName(r))}<small>${esc(r.phone||'연락처 미기재')}</small></td><td>${esc(r.car||'-')}</td><td>${esc(r.start||'-')}<small>~ ${esc(r.end||'-')}</small></td><td>총 ${esc(money(r.total))}<small>입금 ${esc(money(r.paid))}</small><small>잔금 ${esc(money(r.balance))}</small></td><td>${esc(reservationInsurance(r))}<small>${esc(r.paymentMethod||'결제수단 미기재')}</small></td><td>배차 ${esc(r.pickup||'-')}<small>반납 ${esc(r.ret||'-')}</small></td><td><details><summary>메모·ID 확인</summary><div class="json-paste-memo">${esc(r.memo||'메모 없음')}</div><small>${esc(r.id||'ID 없음')}</small></details></td></tr>`;
   }).join('');
   document.getElementById('json-paste-preview').innerHTML=`<div class="json-paste-table-wrap"><table class="json-paste-table"><thead><tr><th>행</th><th>검증</th><th>고객</th><th>차량</th><th>대여·반납</th><th>금액</th><th>보험·결제</th><th>장소</th><th>원문 메모</th></tr></thead><tbody>${rowHTML}</tbody></table></div>`;
   const button=document.getElementById('json-paste-commit');button.disabled=!plan.newRecords.length||jsonPasteCommitting;button.textContent=`검증통과 ${plan.newRecords.length}건 추가`;
@@ -5200,7 +5215,7 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
         <div class="confirmation-notice-grid">
           <div class="field"><label for="confirmation-notice-number">예약번호</label><input id="confirmation-notice-number" maxlength="100" placeholder="예약번호 입력" oninput="editConfirmationNoticeFields()"></div>
           <div class="field"><label for="confirmation-notice-fuel">유종</label><input id="confirmation-notice-fuel" maxlength="60" placeholder="예: LPG, 디젤, 가솔린" oninput="editConfirmationNoticeFields()"></div>
-          <div class="field"><label for="confirmation-notice-insurance">보험 · 일반/완전</label><select id="confirmation-notice-insurance" onchange="editConfirmationInsuranceField('insurance')"><option value="">보험 선택</option><option value="일반면책">일반면책</option><option value="완전면책">완전면책</option></select></div>
+          <div class="field"><label for="confirmation-notice-insurance">보험 · 일반/완전</label><select id="confirmation-notice-insurance" onchange="editConfirmationInsuranceField('insurance')"><option value="일반면책" selected>일반면책</option><option value="완전면책">완전면책</option></select></div>
           <div class="field"><label for="confirmation-notice-deductible">자차면책금</label><input id="confirmation-notice-deductible" maxlength="100" placeholder="예: 50만원, 0원" oninput="editConfirmationInsuranceField('deductible')"></div>
           <div class="field"><label for="confirmation-notice-limit">자차한도</label><input id="confirmation-notice-limit" maxlength="100" placeholder="예: 500만원, 무제한" oninput="editConfirmationInsuranceField('limit')"></div>
         </div>
@@ -5213,7 +5228,6 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
       <div class="dispatch-notice-warning" id="dispatch-notice-warning" role="status"></div>
       <div id="dispatch-missing-actions" hidden>
         <button class="btn btn-ghost btn-sm" type="button" onclick="selectMissingNoticeField()">본문에서 수정하기</button>
-        <span id="dispatch-contract-option" hidden><button class="btn btn-ghost btn-sm" type="button" onclick="useContractInsuranceNotice()">보험 유형은 계약서 확인으로 안내</button></span>
       </div>
       <details id="dispatch-notice-sent-record" class="dispatch-notice-sent-record" hidden><summary>최근 보낸 기록 보기</summary><div id="dispatch-notice-sent-meta"></div><pre id="dispatch-notice-sent-body"></pre></details>
     </div>
@@ -5269,7 +5283,7 @@ function dispatchNoticeFormat(value){
 function buildDispatchNotice(r){
   const loc=dispatchNoticeLocations(r),name=reservationCustomerName(r),plate=reservationVehicleId(r);
   const car=(String(r.car||'').trim()||plate)?reservationVehicleName(r):'[차량 확인 필요]';
-  const insurance={'일반면책':'일반면책','일반자차':'일반면책','완전자차':'완전면책','완전면책':'완전면책'}[String(r.ins||'').trim()]||'[보험 유형 확인 필요]';
+  const insurance=reservationInsurance(r);
   return ['[경일렌트카] 배차 전 예약 안내',name?`${name} 고객님, 예약하신 차량 이용 안내드립니다.`:'안녕하세요. 예약하신 차량 이용 안내드립니다.','',`차량 : ${car}${plate?' ('+plate+')':''}`,`배차 일시 : ${dispatchNoticeFormat(r.start)}`,`반차 일시 : ${dispatchNoticeFormat(r.end)}`,`배차지 : ${loc.pickup||'[배차지 확인 필요]'}`,`반차지 : ${loc.ret||'[반차지 확인 필요]'}`,'','[차량 이용 주의사항]','- 운전면허증을 지참해 주세요.','- 출발 전 차량 외관과 연료·충전량을 함께 확인해 주세요.','- 사고·고장 발생 시 즉시 경일렌트카로 연락해 주세요.','','[보험 안내]',`보험 : ${insurance}`,'자차면책금·보상한도는 계약서 기준으로 적용되며, 배차 시 확인해 주세요.','', '자차보험 면책사항 : 휠·타이어·앞유리 파손은 자차보험 보상 대상에서 제외됩니다.','실내 클리닝 비용 : 실내 흡연·음식물 등으로 오염이 발생하면 클리닝 비용이 청구될 수 있습니다.'].join('\n');
 }
 // Confirmation messages have independent drafts and send records: they never clear the 24-hour reminder.
@@ -5282,9 +5296,8 @@ function confirmationNoticeFuel(r){
   if(vehicle&&reservationVehicleName(r).replace(/\s/g,'')===String(vehicle.n||'').replace(/\s/g,''))return confirmationNoticeValue(vehicle.fuel);
   return '';
 }
-function confirmationNoticeInsurance(value){return {'일반':'일반면책','일반면책':'일반면책','일반자차':'일반면책','완전':'완전면책','완전자차':'완전면책','완전면책':'완전면책'}[String(value??'').trim()]||''}
 function confirmationNoticeTerm(value){const s=String(value??'').trim();return s==='없음'?s:confirmationNoticeValue(s)}
-function confirmationNoticeFields(r){return{number:confirmationNoticeValue(r.reservationNumber),fuel:confirmationNoticeFuel(r),deductible:confirmationNoticeTerm(r.insuranceDeductible??r.deductible),limit:confirmationNoticeTerm(r.insuranceLimit??r.coverageLimit),insurance:confirmationNoticeInsurance(r.ins)}}
+function confirmationNoticeFields(r){return{number:confirmationNoticeValue(r.reservationNumber),fuel:confirmationNoticeFuel(r),deductible:confirmationNoticeTerm(r.insuranceDeductible??r.deductible),limit:confirmationNoticeTerm(r.insuranceLimit??r.coverageLimit),insurance:reservationInsurance(r)}}
 function confirmationNoticeSource(r){
   // Keep the original fingerprint layout so existing drafts and send records stay valid.
   // Reservation insurance already participates through dispatchNoticeSource(r).
@@ -5307,7 +5320,7 @@ function confirmationNoticeDuration(r){
 }
 function buildConfirmationNotice(r,fields=confirmationNoticeFields(r)){
   const required=(value,label)=>confirmationNoticeValue(value)||`[${label} 확인 필요]`,loc=dispatchNoticeLocations(r),total=moneyNumber(r.total),balance=reservationBalance(r);
-  const insurance=confirmationNoticeInsurance(fields.insurance===undefined?r.ins:fields.insurance)||'[보험 유형 확인 필요]';
+  const insurance=coverageLabel(fields.insurance)||reservationInsurance(r);
   const method=confirmationNoticeValue(r.paymentMethod||r.payment_method),payment={'카드':'카드결제','이체':'계좌이체','현금':'현금결제'}[method]||method;
   const car=(String(r.car||'').trim()||reservationVehicleId(r))?reservationVehicleName(r):'';
   const amount=(value,label)=>value===null?`[${label} 확인 필요]`:value.toLocaleString('ko-KR')+'원';
@@ -5315,22 +5328,20 @@ function buildConfirmationNotice(r,fields=confirmationNoticeFields(r)){
 }
 function readConfirmationNoticeFields(){return{insurance:document.getElementById('confirmation-notice-insurance').value,number:document.getElementById('confirmation-notice-number').value.trim(),fuel:document.getElementById('confirmation-notice-fuel').value.trim(),deductible:document.getElementById('confirmation-notice-deductible').value.trim(),limit:document.getElementById('confirmation-notice-limit').value.trim()}}
 function setConfirmationNoticeFields(fields){for(const [key,suffix] of Object.entries({number:'number',fuel:'fuel',insurance:'insurance',deductible:'deductible',limit:'limit'}))document.getElementById('confirmation-notice-'+suffix).value=fields?.[key]??''}
-function confirmationNoticeBaseline(r){return{fields:confirmationNoticeFields(r),vehicle:JSON.stringify([String(r.car||''),reservationVehicleId(r),reservationVehicleName(r)]),insurance:String(r.ins||'')}}
+function confirmationNoticeBaseline(r){return{fields:confirmationNoticeFields(r),vehicle:JSON.stringify([String(r.car||''),reservationVehicleId(r),reservationVehicleName(r)]),insurance:reservationInsurance(r)}}
 function editConfirmationNoticeFields(){if(dispatchNoticeState)dispatchNoticeState.fieldsDirty=true;editDispatchNotice()}
 function editConfirmationInsuranceField(key){
   const state=dispatchNoticeState,label={insurance:'보험',deductible:'자차면책금',limit:'자차한도'}[key];
   if(!state||dispatchNoticeKind()!=='confirmation'||!label)return;
-  const fields=readConfirmationNoticeFields(),value=key==='insurance'?(confirmationNoticeInsurance(fields.insurance)||'[보험 유형 확인 필요]'):(confirmationNoticeTerm(fields[key])||`[${label} 확인 필요]`);
+  const fields=readConfirmationNoticeFields(),value=key==='insurance'?(coverageLabel(fields.insurance)||'일반면책'):(confirmationNoticeTerm(fields[key])||`[${label} 확인 필요]`);
   const update=text=>{let found=false;const lines=String(text||'').split('\n').map(line=>{if(new RegExp('^\\s*'+label+'\\s*[:：]').test(line)){found=true;return label+' : '+value}return line});if(!found)lines.push(label+' : '+value);return lines.join('\n')};
   document.getElementById('dispatch-notice-body').value=update(document.getElementById('dispatch-notice-body').value);
   state.generatedBody=update(state.generatedBody);editDispatchNotice();
 }
 function confirmationNoticeRestoredFields(r,draft){
   const fields={...confirmationNoticeFields(r),...draft?.fields};
-  if(draft&&draft.fields?.insurance===undefined){
-    const line=String(draft.body||'').split('\n').find(text=>/^보험\s*[:：]/.test(text.trim()));
-    const saved=line&&confirmationNoticeInsurance(line.replace(/^\s*보험\s*[:：]\s*/,''));if(saved)fields.insurance=saved;
-  }
+  const savedLine=String(draft?.body||'').match(/^[ \t]*보험[ \t]*[:：][ \t]*([^\r\n]+)$/m);
+  fields.insurance=coverageLabel(draft?.fields?.insurance)||coverageLabel(savedLine?.[1])||reservationInsurance(r);
   return fields;
 }
 function loadDispatchNoticeKind(r,kind){
@@ -5342,7 +5353,9 @@ function loadDispatchNoticeKind(r,kind){
   document.getElementById('dispatch-notice-channel').value=matching?(draft.channel==='kakao'?'kakao':'sms'):(r[noticeSentKey(kind)]?.channel==='kakao'?'kakao':'sms');
   document.getElementById('dispatch-notice-recipient').value=matching?draft.recipient??reservationCustomerName(r):reservationCustomerName(r);
   document.getElementById('dispatch-notice-phone').value=matching?draft.phone??'':r.phone||'';
-  document.getElementById('dispatch-notice-body').value=matching?draft.body||state.generatedBody:state.generatedBody;
+  const body=matching?draft.body||state.generatedBody:state.generatedBody;
+  const insurance=kind==='confirmation'?fields.insurance:reservationInsurance(r);
+  document.getElementById('dispatch-notice-body').value=body.replace(/^(보험[ \t]*[:：][ \t]*)(?:\[보험 유형 확인 필요\]|미정|배차 시 계약서에서 보험 유형을 확인해 주세요\.)[ \t]*$/gm,'$1'+insurance);
   document.getElementById('dispatch-notice-reviewed').checked=false;
   document.getElementById('dispatch-notice-result').textContent=matching?(cached?'작성 중인 안내를 불러왔습니다.':draft===sent?'최근 보낸 안내를 불러왔습니다. 다시 보내려면 내용을 확인해 주세요.':'저장한 초안을 불러왔습니다.'):draft?'예약 정보가 바뀌어 최신 정보로 새 초안을 작성했습니다.':'';
 }
@@ -5399,14 +5412,6 @@ function selectMissingNoticeField(){
   field.focus();
   field.setSelectionRange(start,start+first.length);
 }
-function useContractInsuranceNotice(){
-  const field=document.getElementById('dispatch-notice-body');
-  const pending='[보험 유형 확인 필요]';
-  if(dispatchNoticeKind()!=='reminder'||!field.value.includes(pending))return;
-  field.value=field.value.replaceAll(pending,'배차 시 계약서에서 보험 유형을 확인해 주세요.');
-  editDispatchNotice();
-  document.getElementById('dispatch-notice-reviewed').focus();
-}
 function dispatchNoticeValidation(options={}){
   const r=dispatchNoticeState&&data.find(x=>x.id===dispatchNoticeState.id),phone=normalizeDispatchPhone(document.getElementById('dispatch-notice-phone').value),body=document.getElementById('dispatch-notice-body').value.trim(),channel=dispatchNoticeChannel(),recipient=document.getElementById('dispatch-notice-recipient').value.trim(),errors=[];
   if(!r||r.deletedAt)errors.push('예약이 삭제되었거나 존재하지 않습니다.');
@@ -5444,7 +5449,6 @@ function refreshDispatchNotice(){
   document.getElementById('dispatch-notice-warning').textContent=notes.join('\n');
   const missing=missingNoticeFields(body);
   document.getElementById('dispatch-missing-actions').hidden=missing.length===0;
-  document.getElementById('dispatch-contract-option').hidden=confirmation||!missing.includes('[보험 유형 확인 필요]');
   document.getElementById('dispatch-notice-length').textContent=`${body.length.toLocaleString('ko-KR')} / 2,000자`;
   const apiButton=document.getElementById('dispatch-notice-api');
   apiButton.hidden=channel!=='sms';
