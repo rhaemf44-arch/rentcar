@@ -5131,7 +5131,7 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
       <label class="dispatch-notice-review"><input type="checkbox" id="dispatch-notice-reviewed" onchange="refreshDispatchNotice()"><span>받는 고객, 배차·반차 장소, 차량 주의사항과 보험 내용을 확인했습니다.</span></label>
       <details id="dispatch-notice-sent-record" class="dispatch-notice-sent-record" hidden><summary>최근 보낸 기록 보기</summary><div id="dispatch-notice-sent-meta"></div><pre id="dispatch-notice-sent-body"></pre></details>
     </div>
-    <footer class="dispatch-notice-foot"><div class="actions"><button class="btn btn-ghost" onclick="saveDispatchNoticeDraft()">초안 저장</button><button class="btn btn-ghost" onclick="copyDispatchNotice()">내용 복사</button><button class="btn btn-gold" id="dispatch-notice-launch" onclick="launchDispatchSMS()" disabled>휴대폰 문자 앱 열기</button><button class="btn btn-kakao" id="dispatch-notice-kakao" onclick="launchDispatchKakao()" hidden disabled>카카오톡 공유 메뉴 열기</button><button class="btn btn-gold" id="dispatch-notice-confirm" onclick="markDispatchNoticeSent()" disabled>문자 보냈다</button></div><small>전송 후 ‘보냈다’를 눌러 기록하세요. 앱 열기·공유·복사만으로는 보냈다로 바뀌지 않습니다. 기록 시각은 직원이 확인한 시각입니다.</small><small id="dispatch-notice-device-help"></small><div class="dispatch-notice-result" id="dispatch-notice-result" role="status" aria-live="polite"></div></footer>
+    <footer class="dispatch-notice-foot"><div class="actions"><button class="btn btn-ghost" onclick="saveDispatchNoticeDraft()">초안 저장</button><button class="btn btn-ghost" onclick="copyDispatchNotice()">내용 복사</button><button class="btn btn-gold" id="dispatch-notice-api" onclick="sendReservationSms()" disabled>뿌리오 문자 발송</button><button class="btn btn-ghost" id="dispatch-notice-launch" onclick="launchDispatchSMS()" disabled>휴대폰 문자 앱 열기</button><button class="btn btn-kakao" id="dispatch-notice-kakao" onclick="launchDispatchKakao()" hidden disabled>카카오톡 공유 메뉴 열기</button><button class="btn btn-gold" id="dispatch-notice-confirm" onclick="markDispatchNoticeSent()" disabled>문자 보냈다</button></div><small>문자 앱이나 카카오톡에서 전송 후 ‘보냈다’를 눌러 기록하세요. 앱 열기·공유·복사만으로는 보냈다로 바뀌지 않습니다. 기록 시각은 직원이 확인한 시각입니다.</small><small id="dispatch-api-receipt"></small><details id="dispatch-api-device"><summary>발송 기기 등록 · 연결 확인</summary><small>승인용 기기 번호: <b id="dispatch-api-uid"></b></small><button type="button" class="btn btn-ghost btn-sm" onclick="checkSmsConnection(this)">뿌리오 연결 확인</button></details><small id="dispatch-notice-device-help"></small><div class="dispatch-notice-result" id="dispatch-notice-result" role="status" aria-live="polite"></div></footer>
   </div>
 </section>
 <script>
@@ -5321,6 +5321,13 @@ function refreshDispatchNotice(){
   document.getElementById('dispatch-notice-length').textContent=`${body.length.toLocaleString('ko-KR')} / 2,000자 · ${channel==='kakao'?'고객 대화방과 내용을 확인한 뒤 전송하세요.':'장문 문자 요금은 사용하는 통신사·문자 앱 기준입니다.'}`;
   document.getElementById('dispatch-notice-launch').disabled=!!errors.length||!reviewed;
   document.getElementById('dispatch-notice-launch').hidden=channel!=='sms';
+  const apiButton=document.getElementById('dispatch-notice-api');
+  apiButton.hidden=channel!=='sms';
+  apiButton.disabled=!!errors.length||!reviewed||ppurioBusy;
+  document.getElementById('dispatch-api-device').hidden=channel!=='sms';
+  document.getElementById('dispatch-api-uid').textContent=auth.currentUser?.uid||'로그인 연결을 확인해 주세요.';
+  const receipt=r?.ppurioReceipts?.[kind];
+  document.getElementById('dispatch-api-receipt').textContent=channel==='sms'&&receipt?'최근 뿌리오 접수 · '+dispatchNoticeShortTime(receipt.at):'';
   document.getElementById('dispatch-notice-kakao').hidden=channel!=='kakao';
   document.getElementById('dispatch-notice-kakao').disabled=!!errors.length||!reviewed;
   document.getElementById('dispatch-notice-kakao').textContent=dispatchNoticeCanShare(body)?'카카오톡 공유 메뉴 열기':'카카오톡용 내용 복사';
@@ -5363,6 +5370,51 @@ function readyDispatchNotice(options={}){
   const payload=dispatchNoticeValidation(options);refreshDispatchNotice();
   if(payload.errors.length||!document.getElementById('dispatch-notice-reviewed').checked){toast('고객 번호와 문자 내용을 확인해 주세요.');return null}
   return payload;
+}
+let ppurioBusy=false;
+async function requestSmsApi(payload){
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch(SUPABASE_URL+'/functions/v1/ppurio-reservation-sms',{
+    method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,apikey:SUPABASE_ANON_KEY},
+    body:JSON.stringify(payload)
+  });
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.message||'뿌리오 발송 서비스에 연결할 수 없습니다.');
+  return result;
+}
+async function checkSmsConnection(button){
+  const output=document.getElementById('dispatch-notice-result');
+  if(!auth.currentUser){output.textContent='예약관리 로그인 연결을 확인하세요.';return;}
+  button.disabled=true;
+  try{const result=await requestSmsApi({action:'check'});output.textContent=result.message;}
+  catch(error){output.textContent=error.message||'연결을 확인할 수 없습니다.';}
+  finally{button.disabled=false;}
+}
+async function sendReservationSms(){
+  if(ppurioBusy)return;
+  const payload=readyDispatchNotice();
+  if(!payload||payload.channel!=='sms')return;
+  const state=dispatchNoticeState;
+  const kind=dispatchNoticeKind();
+  if(!auth.currentUser){toast('예약관리 로그인 연결을 확인하세요.');return;}
+  if(payload.phone!==normalizeDispatchPhone(payload.r.phone)){
+    toast('받는 번호를 변경하려면 예약 연락처를 먼저 수정하고 저장하세요.');return;
+  }
+  if(!confirm(payload.phone+' 번호로 뿌리오 문자를 발송할까요? 문자 발송료가 차감됩니다.'))return;
+  ppurioBusy=true;refreshDispatchNotice();
+  const notify=text=>{
+    if(dispatchNoticeState===state && dispatchNoticeKind()===kind)document.getElementById('dispatch-notice-result').textContent=text;
+    else toast(text);
+  };
+  try{
+    const result=await requestSmsApi({reservationId:payload.r.id,kind,phone:payload.phone,body:payload.body});
+    if(result.accepted){
+      const r=data.find(record=>record.id===payload.r.id);
+      if(r){r.ppurioReceipts={...r.ppurioReceipts,[kind]:{at:new Date().toISOString(),phone:payload.phone}};save();}
+    }
+    notify(result.message||'접수 여부를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요.');
+  }catch(error){notify(error.message+' · 재시도 전에 뿌리오 발송결과를 확인하세요.');}
+  finally{ppurioBusy=false;refreshDispatchNotice();}
 }
 function launchDispatchSMS(){
   const payload=readyDispatchNotice();if(!payload)return false;
