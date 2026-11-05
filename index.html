@@ -569,10 +569,11 @@ body.tv-mode{display:block;background:#0b1420}
 
 /* TV board: sized for a 1920x1080 screen read from 3-5m; --u is 1px at 1920x1080 and scales with the screen. */
 #tv-board[hidden],#tv-board [hidden]{display:none!important}
-#tv-board{--u:max(.6px,min(.0521vw,.0926vh));--tv-bg:#0b111c;--tv-panel:#131b29;--tv-panel-2:#0f1622;--tv-edge:#34425a;--tv-text:#f2f4f8;--tv-muted:#aeb6c4;--tv-dim:#8e97a8;--tv-pickup:#4fd1c5;--tv-return:#f2b84b;--tv-active:#8fb8ff;--tv-late:#ff6b5e;--tv-ease:cubic-bezier(.23,1,.32,1);position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:hidden;font-family:inherit;line-height:1.3;font-variant-numeric:tabular-nums;word-break:keep-all;-webkit-font-smoothing:antialiased}
+#tv-board{--tv-fit:.95;--u:calc(min(.05208333vw,.09259259vh)*var(--tv-fit));--tv-bg:#0b111c;--tv-panel:#131b29;--tv-panel-2:#0f1622;--tv-edge:#34425a;--tv-text:#f2f4f8;--tv-muted:#aeb6c4;--tv-dim:#8e97a8;--tv-pickup:#4fd1c5;--tv-return:#f2b84b;--tv-active:#8fb8ff;--tv-late:#ff6b5e;--tv-ease:cubic-bezier(.23,1,.32,1);position:fixed;inset:0;z-index:90;background:var(--tv-bg);color:var(--tv-text);overflow:hidden;font-family:inherit;line-height:1.3;font-variant-numeric:tabular-nums;word-break:keep-all;-webkit-font-smoothing:antialiased}
 #tv-board *{box-sizing:border-box}
 #tv-board:not(.show-controls){cursor:none}
-#tv-board .tv-board-inner{position:relative;height:100dvh;display:flex;flex-direction:column;gap:calc(28*var(--u));padding:calc(40*var(--u)) calc(48*var(--u)) calc(32*var(--u));min-height:0}
+#tv-board{display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center}
+#tv-board .tv-board-inner{position:relative;width:calc(100% * var(--tv-fit));height:calc(100% * var(--tv-fit));display:flex;flex-direction:column;gap:calc(28*var(--u));padding:calc(40*var(--u)) calc(48*var(--u)) calc(32*var(--u));min-height:0;min-width:0}
 #tv-board button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 #tv-board button:focus-visible,#tv-board .tv-date-input:focus-visible{outline:3px solid #fff;outline-offset:4px}
 #tv-board .tv-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:calc(40*var(--u));flex:none}
@@ -665,9 +666,11 @@ body.tv-mode{display:block;background:#0b1420}
 #tv-board .tv-date-input{min-height:max(44px,calc(64*var(--u)));width:max(170px,calc(260*var(--u)));padding:0 calc(16*var(--u));border-radius:calc(14*var(--u));border:calc(2*var(--u)) solid var(--tv-edge);background:var(--tv-bg);color:var(--tv-text);font-family:inherit;font-size:max(16px,calc(24*var(--u)));font-weight:700;color-scheme:dark}
 #tv-board .tv-date-input::-webkit-calendar-picker-indicator{cursor:pointer}
 #tv-board .tv-controls-sep{width:calc(2*var(--u));height:calc(40*var(--u));margin:0 calc(4*var(--u));background:var(--tv-edge)}
+#tv-board .tv-controls{width:max-content;max-width:100%;flex-wrap:wrap;justify-content:center}
+#tv-board .tv-fit-select{width:auto;color-scheme:dark}
 @media(hover:hover){#tv-board .tv-button:not(:disabled):hover{background:#22304a}}
 @media(prefers-reduced-motion:reduce){#tv-board .tv-controls{transition:opacity 200ms linear;transform:translate(-50%,0)}#tv-board .tv-page.is-running .tv-page-bar i{animation:none;transform:scaleX(1)}#tv-board .tv-button:active{transform:none}}
-@media(max-width:900px){#tv-board{overflow-y:auto}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{height:auto;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
+@media(max-width:599px),(max-width:900px) and (orientation:portrait){#tv-board{display:block;--u:max(.6px,min(.0521vw,.0926vh));overflow-y:auto}#tv-board .tv-fit-select{display:none}#tv-board:not(.show-controls){cursor:auto}#tv-board .tv-board-inner{width:100%;height:auto;min-height:100vh;min-height:100dvh;padding:16px;gap:16px}#tv-board .tv-header{grid-template-columns:minmax(0,1fr) auto;gap:16px}#tv-board .tv-summary{grid-column:1/-1;order:3}#tv-board .tv-sum{flex:1;min-width:0;padding:10px}#tv-board .tv-lanes{grid-template-columns:minmax(0,1fr);gap:24px}#tv-board .tv-cards{overflow:visible}#tv-board .tv-empty{min-height:120px}#tv-board .tv-page{display:none}#tv-board .tv-task:not(.is-done){grid-template-columns:auto minmax(0,1fr);gap:8px 16px;padding:14px 16px}#tv-board .tv-task-state{grid-column:2;justify-self:start}#tv-board .tv-task-memo{grid-column:1/-1;white-space:normal}#tv-board .tv-car-row{flex-wrap:wrap;white-space:normal;gap:2px 10px}#tv-board .tv-task-details{flex-direction:column;white-space:normal;gap:2px}#tv-board .tv-task-detail:first-child{max-width:none}#tv-board .tv-task.is-done{grid-template-columns:auto auto minmax(0,1fr);height:auto;min-height:48px;padding:8px 16px}#tv-board .tv-task.is-done .tv-task-state{display:none}#tv-board .tv-footer{flex-wrap:wrap;padding:12px 16px}#tv-board .tv-page-info{white-space:normal}#tv-board .tv-hint{display:none}#tv-board .tv-controls{position:static;order:-1;flex-wrap:wrap;justify-content:center;opacity:1;pointer-events:auto;transform:none;box-shadow:none;padding:8px;gap:8px}#tv-board .tv-controls-sep{display:none}}
 
 
 /* ===== 표의 빈 번호 칸: 차량 검색 ===== */
@@ -954,6 +957,9 @@ body.tv-mode{display:block;background:#0b1420}
       <button class="tv-button" id="tv-date-next" onclick="shiftTVDate(1)" aria-label="다음날">다음날 ›</button>
       <button class="tv-button tv-today-button" id="tv-date-today" onclick="showTVToday()" aria-pressed="true">오늘</button>
       <span class="tv-controls-sep" aria-hidden="true"></span>
+      <select class="tv-button tv-fit-select" id="tv-fit" aria-label="TV 표시 크기" onchange="setTVFit(this.value)">
+        <option value="100">화면 크기 100%</option><option value="95" selected>화면 크기 95%</option><option value="90">화면 크기 90%</option><option value="85">화면 크기 85%</option><option value="80">화면 크기 80%</option>
+      </select>
       <button class="tv-button" id="tv-fullscreen" onclick="toggleTVFullscreen()">전체 화면</button>
       <button class="tv-button" id="tv-exit" onclick="exitTVMode()">관리 화면</button>
     </nav>
@@ -4768,15 +4774,15 @@ function tvSelectedDay(now=Date.now()){return tvSelectedDate||koreanNow(new Date
 function syncTVDateURL(){
   try{
     const url=new URL(window.location.href);
-    if(tvMode){url.searchParams.set('tv','1');if(tvSelectedDate)url.searchParams.set('tvDate',tvSelectedDate);else url.searchParams.delete('tvDate')}
-    else{url.searchParams.delete('tv');url.searchParams.delete('tvDate')}
+    if(tvMode)url.searchParams.set('tv','1');else url.searchParams.delete('tv');
+    url.searchParams.delete('tvDate');
     window.history.replaceState(null,'',url.toString());
   }catch(e){}
 }
 function setTVDate(value){
   if(!isTVDate(value)){const input=document.getElementById('tv-date-input');if(input)input.value=tvSelectedDay();return false}
   tvSelectedDate=value===todayStr()?'':value;
-  syncTVDateURL();renderTVBoard();
+  renderTVBoard();
   const lanes=document.getElementById('tv-lanes');if(lanes)lanes.scrollTop=0;
   return true;
 }
@@ -4789,7 +4795,7 @@ function showTVToday(){return setTVDate(todayStr())}
 function setTVMode(enabled){
   const board=document.getElementById('tv-board');if(!board)return;
   tvMode=!!enabled;
-  if(tvMode)closeReservationPanel();
+  if(tvMode){tvSelectedDate='';closeReservationPanel()}
   document.body.classList.toggle('tv-mode',tvMode);
   board.hidden=!tvMode;
   try{localStorage.setItem('ky-tv-mode',tvMode?'1':'0')}catch(e){}
@@ -4804,7 +4810,7 @@ function exitTVMode(){
 }
 function restoreTVMode(){
   let enabled=false;
-  try{const params=new URL(window.location.href).searchParams,requested=params.get('tv'),date=params.get('tvDate');tvSelectedDate=isTVDate(date)?date:'';enabled=requested===null?localStorage.getItem('ky-tv-mode')==='1':requested==='1'}catch(e){try{enabled=localStorage.getItem('ky-tv-mode')==='1'}catch(err){}}
+  try{const requested=new URL(window.location.href).searchParams.get('tv');enabled=requested===null?localStorage.getItem('ky-tv-mode')==='1':requested==='1'}catch(e){try{enabled=localStorage.getItem('ky-tv-mode')==='1'}catch(err){}}
   if(enabled)setTVMode(true);
 }
 document.addEventListener('keydown',e=>{if(tvMode&&e.key==='Escape'&&!document.fullscreenElement){e.preventDefault();exitTVMode()}});
@@ -4865,14 +4871,21 @@ function tvNextDayInfo(day,isToday,now){
 /* Lanes page every 15s when a day has more work than fits on screen; finished work goes last. */
 const TV_PAGE_MS=15000;
 let tvPages={pickup:{index:0,count:1},return:{index:0,count:1}},tvPageStartedAt=0,tvBoardMinute='',tvControlsTimer=null,tvResizeTimer=null;
+function setTVFit(value,save=true){
+  const select=document.getElementById('tv-fit');
+  select.value=String(value);
+  if(!select.value)select.value='95';
+  document.getElementById('tv-board').style.setProperty('--tv-fit',Number(select.value)/100);
+  if(save){try{localStorage.setItem('ky-tv-fit',select.value)}catch(e){}renderTVBoard()}
+}
 function tvPaginateLane(id){
   const box=document.getElementById('tv-'+id+'-cards'),state=tvPages[id];
   const items=[...box.children].filter(el=>el.classList.contains('tv-task'));
   items.forEach(el=>{el.classList.remove('tv-off');delete el.dataset.page});
   let count=1;
-  if(items.length&&!window.matchMedia('(max-width:900px)').matches){
-    const limit=box.clientHeight,gap=parseFloat(getComputedStyle(box).rowGap)||0;let used=0,page=0;
-    items.forEach(el=>{const h=el.offsetHeight;if(used&&used+gap+h>limit+1){page++;used=0}el.dataset.page=page;used+=(used?gap:0)+h});
+  if(items.length&&getComputedStyle(box).overflowY!=='visible'){
+    const limit=box.getBoundingClientRect().height,gap=parseFloat(getComputedStyle(box).rowGap)||0;let used=0,page=0;
+    items.forEach(el=>{const h=el.getBoundingClientRect().height;if(used&&used+gap+h>limit){page++;used=0}el.dataset.page=page;used+=(used?gap:0)+h});
     count=page+1;
   }
   state.count=count;if(state.index>=count)state.index=0;
@@ -4890,6 +4903,7 @@ function tvShowPages(restart){
 }
 function renderTVBoard(){
   const board=document.getElementById('tv-board');if(!board||board.hidden)return;
+  if(tvSelectedDate&&tvBoardToday&&tvBoardToday!==todayStr())tvSelectedDate='';
   const now=Date.now(),groups=tvBoardGroups(data,now),isToday=groups.day===groups.today,dayChanged=tvBoardDay!==groups.day;
   tvBoardDay=groups.day;
   tvBoardToday=groups.today;
@@ -4945,9 +4959,11 @@ function showTVControls(){
 }
 (()=>{
   const board=document.getElementById('tv-board');if(!board)return;
+  try{setTVFit(localStorage.getItem('ky-tv-fit'),false)}catch(e){}
   ['pointermove','pointerdown'].forEach(type=>board.addEventListener(type,showTVControls,{passive:true}));
   board.addEventListener('keydown',e=>{if(e.key!=='Escape')showTVControls()});
   window.addEventListener('resize',()=>{if(!tvMode)return;clearTimeout(tvResizeTimer);tvResizeTimer=setTimeout(renderTVBoard,200)});
+  document.addEventListener('visibilitychange',()=>{if(tvMode&&!document.hidden)renderTVBoard()});
 })();
 
 async function toggleTVFullscreen(){
