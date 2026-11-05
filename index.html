@@ -5323,7 +5323,8 @@ function dispatchNoticeButton(r){
   if(r.deletedAt)return '';
   const sent=dispatchNoticeSentCurrent(r),due=dispatchNoticeDue(r),changed=!!r.dispatchNoticeSent&&!sent;
   const latest=[...Object.values(r.ppurioReceipts||{}),...Object.values(r.ppurioLastSms||{})].filter(item=>item?.at).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
-  const detail=latest?smsTime(latest.at)+' 전송 접수':sent?dispatchNoticeChannelLabel(r.dispatchNoticeSent.channel)+' · '+dispatchNoticeShortTime(r.dispatchNoticeSent.confirmedAt):changed?'이전 기록 있음 · 재안내 확인':due?'24시간 내 · 안내 필요':'안내 작성';
+  const count=smsSuccessCount(r,r.ppurioServerCount);
+  const detail=latest?(count===null?smsTime(latest.at)+' 전송 접수':'문자 발송 '+count+'회'):sent?dispatchNoticeChannelLabel(r.dispatchNoticeSent.channel)+' · '+dispatchNoticeShortTime(r.dispatchNoticeSent.confirmedAt):changed?'이전 기록 있음 · 재안내 확인':due?'24시간 내 · 안내 필요':'안내 작성';
   const confirmation=r.confirmationNoticeSent,confirmationLine=confirmation?`<small class="confirmation-sent">예약확인 ${selectedNoticeSentCurrent(r,'confirmation')?'보냈다 · '+esc(dispatchNoticeChannelLabel(confirmation.channel)):'이전 기록 · 재확인'}</small>`:'';
   return `<button class="dispatch-notice-action ${sent?'confirmed':due?'due':''}" onclick="event.stopPropagation();openDispatchNotice(${uiArg(r.id)})" title="안내 작성 및 발송내역 보기">${latest?'문자 발송내역':sent?'보냈다':'문자·카톡'}<small>${esc(detail)}</small>${confirmationLine}</button>`;
 }
@@ -5409,6 +5410,7 @@ function refreshDispatchNotice(){
   const apiButton=document.getElementById('dispatch-notice-api');
   apiButton.hidden=channel!=='sms';
   apiButton.disabled=!!errors.length||!reviewed||ppurioBusy;
+  apiButton.textContent=ppurioBusy?'발송 중…':'문자 발송';
   document.getElementById('dispatch-api-device').hidden=channel!=='sms';
   document.getElementById('dispatch-api-uid').textContent=auth.currentUser?.uid||'로그인 연결을 확인해 주세요.';
   document.getElementById('dispatch-api-history').hidden=channel!=='sms';
@@ -5463,6 +5465,13 @@ function smsTime(at){
   if(!Number.isFinite(t))return '시각 미확인';
   return koreanNow(new Date(t)).replace(/^(\d+)-(\d+)-(\d+)T(\d+):(\d+)$/,'$1년 $2월 $3일 $4시 $5분');
 }
+function smsSuccessCount(reservation,serverTotal,serverRows=[]){
+  const legacy=Object.values(reservation?.ppurioReceipts||{}).filter(row=>row?.at).length;
+  const mirrored=new Set(serverRows.map(row=>row.id));
+  const backup=Object.values(reservation?.smsReceiptFallback||{}).filter(row=>row?.at&&!mirrored.has(row.id)).length;
+  if(Number.isInteger(serverTotal))return serverTotal+legacy+backup;
+  return legacy&&!reservation?.ppurioLastSms?legacy:null;
+}
 function renderSmsHistory(state){
   const reservation=data.find(r=>r.id===state.id);
   const history=state.smsHistory;
@@ -5476,7 +5485,8 @@ function renderSmsHistory(state){
   for(const row of Object.values(reservation?.smsReceiptFallback||{}))byId.set(row.id,row);
   for(const row of history.rows)byId.set(row.id,row);
   const rows=[...byId.values()].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
-  document.getElementById('dispatch-api-history-title').textContent=rows.length?'문자 발송내역 · '+smsTime(rows[0].at)+' 전송 접수':'문자 발송내역';
+  const count=smsSuccessCount(reservation,history.total??reservation?.ppurioServerCount,history.rows);
+  document.getElementById('dispatch-api-history-title').textContent=count===null?'문자 발송내역':'문자 발송 '+count+'회 · 내역 보기';
   document.getElementById('dispatch-history-list').innerHTML=rows.map(row=>
     `<article><strong>${esc(smsTime(row.at))} 전송 접수</strong><div>${row.kind==='confirmation'?'예약 완료 안내':'배차 하루 전 안내'} · ${esc(row.phone||'번호 미확인')}</div>${row.body?`<details><summary>보낸 내용</summary><pre>${esc(row.body)}</pre></details>`:''}</article>`
   ).join('');
@@ -5496,6 +5506,7 @@ async function loadSmsHistory(more=false){
     const page=await requestSmsApi({action:'history',reservationId:state.id,offset:history.next});
     history.rows.push(...page.history);
     history.next=page.nextOffset;
+    history.total=Number.isInteger(page.total)?page.total:history.next===null?new Set(history.rows.map(row=>row.id)).size:null;
   }catch(error){history.error=error.message||'발송내역을 불러오지 못했습니다.';}
   finally{
     history.loading=false;
@@ -5509,7 +5520,11 @@ async function requestSmsApi(payload){
     body:JSON.stringify(payload)
   });
   const result=await response.json();
-  if(!response.ok)throw new Error(result.message||'뿌리오 발송 서비스에 연결할 수 없습니다.');
+  if(!response.ok){
+    const error=new Error(result.message||'뿌리오 발송 서비스에 연결할 수 없습니다.');
+    error.outcome=result.outcome||(response.status<500?'failed':'unknown');
+    throw error;
+  }
   return result;
 }
 let joiningStaffSms=false;
@@ -5566,21 +5581,26 @@ async function sendReservationSms(){
     else toast(text);
   };
   try{
-    const result=await requestSmsApi({reservationId:payload.r.id,kind,phone:payload.phone,body:payload.body});
+    const attemptId=crypto.randomUUID();
+    const result=await requestSmsApi({reservationId:payload.r.id,kind,phone:payload.phone,body:payload.body,attemptId});
     if(result.accepted&&result.at&&result.id){
       const r=data.find(record=>record.id===payload.r.id);
       if(r){
         const receipt={id:result.id,at:result.at,kind,phone:payload.phone,source};
         if(!result.duplicate && (!r.ppurioLastSms?.[kind]||Date.parse(result.at)>=Date.parse(r.ppurioLastSms[kind].at))){
           r.ppurioLastSms={...r.ppurioLastSms,[kind]:receipt};
+          if(Number.isInteger(result.total))r.ppurioServerCount=Math.max(result.total,r.ppurioServerCount||0);
           if(result.recorded===false)r.smsReceiptFallback={...r.smsReceiptFallback,[receipt.id]:{...receipt,body:payload.body}};
           save();render();
         }
       }
     }
     if(result.accepted&&dispatchNoticeState===state)loadSmsHistory();
-    notify(result.accepted&&result.at?result.message+' · '+smsTime(result.at):result.message||'접수 여부를 확인할 수 없습니다. 뿌리오 발송결과를 확인하세요.');
-  }catch(error){notify(error.message+' · 재시도 전에 뿌리오 발송결과를 확인하세요.');}
+    if(result.accepted)notify((result.recorded===false?'문자 발송 성공 · 내역 저장 지연':'문자 발송 성공')+(result.at?' · '+smsTime(result.at):''));
+    else notify('발송 결과 확인 필요 · 뿌리오 발송내역을 확인하세요.');
+  }catch(error){
+    notify(error.outcome==='failed'?'문자 발송 실패 · '+error.message:'발송 결과 확인 필요 · 재발송 전에 뿌리오 발송내역을 확인하세요.');
+  }
   finally{ppurioBusy=false;refreshDispatchNotice();}
 }
 async function launchDispatchKakao(){
