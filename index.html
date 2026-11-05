@@ -1367,6 +1367,15 @@ body.tv-mode{display:block;background:#0b1420}
 </div>
 <div class="toast" id="toast"></div>
 
+<dialog id="sms-device-dialog" aria-labelledby="sms-device-heading" style="margin:auto;width:min(92vw,400px);padding:20px;border:1px solid #dedfe5;border-radius:12px" onclose="if(location.hash==='#sms-device')history.replaceState(null,'',location.pathname+location.search)">
+  <h2 id="sms-device-heading">문자 발송 기기 등록</h2>
+  <p style="margin:12px 0">이 브라우저에서 문자를 보내려면 아래 기기 번호를 복사해 관리자에게 전달하세요.</p>
+  <label for="sms-device-number">승인용 기기 번호</label>
+  <input id="sms-device-number" readonly placeholder="로그인 연결 확인 중" style="width:100%;margin:6px 0 14px;font-family:monospace">
+  <button type="button" id="sms-device-copy" class="btn btn-gold" onclick="copySmsDeviceNumber()" disabled>기기 번호 복사</button>
+  <button type="button" class="btn btn-ghost" onclick="document.getElementById('sms-device-dialog').close()">닫기</button>
+  <p id="sms-device-note" role="status"></p>
+</dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -4915,12 +4924,33 @@ window.addEventListener('reservation-sync-state',updateTVClock);
 window.addEventListener('resize',()=>{if(tvMode)renderTVBoard()});
 restoreTVMode();
 
+async function copySmsDeviceNumber(){
+  const input=document.getElementById('sms-device-number');
+  try{
+    await navigator.clipboard.writeText(input.value);
+    document.getElementById('sms-device-note').textContent='기기 번호를 복사했습니다.';
+  }catch{
+    input.focus();input.select();
+    document.getElementById('sms-device-note').textContent='선택된 기기 번호를 길게 눌러 복사하세요.';
+  }
+}
+function showSmsDeviceNumber(){
+  if(location.hash!=='#sms-device')return;
+  const dialog=document.getElementById('sms-device-dialog');
+  const uid=auth.currentUser?.uid||'';
+  document.getElementById('sms-device-number').value=uid;
+  document.getElementById('sms-device-copy').disabled=!uid;
+  if(!dialog.open)dialog.showModal();
+}
+window.addEventListener('hashchange',showSmsDeviceNumber);
+
 /* ===== Firebase Auth 상태 감시 ===== */
 auth.onAuthStateChanged(user=>{
   const loginScreen=document.getElementById('login-screen');
   if(user){
     _currentUser=user;
     loginScreen.style.display='none';
+    showSmsDeviceNumber();
     initApp();
   }else{
     _currentUser=null;
