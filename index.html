@@ -767,6 +767,15 @@ body.tv-mode{display:block;background:#0b1420}
   /* 오늘 업무 */
   .m-today{display:flex;flex-direction:column;gap:16px}
   .m-date{margin:0;font-size:13px;color:var(--m-muted)}
+  .m-date-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px 52px;gap:8px;align-items:center}
+  .m-date-nav button,.m-date-nav input{height:44px;min-width:0;max-width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:12px;background:#fff;color:var(--m-ink);font:inherit;font-size:16px}
+  .m-date-nav button{display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .m-date-nav button:disabled{color:var(--m-muted);background:var(--m-bg);cursor:default}
+  .m-date-nav input{display:block;width:100%;padding:0 8px;-webkit-appearance:none;appearance:none}
+  .m-date-nav input::-webkit-date-and-time-value{text-align:center}
+  .m-date-nav .m-ico{width:20px;height:20px}
+  .m-date-prev .m-ico{transform:rotate(180deg)}
+  #m-today-content{display:flex;flex-direction:column;gap:16px}
   .m-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
   .m-stat{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:68px;padding:10px;border-radius:12px;border:1px solid #e6e7eb;background:#fff;font:inherit;text-align:left;color:var(--m-ink);cursor:pointer}
   .m-stat span{font-size:12px;color:var(--m-muted)}
@@ -4251,6 +4260,7 @@ const M_ICON={
 };
 let mTodayLane='pickup',mSheetId=null,mSheetReturnFocus=null,mSheetCloseTimer=null;
 let mSheetEditing=false;
+let mTodayDate='';
 
 function updateMobileTabs(v){
   const tab=M_TAB_OF[v]||'more';
@@ -4273,14 +4283,29 @@ function mMoney(r){const b=reservationBalance(r);return b===null?['금액 미확
 function mMapUrl(place){return place&&place!=='장소 미정'?'https://map.kakao.com/?q='+encodeURIComponent(place):''}
 
 /* 오늘 업무 */
+function setMobileTodayDate(value){
+  if(!isTVDate(value)){
+    document.getElementById('m-today-date').value=mTodayDate||todayStr();
+    return false;
+  }
+  document.getElementById('m-today-date').value=value;
+  mTodayDate=value===todayStr()?'':value;
+  renderToday();
+  return true;
+}
+function shiftMobileTodayDate(delta){
+  const date=new Date((mTodayDate||todayStr())+'T12:00:00Z');
+  date.setUTCDate(date.getUTCDate()+delta);
+  return setMobileTodayDate(date.toISOString().slice(0,10));
+}
 function setMobileTodayLane(lane){mTodayLane=lane==='return'?'return':'pickup';renderToday()}
-function mTaskCard(r,type,now,isNext){
+function mTaskCard(r,type,now,isNext,showTiming=true){
   const x=tvTaskTiming(r,type,now),v=tvVehicleDisplay(r),id=uiArg(r.id),phone=String(r.phone||'').replace(/[^+\d]/g,'');
   const place=type==='return'?(r.ret||r.pickup||'장소 미정'):(r.pickup||'장소 미정'),map=mMapUrl(place);
   let st=type==='return'?(x.done?'반납 완료':'반납 예정'):(x.done?(r.status==='done'?'반납 완료':'배차 완료'):'배차 대기'),cls=x.done?'m-st-done':type==='return'?'m-st-active':'m-st-wait';
-  if(x.late){st=`${tvDuration(now-x.time)} 지남`;cls='m-st-warn'}else if(isNext){st=x.time-now<60000?'다음 · 곧':`다음 · ${tvDuration(x.time-now)} 후`;cls='m-st-next'}
+  if(showTiming&&x.late){st=`${tvDuration(now-x.time)} 지남`;cls='m-st-warn'}else if(isNext){st=x.time-now<60000?'다음 · 곧':`다음 · ${tvDuration(x.time-now)} 후`;cls='m-st-next'}
   const extra=x.done?[]:dashboardAttentionReasons(r).filter(a=>!/경과|배차 확인/.test(a)).slice(0,1);
-  return `<article class="m-task${x.done?' is-done':''}${x.late?' is-late':''}${isNext?' is-next':''}">
+  return `<article class="m-task${x.done?' is-done':''}${showTiming&&x.late?' is-late':''}${isNext?' is-next':''}">
     <button class="m-task-main" onclick="openMobileSheet(${id})" aria-label="${esc(x.valid?x.value.slice(11,16):'')} ${esc(v.name||'')} ${esc(v.plate||'번호 미배정')} 상세 보기">
       <span class="m-task-time"><b>${esc(x.valid?x.value.slice(11,16):'--:--')}</b><span>${type==='return'?'반납':'배차'}</span></span>
       <span class="m-task-body">
@@ -4294,26 +4319,41 @@ function mTaskCard(r,type,now,isNext){
 }
 function renderToday(){
   const el=document.getElementById('m-today');if(!el)return;
-  const now=Date.now(),t=todayStr(),g=tvBoardGroups(data,now,t);
+  const now=Date.now(),today=todayStr(),t=mTodayDate||today,isToday=t===today;
+  const g=tvBoardGroups(data,now,t,true);
+  // Keep the date input mounted while clock and server updates refresh the list.
+  if(!document.getElementById('m-today-content')){
+    el.innerHTML=`<div class="m-date-nav" role="group" aria-label="업무 조회 날짜">
+      <button type="button" class="m-date-prev" onclick="shiftMobileTodayDate(-1)" aria-label="이전날">${M_ICON.chevron}</button>
+      <input id="m-today-date" type="date" min="0001-01-01" max="9999-12-31" aria-label="업무 조회 날짜" onchange="setMobileTodayDate(this.value)">
+      <button type="button" class="m-date-next" onclick="shiftMobileTodayDate(1)" aria-label="다음날">${M_ICON.chevron}</button>
+      <button type="button" onclick="setMobileTodayDate(todayStr())">오늘</button>
+    </div><div id="m-today-content"></div>`;
+  }
+  const input=document.getElementById('m-today-date');
+  if(document.activeElement!==input&&input.value!==t)input.value=t;
+  el.querySelector('.m-date-prev').disabled=t==='0001-01-01';
+  el.querySelector('.m-date-next').disabled=t==='9999-12-31';
+  if(document.getElementById('view-today').classList.contains('on'))document.getElementById('page-title').textContent=isToday?'오늘 업무':'날짜별 업무';
   const live=data.filter(r=>!r.deletedAt&&r.status!=='cancelled');
   const active=live.filter(r=>r.status==='active').length,attention=live.filter(r=>dashboardAttentionReasons(r).length>0).length;
   const type=mTodayLane,rows=type==='return'?g.returns:g.pickup;
-  const next=rows.find(r=>{const x=tvTaskTiming(r,type,now);return x.valid&&!x.done&&!x.late});
-  const tomorrow=dashboardDayOffset(t,1),tg=tvBoardGroups(data,now,tomorrow),due=data.filter(r=>dispatchNoticeDue(r,now)).length;
+  const next=isToday?rows.find(r=>{const x=tvTaskTiming(r,type,now);return x.valid&&!x.done&&!x.late}):null;
+  const tomorrow=dashboardDayOffset(today,1),tg=tvBoardGroups(data,now,tomorrow),due=data.filter(r=>dispatchNoticeDue(r,now)).length;
   const stat=(key,label,n,cls,onclick)=>`<button class="m-stat ${cls}" onclick="${onclick}" aria-pressed="${cls.includes('on')}"><span>${label}</span><b>${n}</b></button>`;
-  el.innerHTML=`<p class="m-date">${esc(tvLongDate(t))}</p>
-    <section class="m-stats" aria-label="오늘 현황">
+  document.getElementById('m-today-content').innerHTML=`<p class="m-date">${esc(tvLongDate(t))}</p>
+    <section class="m-stats" aria-label="배차·반납 및 현재 업무 현황">
       ${stat('pickup','배차',g.pickup.length,type==='pickup'?'on':'',"setMobileTodayLane('pickup')")}
       ${stat('return','반납',g.returns.length,type==='return'?'on':'',"setMobileTodayLane('return')")}
-      ${stat('active','운행중',active,'blue',"setDashboardMetric('active')")}
-      ${stat('attention','확인 필요',attention,attention?'warn':'',"setDashboardMetric('attention')")}
+      ${stat('active','현재 운행중',active,'blue',"setDashboardMetric('active')")}
+      ${stat('attention','전체 확인',attention,attention?'warn':'',"setDashboardMetric('attention')")}
     </section>
     <div class="m-seg" role="tablist" aria-label="배차 반납 전환">
       <button role="tab" aria-selected="${type==='pickup'}" onclick="setMobileTodayLane('pickup')">배차 ${g.pickup.length}</button>
       <button role="tab" aria-selected="${type==='return'}" onclick="setMobileTodayLane('return')">반납 ${g.returns.length}</button>
     </div>
-    <section class="m-tasks" aria-label="오늘 ${type==='return'?'반납':'배차'} 목록">${rows.length?rows.map(r=>mTaskCard(r,type,now,r===next)).join(''):`<div class="m-empty">오늘 ${type==='return'?'반납':'배차'} 일정이 없습니다<small>예약 탭에서 다른 날짜를 확인하세요</small></div>`}</section>
-    ${tg.pickup.length||due?`<button class="m-banner" onclick="openMobileNoticeList()">${M_ICON.msg}<span><b>내일 배차 ${tg.pickup.length}건</b><small>${due?`하루 전 안내 문자 ${due}건 미발송`:'하루 전 안내 모두 보냄'}</small></span>${M_ICON.chevron}</button>`:''}`;
+    <section class="m-tasks" aria-label="${esc(tvLongDate(t))} ${type==='return'?'반납':'배차'} 목록">${rows.length?rows.map(r=>mTaskCard(r,type,now,r===next,isToday)).join(''):`<div class="m-empty">${isToday?'오늘':'선택한 날짜에'} ${type==='return'?'반납':'배차'} 일정이 없습니다<small>위에서 다른 날짜를 선택하세요</small></div>`}</section>
+    ${isToday&&(tg.pickup.length||due)?`<button class="m-banner" onclick="openMobileNoticeList()">${M_ICON.msg}<span><b>내일 배차 ${tg.pickup.length}건</b><small>${due?`하루 전 안내 문자 ${due}건 미발송`:'하루 전 안내 모두 보냄'}</small></span>${M_ICON.chevron}</button>`:''}`;
 }
 function openMobileNoticeList(){dispatchNoticeOnly=true;schedTab='all';document.querySelectorAll('#sched-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==='all'));go2('schedule');window.scrollTo({top:0})}
 
@@ -4886,10 +4926,10 @@ document.addEventListener('keydown',e=>{if(tvMode&&e.key==='Escape'&&!document.f
 
 /* Read-only display. These functions do not write reservation records. */
 let tvBoardDay='',tvBoardToday='',tvBoardTimer=null;
-function tvBoardGroups(records=data,now=Date.now(),selectedDay=tvSelectedDay(now)){
+function tvBoardGroups(records=data,now=Date.now(),selectedDay=tvSelectedDay(now),includeCompletedReturns=false){
   const today=koreanNow(new Date(now)).slice(0,10),day=isTVDate(selectedDay)?selectedDay:today,live=records.filter(r=>!r.deletedAt&&r.status!=='cancelled');
   const pickup=live.filter(r=>String(r.start||'').slice(0,10)===day);
-  const returns=live.filter(r=>r.status!=='done'&&String(r.end||'').slice(0,10)===day);
+  const returns=live.filter(r=>(includeCompletedReturns||r.status!=='done')&&String(r.end||'').slice(0,10)===day);
   const ongoing=[]; // TV shows only the selected day's departures and scheduled returns.
   const completed=(r,type)=>type==='pickup'?r.status==='active'||r.status==='done':r.status==='done';
   const order=(key,type)=>(a,b)=>Number(completed(a,type))-Number(completed(b,type))||(reservationTime(a[key])||Infinity)-(reservationTime(b[key])||Infinity)||String(a.id||'').localeCompare(String(b.id||''));
