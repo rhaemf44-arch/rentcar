@@ -4152,6 +4152,12 @@ function fmtSheetDT(dt,withDow){
   const base=`${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   return withDow?`${base}(${D[d.getDay()]})`:base;
 }
+function schedulePrintPlace(record){
+  const {pickup,ret}=normalizedLocationPair(record.pickup,record.ret||record.returnLocation,{defaultOffice:false});
+  if(!pickup&&!ret)return '미기재';
+  if(pickup.replace(/\s+/g,' ')===ret.replace(/\s+/g,' '))return pickup;
+  return `배차: ${pickup||'미기재'}\n회차: ${ret||'미기재'}`;
+}
 // 내보낼 행 구성: 날짜별 그룹 + 그룹 사이 빈 줄, 첫 행에만 요일
 function buildSheetRows(){
   const rows=scheduleRows().filter(r=>r.start);
@@ -4169,6 +4175,7 @@ function buildSheetRows(){
       임차인명:reservationCustomerName(r),
       임차인연락처:(r.phone||'').replace(/-/g,'.'),
       배차:r.pickup||'', 회차:r.ret||r.pickup||'사무실',
+      인쇄장소:schedulePrintPlace(r), 잔금:reservationBalanceLabel(r),
     });
     lastDay=day;
   });
@@ -4188,12 +4195,17 @@ function exportScheduleExcel(){
 function printSchedule(){
   const rows=buildSheetRows();
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
-  const esc2=s=>String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   const body=rows.map(r=>{
     if(!r)return '<tr class="blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
     // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
     const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
-    return `<tr class="${isDayStart?'dstart':''}"><td>${esc2(r.대여예정일시)}</td><td>${esc2(r.반납예정일시)}</td><td>${esc2(r.차량)}</td><td>${esc2(r.차량번호)}</td><td>${esc2(r.임차인명)}</td><td>${esc2(r.임차인연락처)}</td><td class="l">${esc2(r.배차)}</td><td class="l">${esc2(r.회차)}</td></tr>`;
+    const isSolati=/[쏠솔]라티|solati/i.test(r.차량)||PLATE_MAP[r.차량번호]?.base==='쏠라티';
+    return `<tr class="${isDayStart?'dstart':''}">
+      <td>${esc(r.대여예정일시)}</td><td>${esc(r.반납예정일시)}</td>
+      <td class="vehicle${isSolati?' solati':''}">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
+      <td>${esc(r.임차인명)}</td><td>${esc(r.임차인연락처)}</td>
+      <td class="place">${esc(r.인쇄장소)}</td><td class="balance">${esc(r.잔금)}</td>
+    </tr>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
   <style>
@@ -4206,10 +4218,14 @@ function printSchedule(){
     table{border-collapse:collapse;width:100%;font-size:11.5px;table-layout:fixed}
     th,td{border:1px solid #000;padding:4px 6px;text-align:center;height:26px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     th{background:#e8e8e8;font-weight:700;height:28px}
-    td.l{text-align:left}
+    td.vehicle,td.place,td.balance{white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+    td.solati{background-color:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td.place{text-align:left;white-space:pre-line}
+    td.balance{text-align:right;font-variant-numeric:tabular-nums}
+    tr{break-inside:avoid}
     tr.blank td{height:24px;border-color:#000}
     tr.dstart td{border-top:1.5px solid #000}
-    col.c1{width:12%}col.c2{width:11%}col.c3{width:13%}col.c4{width:9%}col.c5{width:9%}col.c6{width:12%}col.c7{width:18%}col.c8{width:16%}
+    col.c1{width:11%}col.c2{width:10%}col.c3{width:16%}col.c4{width:9%}col.c5{width:8%}col.c6{width:12%}col.c7{width:25%}col.c8{width:9%}
     @media print{.noprint{display:none}}
     .noprint{margin-bottom:10px}
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
@@ -4218,7 +4234,7 @@ function printSchedule(){
   <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${todayStr()} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
   <table>
     <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"></colgroup>
-    <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차</th><th>회차</th></tr></thead>
+    <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>잔금</th></tr></thead>
     <tbody>${body}</tbody>
   </table>
   <script>setTimeout(()=>window.print(),400)<\/script>
