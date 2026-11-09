@@ -1,0 +1,21 @@
+name: Disposable mobile notice WebKit check
+on:
+  push:
+    branches: [qa/isolated-mobile-notice-20261109]
+permissions:
+  contents: read
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install WebKit
+        run: |
+          python -m venv "$RUNNER_TEMP/notice-browser"
+          "$RUNNER_TEMP/notice-browser/bin/pip" -q install playwright==1.55.0
+          "$RUNNER_TEMP/notice-browser/bin/playwright" install --with-deps webkit
+      - name: Check mock booking at two mobile viewport sizes (no real network)
+        run: '"$RUNNER_TEMP/notice-browser/bin/python" qa/isolated-mobile-notice.py'
