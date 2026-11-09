@@ -3768,29 +3768,35 @@ function insertBetween(idx){
 }
 
 /* ===== 일정표: 날짜별 그룹 + 날짜 사이 추가버튼 ===== */
-function renderSchedule(){
-  const el=document.getElementById('sched-list');if(!el)return;
-  const today=todayStr(),yesterday=dashboardDayOffset(today,-1);
+function scheduleRows(now=Date.now()){
   const includeEarlier=document.getElementById('schedule-include-earlier').checked;
-  document.getElementById('schedule-range-label').textContent=includeEarlier?'배차일 기준 · 전체 기간':`배차일 기준 · ${Number(yesterday.slice(5,7))}월 ${Number(yesterday.slice(8))}일부터`;
-  let rows=data.filter(r=>{
-    if(r.status==='cancelled')return false;
-    if(!includeEarlier && r.start && r.start.slice(0,10)<yesterday)return false;
+  const currentMinute=koreanNow(new Date(now));
+  // 배차 일정은 현재 분부터, 대여종료 탭은 기존처럼 어제 배차분부터 조회한다.
+  const cutoff=schedTab==='done'?dashboardDayOffset(currentMinute.slice(0,10),-1):currentMinute;
+  return data.filter(r=>{
+    if(r.deletedAt||r.status==='cancelled')return false;
+    const start=String(r.start||'').slice(0,16);
+    if(!includeEarlier&&start&&start<cutoff.slice(0,start.length))return false;
+    if(dispatchNoticeOnly&&!dispatchNoticeDue(r,now))return false;
     if(schedTab==='done')return r.status==='done';
-    // 예정시간만 지난 운행중·대기 예약은 업무 목록에 유지
-    if(r.status==='done'&&r.end&&reservationTime(r.end)<Date.now())return false;
+    if(r.status==='done'&&r.end&&reservationTime(r.end)<now)return false;
     if(schedTab==='all')return true;
     const vehicle=PLATE_MAP[reservationVehicleId(r)];
     return vehicle?vehicle.base===schedTab:carBase(r.car)===schedTab||((r.car||'').includes(schedTab));
   }).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
+}
+function renderSchedule(){
+  const el=document.getElementById('sched-list');if(!el)return;
+  const now=Date.now(),today=koreanNow(new Date(now)).slice(0,10),yesterday=dashboardDayOffset(today,-1);
+  const includeEarlier=document.getElementById('schedule-include-earlier').checked;
+  const range=document.getElementById('schedule-range-label');
+  if(includeEarlier)range.textContent='배차일시 기준 · 전체 기간';
+  else if(schedTab==='done')range.textContent='배차일 기준 · 어제부터';
+  else range.textContent='배차일시 기준 · 현재 시각부터';
+  const rows=scheduleRows(now);
   updateDispatchNoticeSummary();
-  if(dispatchNoticeOnly)rows=rows.filter(r=>dispatchNoticeDue(r));
   // 날짜별 그룹
   const groups=Object.create(null);
-  if(!includeEarlier && !dispatchNoticeOnly){
-    groups[yesterday]=[];
-    groups[today]=[];
-  }
   rows.forEach(r=>{const d=(r.start||'미정').slice(0,10);(groups[d]=groups[d]||[]).push(r)});
   const dates=Object.keys(groups).sort();
   const D=['일','월','화','수','목','금','토'];
@@ -4148,7 +4154,7 @@ function fmtSheetDT(dt,withDow){
 }
 // 내보낼 행 구성: 날짜별 그룹 + 그룹 사이 빈 줄, 첫 행에만 요일
 function buildSheetRows(){
-  const rows=data.filter(r=>r.status!=='cancelled'&&r.start).sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+  const rows=scheduleRows().filter(r=>r.start);
   const out=[];let lastDay=null;
   rows.forEach(r=>{
     const day=r.start.slice(0,10);
@@ -4169,8 +4175,8 @@ function buildSheetRows(){
   return out;
 }
 function exportScheduleExcel(){
-  if(!data.length){toast('내보낼 예약이 없습니다');return}
   const rows=buildSheetRows();
+  if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const aoa=[['대여예정일시','반납예정일시','차량','차량번호','임차인명','임차인연락처','배차','회차']];
   rows.forEach(r=>aoa.push(r?[r.대여예정일시,r.반납예정일시,r.차량,r.차량번호,r.임차인명,r.임차인연락처,r.배차,r.회차]:['','','','','','','','']));
   const ws=XLSX.utils.aoa_to_sheet(aoa);
@@ -4180,8 +4186,8 @@ function exportScheduleExcel(){
   toast('예약현황표 엑셀이 저장되었습니다');
 }
 function printSchedule(){
-  if(!data.length){toast('내보낼 예약이 없습니다');return}
   const rows=buildSheetRows();
+  if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const esc2=s=>String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   const body=rows.map(r=>{
     if(!r)return '<tr class="blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
@@ -4209,7 +4215,7 @@ function printSchedule(){
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
   </style></head><body>
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
-  <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${todayStr()} · 총 ${data.filter(r=>r.status!=='cancelled'&&r.start).length}건 · 010-4164-2820</div></div>
+  <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${todayStr()} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
   <table>
     <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"></colgroup>
     <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차</th><th>회차</th></tr></thead>
