@@ -4175,7 +4175,10 @@ function buildSheetRows(){
       임차인명:reservationCustomerName(r),
       임차인연락처:(r.phone||'').replace(/-/g,'.'),
       배차:r.pickup||'', 회차:r.ret||r.pickup||'사무실',
-      인쇄장소:schedulePrintPlace(r), 잔금:reservationBalanceLabel(r),
+      인쇄장소:schedulePrintPlace(r),
+      총금액:moneyNumber(r.total),
+      계약금:moneyNumber(r.deposit)??moneyNumber(r.paid),
+      잔금:reservationBalance(r),
     });
     lastDay=day;
   });
@@ -4195,8 +4198,9 @@ function exportScheduleExcel(){
 function printSchedule(){
   const rows=buildSheetRows();
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
+  const amount=n=>n===null?'미확인':n.toLocaleString('ko-KR')+'원';
   const body=rows.map(r=>{
-    if(!r)return '<tr class="blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
     // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
     const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
     const isSolati=/[쏠솔]라티|solati/i.test(r.차량)||PLATE_MAP[r.차량번호]?.base==='쏠라티';
@@ -4204,7 +4208,9 @@ function printSchedule(){
       <td>${esc(r.대여예정일시)}</td><td>${esc(r.반납예정일시)}</td>
       <td class="vehicle${isSolati?' solati':''}">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
       <td>${esc(r.임차인명)}</td><td>${esc(r.임차인연락처)}</td>
-      <td class="place">${esc(r.인쇄장소)}</td><td class="balance">${esc(r.잔금)}</td>
+      <td class="place">${esc(r.인쇄장소)}</td>
+      <td class="money">${amount(r.총금액)}</td><td class="money">${amount(r.계약금)}</td>
+      <td class="money">${r.잔금===0?'0원 (완납)':amount(r.잔금)}</td>
     </tr>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
@@ -4216,16 +4222,15 @@ function printSchedule(){
     .head h1{font-size:17px;margin:0;letter-spacing:3px;font-weight:800}
     .head .sub{font-size:11px;color:#444}
     table{border-collapse:collapse;width:100%;font-size:11.5px;table-layout:fixed}
-    th,td{border:1px solid #000;padding:4px 6px;text-align:center;height:26px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    th,td{border:1px solid #000;padding:4px;text-align:center;height:26px;overflow-wrap:anywhere;line-height:1.35}
     th{background:#e8e8e8;font-weight:700;height:28px}
-    td.vehicle,td.place,td.balance{white-space:normal;overflow-wrap:anywhere;line-height:1.35}
     td.solati{background-color:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td.place{text-align:left;white-space:pre-line}
-    td.balance{text-align:right;font-variant-numeric:tabular-nums}
+    td.money{text-align:right;font-variant-numeric:tabular-nums}
     tr{break-inside:avoid}
     tr.blank td{height:24px;border-color:#000}
     tr.dstart td{border-top:1.5px solid #000}
-    col.c1{width:11%}col.c2{width:10%}col.c3{width:16%}col.c4{width:9%}col.c5{width:8%}col.c6{width:12%}col.c7{width:25%}col.c8{width:9%}
+    col.c1{width:9.5%}col.c2{width:8.5%}col.c3{width:13%}col.c4{width:7%}col.c5{width:6%}col.c6{width:10%}col.c7{width:22%}col.amount{width:8%}
     @media print{.noprint{display:none}}
     .noprint{margin-bottom:10px}
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
@@ -4233,8 +4238,8 @@ function printSchedule(){
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
   <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${todayStr()} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
   <table>
-    <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"></colgroup>
-    <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>잔금</th></tr></thead>
+    <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup>
+    <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>
     <tbody>${body}</tbody>
   </table>
   <script>setTimeout(()=>window.print(),400)<\/script>
