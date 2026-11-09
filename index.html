@@ -5457,13 +5457,37 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
 .sms-history-list article{padding:9px 0;border-bottom:1px solid var(--line)}
 .sms-history-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:5px 0}
 .dispatch-notice-foot [hidden]{display:none!important}
-@media(max-height:700px){.dispatch-notice-foot{max-height:48vh;overflow-y:auto}}
+#dispatch-api-device{margin:10px 0;font-size:13px}
+#dispatch-api-device p{margin:6px 0}
+#dispatch-notice-device-required,#dispatch-send-hint{margin:0 0 6px;color:#804019;font-size:13px;line-height:1.45}
+.dispatch-notice-body [hidden]{display:none!important}
+.dispatch-notice-foot{flex:none}
+.dispatch-notice-foot [role="status"]:empty{display:none}
+@media (max-width:720px), (max-height:540px) and (pointer:coarse){
+  .dispatch-notice-overlay{box-sizing:border-box;top:var(--notice-vtop,0px);bottom:auto;height:100vh;height:var(--notice-vheight,100dvh);padding:max(4px,env(safe-area-inset-top)) max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));overscroll-behavior:contain}
+  .dispatch-notice-dialog{width:100%;height:100%;max-height:none;max-width:820px}
+  .dispatch-notice-head{flex:none;padding:10px 14px}
+  .dispatch-notice-head h2{font-size:18px}
+  .dispatch-notice-body{flex:1 1 auto;min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px}
+  #dispatch-notice-body{min-height:180px;height:clamp(180px,28dvh,310px)}
+  .dispatch-notice-foot{padding:8px 14px 10px}
+  .dispatch-notice-foot>.dispatch-notice-review{min-height:44px;align-items:center;padding:6px 10px;margin-bottom:6px}
+  .dispatch-notice-review input{appearance:auto;width:20px;height:20px;margin:0;accent-color:var(--gold)}
+  .dispatch-notice-foot .btn{min-height:44px}
+  #dispatch-api-device>summary,#dispatch-api-history>summary{min-height:44px;padding:10px 0;cursor:pointer}
+  .dispatch-notice-overlay[data-short] .dispatch-notice-dialog{display:block;overflow:auto;overscroll-behavior:contain}
+  .dispatch-notice-overlay[data-short] .dispatch-notice-body{overflow:visible}
+}
+@media(max-height:440px){
+  .dispatch-notice-dialog{display:block;overflow:auto;overscroll-behavior:contain}
+  .dispatch-notice-body{overflow:visible}
+}
 @media print{.dispatch-notice-bar,.dispatch-notice-action,.dispatch-notice-overlay{display:none!important}}
 </style>
 <section class="dispatch-notice-overlay" id="dispatch-notice-overlay" hidden>
-  <div class="dispatch-notice-dialog" role="dialog" aria-modal="true" aria-labelledby="dispatch-notice-title" aria-describedby="dispatch-notice-description">
+  <div class="dispatch-notice-dialog" id="dispatch-notice-dialog" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="dispatch-notice-title" aria-describedby="dispatch-notice-description">
     <header class="dispatch-notice-head"><div><h2 id="dispatch-notice-title">배차 하루 전 안내 · 문자/카카오톡</h2><p id="dispatch-notice-description">예약 정보를 바탕으로 작성한 초안입니다. 장소·차량 주의사항·보험 내용을 확인해 주세요.</p></div><button class="btn btn-ghost" onclick="closeDispatchNotice()" aria-label="안내문자 닫기">닫기</button></header>
-    <div class="dispatch-notice-body">
+    <div class="dispatch-notice-body" id="dispatch-notice-fields-scroll">
       <div class="dispatch-notice-info" id="dispatch-notice-info"></div>
       <div class="field"><label for="dispatch-notice-kind">안내 종류</label><select id="dispatch-notice-kind" onchange="changeDispatchNoticeKind()"><option value="reminder">배차 하루 전 안내</option><option value="confirmation">예약 완료 안내</option></select><p class="dispatch-notice-help">종류별로 초안과 보낸 기록을 따로 저장합니다.</p></div>
       <div class="confirmation-notice-fields" id="confirmation-notice-fields" hidden>
@@ -5478,20 +5502,11 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
         <p class="dispatch-notice-help">보험·면책금·자차한도는 입력 즉시 안내문에 반영됩니다. 보험을 바꿔도 금액은 입력한 값을 유지합니다. 예약번호·유종 변경 후에는 안내문 생성 버튼을 눌러 주세요. 이 값은 해당 안내의 초안에 저장됩니다.</p>
       </div>
       <div class="dispatch-notice-channel-row"><div class="field"><label for="dispatch-notice-channel">보낼 방법</label><select id="dispatch-notice-channel" onchange="changeDispatchNoticeChannel()"><option value="sms">문자</option><option value="kakao">카카오톡</option></select></div><div class="field" id="dispatch-notice-recipient-field" hidden><label for="dispatch-notice-recipient">카카오톡 받을 고객 / 대화방</label><input id="dispatch-notice-recipient" maxlength="100" autocomplete="off" placeholder="실제로 보낼 고객 또는 대화방 이름" oninput="editDispatchNotice()"><p class="dispatch-notice-help">공유할 때 이 고객의 대화방을 직접 선택하세요.</p></div></div>
-      <div class="field"><label for="dispatch-notice-phone">고객 휴대폰 번호</label><input type="tel" id="dispatch-notice-phone" autocomplete="off" inputmode="tel" placeholder="010-0000-0000" oninput="editDispatchNotice()"><p class="dispatch-notice-help">번호 1개를 입력하세요. 여기서 바꾼 번호는 안내문자에만 사용됩니다.</p></div>
+      <div class="field"><label for="dispatch-notice-phone">고객 휴대폰 번호</label><input type="tel" id="dispatch-notice-phone" autocomplete="off" inputmode="tel" placeholder="010-0000-0000" oninput="editDispatchNotice()"><p class="dispatch-notice-help">문자는 이 예약에 저장된 고객 번호로만 보낼 수 있습니다.</p></div>
       <div class="field"><div class="dispatch-notice-message-label"><label for="dispatch-notice-body">안내 내용 · 직접 수정 가능</label><button class="btn btn-ghost btn-sm" onclick="regenerateDispatchNotice()">예약 정보로 다시 작성</button></div><textarea id="dispatch-notice-body" maxlength="2000" spellcheck="false" oninput="editDispatchNotice()"></textarea><p class="dispatch-notice-help" id="dispatch-notice-length"></p><p class="dispatch-notice-help">보험·면책금·보상한도와 차량별 주의사항을 계약 조건에 맞게 확인하세요. 실내 클리닝 비용도 발송 전에 확인하세요. 내부 메모는 문자에 포함하지 않습니다.</p></div>
       <div class="dispatch-notice-warning" id="dispatch-notice-warning" role="status"></div>
       <div id="dispatch-missing-actions" hidden>
         <button class="btn btn-ghost btn-sm" type="button" onclick="selectMissingNoticeField()">본문에서 수정하기</button>
-      </div>
-      <details id="dispatch-notice-sent-record" class="dispatch-notice-sent-record" hidden><summary>최근 보낸 기록 보기</summary><div id="dispatch-notice-sent-meta"></div><pre id="dispatch-notice-sent-body"></pre></details>
-    </div>
-    <footer class="dispatch-notice-foot">
-      <label class="dispatch-notice-review"><input type="checkbox" id="dispatch-notice-reviewed" onchange="refreshDispatchNotice()"><span>받는 고객, 배차·반차 장소, 차량 주의사항과 보험 내용을 확인했습니다.</span></label>
-      <div class="actions">
-        <button class="btn btn-gold" id="dispatch-notice-api" onclick="sendReservationSms()" disabled>문자 발송</button>
-        <button class="btn btn-kakao" id="dispatch-notice-kakao" onclick="launchDispatchKakao()" hidden disabled>카카오톡 공유</button>
-        <button class="btn btn-ghost" id="dispatch-notice-confirm" onclick="markDispatchNoticeSent()" hidden disabled>카카오톡 발송 기록</button>
       </div>
       <details id="dispatch-api-history">
         <summary id="dispatch-api-history-title">문자 발송내역</summary>
@@ -5500,7 +5515,18 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
         <button type="button" id="dispatch-history-more" class="btn btn-ghost btn-sm" onclick="loadSmsHistory(true)" hidden>이전 내역 더 보기</button>
         <button type="button" id="dispatch-history-retry" class="btn btn-ghost btn-sm" onclick="loadSmsHistory(true)" hidden>다시 불러오기</button>
       </details>
-      <details id="dispatch-api-device"><summary>발송 기기 등록 · 연결 확인</summary><small>승인용 기기 번호: <b id="dispatch-api-uid"></b></small><button type="button" class="btn btn-ghost btn-sm" onclick="checkSmsConnection(this)">뿌리오 연결 확인</button></details>
+      <details id="dispatch-api-device"><summary>발송 기기 등록 · 연결 확인</summary><p>처음 사용하는 휴대폰이라면 기존 직원용 링크를 이 브라우저에서 열어 주세요. <a href="#sms-device">기기 등록 안내</a></p><small>승인용 기기 번호: <b id="dispatch-api-uid"></b></small><button type="button" class="btn btn-ghost btn-sm" onclick="checkSmsConnection(this)">뿌리오 연결 확인</button></details>
+      <details id="dispatch-notice-sent-record" class="dispatch-notice-sent-record" hidden><summary>최근 보낸 기록 보기</summary><div id="dispatch-notice-sent-meta"></div><pre id="dispatch-notice-sent-body"></pre></details>
+    </div>
+    <footer class="dispatch-notice-foot">
+      <p id="dispatch-notice-device-required" hidden>이 브라우저는 발송 기기 승인이 필요합니다. 기존 직원용 링크를 열거나 <a href="#sms-device">기기 등록 안내</a>를 확인해 주세요.</p>
+      <label class="dispatch-notice-review"><input type="checkbox" id="dispatch-notice-reviewed" onchange="refreshDispatchNotice()"><span>받는 고객, 배차·반납 장소와 안내 내용을 확인했습니다.</span></label>
+      <p id="dispatch-send-hint" hidden></p>
+      <div class="actions">
+        <button class="btn btn-gold" id="dispatch-notice-api" aria-describedby="dispatch-send-hint" onclick="sendReservationSms()" disabled>문자 발송</button>
+        <button class="btn btn-kakao" id="dispatch-notice-kakao" onclick="launchDispatchKakao()" hidden disabled>카카오톡 공유</button>
+        <button class="btn btn-ghost" id="dispatch-notice-confirm" onclick="markDispatchNoticeSent()" hidden disabled>카카오톡 발송 기록</button>
+      </div>
       <small id="dispatch-notice-device-help" hidden></small>
       <div class="dispatch-notice-result" id="dispatch-notice-result" role="status" aria-live="polite"></div>
     </footer>
@@ -5667,6 +5693,17 @@ function updateDispatchNoticeSummary(){
   const button=document.getElementById('dispatch-notice-filter');button.setAttribute('aria-pressed',String(dispatchNoticeOnly));button.textContent=dispatchNoticeOnly?'전체 일정 보기':'24시간 내 안내 필요';
 }
 function toggleDispatchNoticeFilter(){dispatchNoticeOnly=!dispatchNoticeOnly;if(dispatchNoticeOnly){schedTab='all';document.querySelectorAll('#sched-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==='all'))}renderSchedule()}
+// iOS can resize/pan its visual viewport without resizing the layout viewport (e.g. keyboard).
+function syncDispatchMobileViewport(){
+  const overlay=document.getElementById('dispatch-notice-overlay');if(overlay.hidden)return;
+  const vv=window.visualViewport,valid=vv&&Math.abs(vv.scale-1)<.01&&vv.height>0;
+  if(valid){overlay.style.setProperty('--notice-vheight',vv.height+'px');overlay.style.setProperty('--notice-vtop',vv.offsetTop+'px');}
+  else{overlay.style.removeProperty('--notice-vheight');overlay.style.removeProperty('--notice-vtop');}
+  overlay.toggleAttribute('data-short',(valid?vv.height:window.innerHeight)<=440);
+}
+window.visualViewport?.addEventListener('resize',syncDispatchMobileViewport,{passive:true});
+window.visualViewport?.addEventListener('scroll',syncDispatchMobileViewport,{passive:true});
+window.addEventListener('resize',syncDispatchMobileViewport,{passive:true});
 function openDispatchNotice(id,kind='reminder'){
   const r=data.find(x=>x.id===id);if(!r||r.deletedAt){toast('예약을 찾을 수 없습니다.');return}
   dispatchNoticeReturnFocus=document.activeElement;
@@ -5674,7 +5711,8 @@ function openDispatchNotice(id,kind='reminder'){
   loadDispatchNoticeKind(r,dispatchNoticeState.kind);
   document.getElementById('dispatch-api-history').open=false;
   loadSmsHistory();
-  document.getElementById('dispatch-notice-overlay').hidden=false;refreshDispatchNotice();document.getElementById('dispatch-notice-kind').focus();
+  document.getElementById('dispatch-notice-overlay').hidden=false;syncDispatchMobileViewport();refreshDispatchNotice();
+  const dialog=document.getElementById('dispatch-notice-dialog');dialog.scrollTop=0;document.getElementById('dispatch-notice-fields-scroll').scrollTop=0;dialog.focus({preventScroll:true});
 }
 function closeDispatchNotice(){
   document.getElementById('dispatch-notice-overlay').hidden=true;dispatchNoticeState=null;
@@ -5705,6 +5743,7 @@ function dispatchNoticeValidation(options={}){
     }
   }
   if(channel==='sms'&&!phone)errors.push('문자를 받을 휴대폰 번호 1개를 정확히 입력해 주세요.');
+  else if(channel==='sms'&&r&&phone!==normalizeDispatchPhone(r.phone))errors.push('입력한 번호가 예약 연락처와 다릅니다. 원래 번호로 입력하거나 예약 연락처를 먼저 수정·저장해 주세요.');
   if(channel==='kakao'&&(!recipient||recipient.length>100))errors.push('카카오톡을 받을 고객 또는 대화방 이름을 100자 이내로 입력해 주세요.');
   if(dispatchNoticeKind()==='confirmation'&&dispatchNoticeState?.fieldsDirty)errors.push('추가 입력값이 변경되었습니다. ‘입력값으로 안내문 생성’을 눌러 주세요.');
   if(!body)errors.push('문자 내용을 입력해 주세요.');
@@ -5735,9 +5774,12 @@ function refreshDispatchNotice(){
   document.getElementById('dispatch-missing-actions').hidden=missing.length===0;
   document.getElementById('dispatch-notice-length').textContent=smsBytes===null?`${body.length.toLocaleString('ko-KR')} / 2,000자`:`${smsBytes.toLocaleString('ko-KR')} / 2,000바이트`;
   const apiButton=document.getElementById('dispatch-notice-api');
+  const hint=document.getElementById('dispatch-send-hint');
+  hint.textContent=errors[0]||'';hint.hidden=!hint.textContent;
+  document.getElementById('dispatch-notice-device-required').hidden=channel!=='sms'||!dispatchNoticeState.smsHistory?.deviceRequired;
   apiButton.hidden=channel!=='sms';
   apiButton.disabled=!!errors.length||!reviewed||ppurioBusy;
-  apiButton.textContent=ppurioBusy?'발송 중…':'문자 발송';
+  apiButton.textContent=ppurioBusy?'발송 중…':!reviewed&&!errors.length?'내용 확인 후 문자 발송':'문자 발송';
   document.getElementById('dispatch-api-device').hidden=channel!=='sms';
   document.getElementById('dispatch-api-uid').textContent=auth.currentUser?.uid||'로그인 연결을 확인해 주세요.';
   document.getElementById('dispatch-api-history').hidden=channel!=='sms';
@@ -5834,13 +5876,14 @@ async function loadSmsHistory(more=false){
     history.rows.push(...page.history);
     history.next=page.nextOffset;
     history.total=Number.isInteger(page.total)?page.total:history.next===null?new Set(history.rows.map(row=>row.id)).size:null;
-  }catch(error){history.error=error.message||'발송내역을 불러오지 못했습니다.';}
+  }catch(error){history.error=error.message||'발송내역을 불러오지 못했습니다.';history.deviceRequired=!!error.deviceRequired;}
   finally{
     history.loading=false;
-    if(dispatchNoticeState===state&&state.smsHistory===history)renderSmsHistory(state);
+    if(dispatchNoticeState===state&&state.smsHistory===history){renderSmsHistory(state);refreshDispatchNotice();}
   }
 }
 async function requestSmsApi(payload){
+  if(!auth.currentUser)throw new Error('예약관리 로그인 연결을 확인한 뒤 다시 시도해 주세요.');
   const token=await auth.currentUser.getIdToken();
   const response=await fetch(SUPABASE_URL+'/functions/v1/ppurio-reservation-sms',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,apikey:SUPABASE_ANON_KEY},
@@ -5850,6 +5893,7 @@ async function requestSmsApi(payload){
   if(!response.ok){
     const error=new Error(result.message||'뿌리오 발송 서비스에 연결할 수 없습니다.');
     error.outcome=result.outcome||(response.status<500?'failed':'unknown');
+    error.deviceRequired=response.status===403&&String(result.message||'').includes('직원용 예약관리 링크를 이 브라우저에서');
     throw error;
   }
   return result;
@@ -5885,9 +5929,16 @@ auth.onAuthStateChanged(user=>{if(user)openStaffSmsLink();});
 async function checkSmsConnection(button){
   const output=document.getElementById('dispatch-notice-result');
   if(!auth.currentUser){output.textContent='예약관리 로그인 연결을 확인하세요.';return;}
-  button.disabled=true;
-  try{const result=await requestSmsApi({action:'check'});output.textContent=result.message;}
-  catch(error){output.textContent=error.message||'연결을 확인할 수 없습니다.';}
+  button.disabled=true;const state=dispatchNoticeState;
+  try{
+    const result=await requestSmsApi({action:'check'});if(dispatchNoticeState!==state)return;
+    output.textContent=result.message;
+    if(state?.smsHistory?.deviceRequired){state.smsHistory.deviceRequired=false;refreshDispatchNotice();loadSmsHistory();}
+  }catch(error){
+    if(dispatchNoticeState!==state)return;
+    output.textContent=error.message||'연결을 확인할 수 없습니다.';
+    if(error.deviceRequired&&state?.smsHistory){state.smsHistory.deviceRequired=true;refreshDispatchNotice();}
+  }
   finally{button.disabled=false;}
 }
 async function sendReservationSms(){
@@ -5923,9 +5974,10 @@ async function sendReservationSms(){
       }
     }
     if(result.accepted&&dispatchNoticeState===state)loadSmsHistory();
-    if(result.accepted)notify((result.recorded===false?'문자 발송 성공 · 내역 저장 지연':'문자 발송 성공')+(result.at?' · '+smsTime(result.at):''));
+    if(result.accepted)notify((result.recorded===false?'뿌리오 발송 접수 · 내역 저장 지연':'뿌리오 발송 접수')+(result.at?' · '+smsTime(result.at):''));
     else notify('발송 결과 확인 필요 · 뿌리오 발송내역을 확인하세요.');
   }catch(error){
+    if(error.deviceRequired&&dispatchNoticeState===state&&state.smsHistory){state.smsHistory.deviceRequired=true;refreshDispatchNotice();}
     notify(error.outcome==='failed'?'문자 발송 실패 · '+error.message:'발송 결과 확인 필요 · 재발송 전에 뿌리오 발송내역을 확인하세요.');
   }
   finally{ppurioBusy=false;refreshDispatchNotice();}
@@ -5957,7 +6009,7 @@ function markDispatchNoticeSent(){
 }
 document.getElementById('dispatch-notice-overlay').addEventListener('keydown',event=>{
   if(event.key==='Escape'){event.preventDefault();closeDispatchNotice();return}
-  if(event.key!=='Tab')return;const items=[...document.getElementById('dispatch-notice-overlay').querySelectorAll('button:not([disabled]),input,textarea,select,summary')].filter(el=>el.getClientRects().length>0),first=items[0],last=items.at(-1);
+  if(event.key!=='Tab')return;const items=[...document.getElementById('dispatch-notice-overlay').querySelectorAll('button:not([disabled]),input,textarea,select,summary,a[href]')].filter(el=>el.getClientRects().length>0),first=items[0],last=items.at(-1);
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}
 });
 setInterval(()=>{if(document.getElementById('view-schedule')?.classList.contains('on')){if(dispatchNoticeOnly)renderSchedule();else updateDispatchNoticeSummary()}if(dispatchNoticeState)refreshDispatchNotice()},30000);
