@@ -141,6 +141,7 @@ select option{background:var(--panel-solid)}
 .badge{font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:600;letter-spacing:.3px}
 .b-wait{background:rgba(184,137,43,.15);color:var(--gold)}
 .b-active{background:rgba(46,158,107,.15);color:var(--ok)}
+.driver-tag{display:inline-block;white-space:nowrap;color:#24488a;background:#e9effa;border-radius:4px;padding:2px 6px;font-size:12px;font-weight:650;line-height:1.4}
 .b-done{background:rgba(20,25,40,.07);color:var(--ivory-dim)}
 .b-flag{background:rgba(209,67,67,.15);color:var(--danger)}
 .res-info{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12.5px;color:var(--ivory-dim)}
@@ -1132,6 +1133,7 @@ body.tv-mode{display:block;background:#0b1420}
                 <div class="field"><label for="f-balance">잔금 (원)</label><input id="f-balance" inputmode="decimal" placeholder="미확인은 공란"></div>
               </div>
               <p class="hint" id="balance-help">총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.</p>
+              <div class="field"><label for="f-driver-service">운행 구분</label><select id="f-driver-service"><option value="">자동 구분</option><option value="driver">운행기사</option><option value="self">일반 대여</option></select></div>
               <div class="field reservation-row-memo"><label for="f-memo">메모</label><textarea id="f-memo" rows="2" placeholder="추가 요청·운영 메모"></textarea></div>
               <div class="reservation-actions">
                 <button class="btn btn-gold btn-block" onclick="saveRes()" id="save-btn">예약 저장</button>
@@ -1203,6 +1205,7 @@ body.tv-mode{display:block;background:#0b1420}
         <div class="card-b">
           <div class="tabs" id="sched-tabs">
             <button class="on" data-t="all" onclick="setSched(this)">전체</button>
+            <button data-t="driver" onclick="setSched(this)">운행기사</button>
             <button data-t="쏠라티" onclick="setSched(this)">쏠라티</button>
             <button data-t="스타리아" onclick="setSched(this)">스타리아</button>
             <button data-t="카니발" onclick="setSched(this)">카니발</button>
@@ -2147,6 +2150,7 @@ function guideMonthFor(day,now){return Number(day)<now.getDate()?now.getMonth()+
 function applyParsingGuide(raw,r){
   r={...r,warnings:[...(r.warnings||[])]};const now=new Date(),text=String(raw||''),warn=w=>{if(!r.warnings.includes(w))r.warnings.push(w)};
   const memo=[];const structured=r.format==='확인문자';
+  r.driverService=driverServiceFromText(text);
   // ── 연락처: 소개처 고정 번호 ──
   const phones=[...text.matchAll(/(?:\+82\s*|0)1[016789][\s.-]?\d{3,4}[\s.-]?\d{4}/g)].map(m=>m[0].replace(/^\+82\s*/,'0').replace(/\D/g,''));
   const partnerDigits=phones.find(d=>PARTNER_PHONES[guidePhoneKey(d)]);
@@ -2605,6 +2609,7 @@ function applyParsedResult(r){
   const plate=resolvePlate(r.plate),car=(plate&&PLATE_MAP[plate]?PLATE_MAP[plate].n:r.car)||'';
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
   set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
+  set('f-driver-service',r.driverService||'');
   // Insurance is selected by staff; parsing must preserve the form selection.
   populateFinanceForm(r);
   set('f-memo',[r.memo,buildFinancialMemo(r,r.memo)].filter(Boolean).join(' · '));
@@ -2657,7 +2662,7 @@ function friendlyAIError(e){
 }
 let reservationFormVersion=0;
 function reservationInputSnapshot(){
-  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price'];
+  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service'];
   return JSON.stringify([editId,...ids.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'']);
 }
 async function smartParse(){
@@ -2863,7 +2868,7 @@ function parseKakaoReservationEvent(text,baseDate,forcedType=''){
   const memo=[/자차\s*면책금[^\n]*/.test(text)?(String(text).match(/자차\s*면책금[^\n]*/)||[])[0]:'',opNotes.join(' / ')].filter(Boolean).join(' · ');
   return{action,reservationNumber:'',targetReservationId:'',customerName:person.customerName,sourceName:person.sourceName,phone:person.phone,secondaryPhones:person.secondaryPhones,
     car:car.car,carClass:car.carClass,plate,plateCandidates,quantity,start:date.start,end:date.end,days:date.days,
-    insurance,pickup:loc.pickup,returnLocation:loc.returnLocation,returnLocationExplicit:loc.returnLocationExplicit,total:money.total,deposit:money.deposit,balance:money.balance,paymentMethod:money.paymentMethod,paymentStatus:money.paymentStatus,
+    driverService:driverServiceFromText(text),insurance,pickup:loc.pickup,returnLocation:loc.returnLocation,returnLocationExplicit:loc.returnLocationExplicit,total:money.total,deposit:money.deposit,balance:money.balance,paymentMethod:money.paymentMethod,paymentStatus:money.paymentStatus,
     status:action==='CANCEL'?'cancelled':'pending',memo,operationNotes:opNotes,changedFields:[...new Set(changedFields)],confidence,warnings:[...new Set(warnings)],
     evidence:kakaoEvidence(text,[['phone',/(?:\+82\s*10|01[016789])[-\s.]?\d{3,4}[-\s.]?\d{4}/],['car',/카니발[^\n]*|스타리아[^\n]*|쏠라티[^\n]*|아반떼[^\n]*|셀토스[^\n]*/],['date',/\d{1,2}[\/월]\d{1,2}[^\n]*/],['payment',/(?:계약금|잔금|완납|입완|현\d|카\d)[^\n]*/]])};
 }
@@ -2935,7 +2940,7 @@ function renderKakaoAnalysis(messageCount=0,clusterCount=0){
 }
 function kakaoDisplayName(e){return reservationCustomerName({name:[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||e.name||''})}
 function kakaoCarField(e,existing=''){const source=String(e.car||existing||'').trim(),p=resolvePlate(e.plate)||e.plate||reservationVehicleId({car:source}),car=source?reservationVehicleName({car:source}):'';return [car,p?`(${p})`:''].filter(Boolean).join(' ')}
-function fillKakaoEventForm(e){clearForm();populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
+function fillKakaoEventForm(e){clearForm();set('f-driver-service',e.driverService||'');populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
 function chooseKakaoMatch(e){
   const matches=matchKakaoReservation(e).filter(m=>m.score>=50);if(!matches.length)return null;const top=matches[0],second=matches[1];if(top.score>=80&&(!second||top.score-second.score>=30))return data.find(r=>r.id===top.reservationId);
   const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${reservationCustomerName(r)} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
@@ -2950,7 +2955,7 @@ function applyKakaoRow(i){
   snapshot();const before=JSON.parse(JSON.stringify(target)),changed=[];const setField=(key,val)=>{if(val!==''&&val!=null&&target[key]!==val){target[key]=val;changed.push(key)}};
   if(e.action==='CANCEL'){setField('status','cancelled')}
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
-  if(e.action==='UPDATE'){if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
+  if(e.action==='UPDATE'){if(e.driverService)setField('driverService',e.driverService);if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
   if(['UPDATE','LOCATION_UPDATE'].includes(e.action)){if(e.pickup)setField('pickup',e.pickup);if(e.returnLocation)setField('ret',e.returnLocation)}
   if(e.action==='PAYMENT_UPDATE'){if(e.total!=null)setField('total',e.total);if(e.deposit!=null){setField('deposit',e.deposit);setField('paid',e.deposit)}if(e.balance!=null){setField('balance',e.balance);if(moneyNumber(target.total)!==null)setField('paid',Math.max(0,moneyNumber(target.total)-e.balance));else setField('paid',null)}if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
   const extra=[e.memo,...(e.operationNotes||[]),buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod}),e.paymentStatus?`결제상태 ${e.paymentStatus}`:''].filter(Boolean).join(' · ');if(extra&&!String(target.memo||'').includes(extra))setField('memo',[target.memo,extra].filter(Boolean).join(' · '));
@@ -2958,7 +2963,7 @@ function applyKakaoRow(i){
   const invalid=validateReservation(target);if(invalid){data[data.findIndex(x=>x.id===target.id)]=before;toast(invalid);return}if(!confirmReservationWarnings(target)){data[data.findIndex(x=>x.id===target.id)]=before;return}
   saveKakaoHistory(target.id,e.action,changed,before,JSON.parse(JSON.stringify(target)),row.cluster.messages.map(m=>m.text.slice(0,120)));save();render();row.ignored=true;renderKakaoAnalysis();toast('예약에 반영하고 변경 이력을 저장했습니다');
 }
-function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
+function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.driverService)set('f-driver-service',e.driverService);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
 function ignoreKakaoRow(i){if(!kakaoAnalysisState[i])return;kakaoAnalysisState[i].ignored=true;renderKakaoAnalysis();toast('이 분석 결과를 무시했습니다')}
 
 /* ===== 카톡 신규 예약을 폼 안 거치고 바로 Firestore에 저장 ===== */
@@ -2975,6 +2980,7 @@ function kakaoEventToReservation(e){
     status:'wait',
     pickup:e.pickup||'사무실',
     ret:e.returnLocation||e.pickup||'사무실',
+    driverService:e.driverService||'',
     total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
@@ -3298,6 +3304,7 @@ function updateFinanceBalance(){
 function reservationFormRecord(){
   const car=val('f-car'),pickup=val('f-pickup')||'사무실';
   const candidate={name:reservationCustomerName({name:val('f-name')}),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
+  candidate.driverService=val('f-driver-service');
   candidate.vehicleId=reservationVehicleId({car});
   const selected=document.getElementById('f-car').dataset.fullPlate;
   if(selected&&PLATE_MAP[selected]&&car===`${PLATE_MAP[selected].n} (${selected.slice(-4)})`)candidate.vehicleId=selected;
@@ -3356,7 +3363,7 @@ function saveRes(){
 function clearForm(){
   editReturnPosition=null;
   reservationFormVersion++;
-  ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price'].forEach(i=>set(i,''));
+  ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service'].forEach(i=>set(i,''));
   document.getElementById('f-ins').value='일반면책';document.getElementById('f-status').value='wait';
   delete document.getElementById('f-car').dataset.fullPlate;
   document.getElementById('f-car').title='';
@@ -3368,6 +3375,7 @@ function clearForm(){
 function fillReservationEdit(original,position){
   const r=normalizeReservationLocationRecord(original);clearForm();
   editReturnPosition=position;
+  set('f-driver-service',r.driverService||'');
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   set('f-ins',reservationInsurance(r)==='완전면책'?'완전자차':'일반면책');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
@@ -3428,6 +3436,17 @@ function reservationActionButtons(r,compact=false){
   if(r.status==='active')return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'done')">반납 완료</button>`;
   return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'active')">배차 완료</button>`;
 }
+function driverServiceFromText(text){
+  const note=String(text||'').replace(/(?:탁송|배차|회차|대리)[ \t]*기사(?:님)?/g,'');
+  if(/기사(?:님)?[ \t]*(?:운행|포함|동행)?[ \t]*(?:[:：][ \t]*)?(?:미포함|불포함|제외|없이|없음|아님|취소|불필요)/.test(note))return 'self';
+  if(/기사(?:님)?[ \t]*(?:포함|운행|동행)?[ \t]*(?:여부|문의|가능|[?？])/.test(note))return '';
+  return /(?:운행[ \t]*기사(?:님)?|기사(?:님)?[ \t]*(?:포함|운행|동행))(?:[ \t]*건)?(?![가-힣])/.test(note)?'driver':'';
+}
+function isDriverReservation(r){
+  if(r.driverService==='driver'||r.driverService==='self')return r.driverService==='driver';
+  return driverServiceFromText([r.car,r.memo,r.pickup,r.ret].join('\n'))==='driver';
+}
+function driverBadge(r){return isDriverReservation(r)?'<span class="driver-tag">운행기사</span>':''}
 function reservationBalanceLabel(r){const amount=reservationBalance(r);return amount===null?'금액 미확인':amount===0?'완납':amount.toLocaleString('ko-KR')+'원'}
 function resCard(r,withNotice=false){
   const today=(r.start||'').slice(0,10)===todayStr(),conflict=hasConflict(r),id=uiArg(r.id),phone=String(r.phone||'').replace(/[^+\d]/g,'');
@@ -3436,7 +3455,7 @@ function resCard(r,withNotice=false){
   const mapUrl=destination?'https://map.kakao.com/?q='+encodeURIComponent(destination):'';
   const alerts=dashboardAttentionReasons(r);
   return `<article class="res ${today?'today':''} ${conflict?'conflict':''}">
-    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(reservationCustomerName(r))}</span></div><div class="res-status">${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
+    <div class="res-top"><div class="res-name">${esc(carName)}<span class="res-plate-number ${plate?'':'unassigned'}">${esc(plate||'차량번호 미배정')}</span><span class="res-customer">예약자 · ${esc(reservationCustomerName(r))}</span></div><div class="res-status">${driverBadge(r)}${conflict?'<span class="badge b-flag">일정 중복</span>':''}${statusBadge(r.status)}</div></div>
     <div class="res-info"><div class="res-time"><span class="label">배차</span><b>${esc(fmtShort(r.start))}</b></div><div class="res-time"><span class="label">반납</span><b>${esc(fmtShort(r.end))}</b></div><div class="full"><span class="label">배차 → 회차</span><b>${esc(r.pickup||'장소 미정')} → ${esc(r.ret||r.pickup||'장소 미정')}</b></div><div><span class="label">연락처</span><b>${esc(r.phone||'미기재')}</b></div><div><span class="label">보험</span><b>${esc(reservationInsurance(r))}</b></div><div class="full res-money"><span>잔금</span><strong>${esc(reservationBalanceLabel(r))}</strong></div>${r.memo?`<details class="full res-memo"><summary>메모 보기</summary><div class="res-memo-content">${esc(r.memo)}</div></details>`:''}</div>
     ${alerts.length?`<div class="res-alert">${esc(alerts.join(' · '))}</div>`:''}
     <div class="res-actions">${phone?`<a class="res-action" href="tel:${esc(phone)}">전화</a>`:''}${mapUrl?`<a class="res-action" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">길찾기</a>`:''}${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r)}<button class="link" onclick="editRes(${id})">수정</button><button class="link del" onclick="delRes(${id})">삭제</button></div>
@@ -3454,7 +3473,7 @@ function resTable(rows,withNotice=false){
   const body=rows.map(r=>{
     const today=(r.start||'').slice(0,10)===t,conflict=hasConflict(r),id=uiArg(r.id),plate=reservationVehicleId(r),carName=reservationVehicleName(r);
     const ed=(field,cls,val,type='')=>`<td class="${cls} editable" data-id="${esc(r.id)}" data-field="${field}" ${type?'data-type="'+type+'"':''} onclick="startEdit(this)" title="클릭하여 수정">${esc(val||'-')}</td>`;
-    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${plateCell(r,plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)}</td><td><div class="rowact">${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
+    return `<tr class="${today?'today':''} ${conflict?'conflict':''}">${ed('start','',fmtShort(r.start),'dt')}${ed('end','',fmtShort(r.end),'dt')}${ed('carName','c-name',carName)}${plateCell(r,plate)}<td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup)}<td class="c-bal"><button class="link" onclick="editRes(${id})" title="금액 수정">${esc(reservationBalanceLabel(r))}</button></td><td>${statusMini(r.status)} ${driverBadge(r)}</td><td><div class="rowact">${withNotice===true?dispatchNoticeButton(r):''}${reservationActionButtons(r,true)}<button onclick="event.stopPropagation();editRes(${id})" title="예약 전체 수정" aria-label="예약 전체 수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${id})" title="예약 삭제" aria-label="예약 삭제">✕</button></div></td></tr>`;
   }).join('');
   return `<div class="res-table-wrap"><table class="res-table">${head}<tbody>${body}</tbody></table></div>`;
 }
@@ -3647,7 +3666,7 @@ function reservationListRows(){
     if(!dashboardMetricMatch(r))return false;
     if(dashboardMetric==='all'&&dashboardPeriod==='upcoming'&&!dashboardUpcomingRecord(r,today))return false;
     if(dashboardMetric==='all'&&range){if(r.status==='cancelled')return false;const start=String(r.start||'').slice(0,10),end=String(r.end||r.start||'').slice(0,10);const intersects=start&&start<=range[1]&&end>=range[0];if(!intersects&&!(dashboardPeriod==='today'&&r.status==='active'&&dashboardUpcomingRecord(r,today)))return false}
-    if(q&&![reservationCustomerName(r),r.car,r.phone,r.pickup,r.ret,r.memo].join(' ').toLowerCase().includes(q))return false;return true;
+    if(q&&![reservationCustomerName(r),r.car,r.phone,r.pickup,r.ret,r.memo,isDriverReservation(r)?'운행기사':''].join(' ').toLowerCase().includes(q))return false;return true;
   });
   const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
   rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||reservationCustomerName(a).localeCompare(reservationCustomerName(b)));
@@ -3737,7 +3756,7 @@ function paintReservationList(rows){
       <td class="c-name editable" data-id="${esc(r.id)}" data-field="name" onclick="startEdit(this)">${esc(reservationCustomerName(r))}${conflict?' <span class="mini-badge b-flag">중복</span>':''}</td>
       ${ed('phone','',r.phone)}${ed('pickup','c-memo',r.pickup)}${ed('ret','c-memo',r.ret||r.pickup||'사무실')}
       ${ed('balance','c-bal',reservationBalanceLabel(r))}
-      <td>${statusMini(r.status)}</td>
+      <td>${statusMini(r.status)} ${driverBadge(r)}</td>
       <td><div class="rowact"><button onclick="event.stopPropagation();cycleStatus(${uiArg(r.id)})" title="상태변경">↻</button><button onclick="event.stopPropagation();editRes(${uiArg(r.id)})" title="전체수정">✎</button><button class="del" onclick="event.stopPropagation();delRes(${uiArg(r.id)})" title="삭제">✕</button></div></td>
     </tr>`;
     // 행 사이 삽입 버튼
@@ -3781,6 +3800,7 @@ function scheduleRows(now=Date.now()){
     if(schedTab==='done')return r.status==='done';
     if(r.status==='done'&&r.end&&reservationTime(r.end)<now)return false;
     if(schedTab==='all')return true;
+    if(schedTab==='driver')return isDriverReservation(r);
     const vehicle=PLATE_MAP[reservationVehicleId(r)];
     return vehicle?vehicle.base===schedTab:carBase(r.car)===schedTab||((r.car||'').includes(schedTab));
   }).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
@@ -3820,6 +3840,7 @@ function renderSchedule(){
 function addForDate(ds){
   clearForm();
   if(ds){set('f-start',ds+'T09:00');set('f-end',ds+'T20:00')}
+  if(schedTab==='driver')set('f-driver-service','driver');
   // 일정표 탭이 차종필터면 차종도 힌트로
   if(['쏠라티','스타리아','카니발'].includes(schedTab))set('f-car',schedTab);
   go2('dashboard');
@@ -4152,11 +4173,14 @@ function fmtSheetDT(dt,withDow){
   const base=`${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   return withDow?`${base}(${D[d.getDay()]})`:base;
 }
-function schedulePrintPlace(record){
+function schedulePrintPlaceHtml(record){
   const {pickup,ret}=normalizedLocationPair(record.pickup,record.ret||record.returnLocation,{defaultOffice:false});
-  if(!pickup&&!ret)return '미기재';
-  if(pickup.replace(/\s+/g,' ')===ret.replace(/\s+/g,' '))return pickup;
-  return `배차: ${pickup||'미기재'}\n회차: ${ret||'미기재'}`;
+  const withDriver=isDriverReservation(record);
+  const address=place=>withDriver?place.replace(/^\[운행기사\]\s*/,''):place;
+  const from=address(pickup),to=address(ret);
+  const origin=(withDriver?'<b class="driver-mark">[운행기사]</b> ':'')+esc(from||'미기재');
+  if(from.replace(/\s+/g,' ')===to.replace(/\s+/g,' '))return origin;
+  return `배차: ${origin}\n회차: ${esc(to||'미기재')}`;
 }
 // 내보낼 행 구성: 날짜별 그룹 + 그룹 사이 빈 줄, 첫 행에만 요일
 function buildSheetRows(){
@@ -4175,7 +4199,7 @@ function buildSheetRows(){
       임차인명:reservationCustomerName(r),
       임차인연락처:(r.phone||'').replace(/-/g,'.'),
       배차:r.pickup||'', 회차:r.ret||r.pickup||'사무실',
-      인쇄장소:schedulePrintPlace(r),
+      인쇄장소Html:schedulePrintPlaceHtml(r),
       총금액:moneyNumber(r.total),
       계약금:moneyNumber(r.deposit)??moneyNumber(r.paid),
       잔금:reservationBalance(r),
@@ -4208,7 +4232,7 @@ function printSchedule(){
       <td>${esc(r.대여예정일시)}</td><td>${esc(r.반납예정일시)}</td>
       <td class="vehicle${isSolati?' solati':''}">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
       <td>${esc(r.임차인명)}</td><td>${esc(r.임차인연락처)}</td>
-      <td class="place">${esc(r.인쇄장소)}</td>
+      <td class="place">${r.인쇄장소Html}</td>
       <td class="money">${amount(r.총금액)}</td><td class="money">${amount(r.계약금)}</td>
       <td class="money">${r.잔금===0?'0원 (완납)':amount(r.잔금)}</td>
     </tr>`;
@@ -4226,6 +4250,7 @@ function printSchedule(){
     th{background:#e8e8e8;font-weight:700;height:28px}
     td.solati{background-color:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td.place{text-align:left;white-space:pre-line}
+    .driver-mark{white-space:nowrap}
     td.money{text-align:right;font-variant-numeric:tabular-nums}
     tr{break-inside:avoid}
     tr.blank td{height:24px;border-color:#000}
@@ -4370,7 +4395,7 @@ function mTaskCard(r,type,now,isNext,showTiming=true){
       <span class="m-task-body">
         <span class="m-task-car"><span>${esc(v.name||'차량 미정')}</span><b class="${v.plate?'':'m-unassigned'}">${esc(v.plate||'번호 미배정')}</b></span>
         <span class="m-task-meta">${esc(reservationCustomerName(r))} · ${esc(place)}</span>
-        <span class="m-task-tags"><span class="m-st ${cls}">${esc(st)}</span>${extra.map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</span>
+        <span class="m-task-tags">${driverBadge(r)}<span class="m-st ${cls}">${esc(st)}</span>${extra.map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</span>
       </span>
     </button>
     <div class="m-task-actions">${phone?`<a class="m-icon-btn" href="tel:${esc(phone)}" aria-label="${esc(reservationCustomerName(r))}에게 전화">${M_ICON.phone}</a>`:''}${map?`<a class="m-icon-btn" href="${esc(map)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(place)} 길찾기">${M_ICON.nav}</a>`:''}</div>
@@ -4427,7 +4452,7 @@ function mobileReservationRows(rows){
     const end=byEnd(r),v=tvVehicleDisplay(r),[st,cls]=mStatus(r),[money,mcls]=mMoney(r);
     const when=String((end?r.end:r.start)||'').slice(11,16)||'--:--';
     const meta=[reservationCustomerName(r),end?'반납 '+when:(r.end?'~'+fmtShort(r.end):''),end?(r.ret||r.pickup||''):(r.pickup||'')].filter(Boolean).join(' · ');
-    return `<button class="m-row" onclick="openMobileSheet(${uiArg(r.id)})"><span class="m-row-car"><time>${esc(when)}</time><span>${esc(v.name||'차량 미정')}</span><b class="${v.plate?'':'m-unassigned'}">${esc(v.plate||'미배정')}</b></span><span class="m-st ${cls}">${esc(st)}</span><span class="m-row-meta">${esc(meta)}</span><span class="m-row-money ${mcls}">${esc(money)}</span></button>`;
+    return `<button class="m-row" onclick="openMobileSheet(${uiArg(r.id)})"><span class="m-row-car"><time>${esc(when)}</time><span>${esc(v.name||'차량 미정')}</span><b class="${v.plate?'':'m-unassigned'}">${esc(v.plate||'미배정')}</b></span><span class="m-st ${cls}">${esc(st)}</span><span class="m-row-meta">${driverBadge(r)} ${esc(meta)}</span><span class="m-row-money ${mcls}">${esc(money)}</span></button>`;
   }).join('')}</div>`).join('');
 }
 function updateMobileMetricChips(){
@@ -4539,7 +4564,7 @@ function renderMobileSheet(){
   const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.id?`id="${attrs.id}"`:''} ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
   document.getElementById('m-sheet-body').innerHTML=`
     <header class="m-sheet-head"><div>
-      <div class="m-task-tags"><span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
+      <div class="m-task-tags">${driverBadge(r)}<span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
       <h2 id="m-sheet-title">${esc(v.name||'차량 미정')}</h2>
       <button type="button" class="m-plate-btn${v.plate?'':' empty'}" id="m-sheet-plate" onclick="openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">${v.plate?`<b>${esc(v.plate)}</b><span>번호 변경</span>`:'<b>＋ 차량번호 배정</b>'}</button>
       <div class="m-sheet-contact"><p>${esc(reservationCustomerName(r))}${r.phone?' · <span id="m-sheet-value-phone">'+esc(r.phone)+'</span>':''}</p>${copy('phone','전화번호',r.phone)}</div>
@@ -4919,6 +4944,7 @@ function auditEventToReservation(e){
   return normalizeReservationLocationRecord({
     id:uid(),name,phone:e.phone||'',car,start:e.start||'',end:e.end||'',days:e.days||'',
     ins:'일반면책',status:'wait',pickup:e.pickup||'사무실',ret:e.returnLocation||e.pickup||'사무실',
+    driverService:e.driverService||'',
     total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
@@ -5304,6 +5330,7 @@ function normalizeJSONPasteRecord(raw,index){
   const id=typeof raw.id==='string'?raw.id.trim():'';
   if(!id||id.length>500||/[\/\x00-\x1f]/.test(id))errors.push('고유 ID가 없거나 형식이 잘못되었습니다');
   const r={id};
+  if(raw.driverService==='driver'||raw.driverService==='self')r.driverService=raw.driverService;
   const fields=['name','phone','car','vehicleId','start','end','days','ins','insuranceFee','paymentMethod','pickup','ret','memo','sourceFile','sourceRow','sourceBatch'];
   fields.forEach(key=>{if(Object.prototype.hasOwnProperty.call(raw,key))r[key]=jsonPasteText(raw[key],key,errors,key==='memo'?20000:2000)});
   for(const key of ['name','phone','car','vehicleId','start','end','ins','insuranceFee','paymentMethod'])r[key]=String(r[key]||'').trim();
