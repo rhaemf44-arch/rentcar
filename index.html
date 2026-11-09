@@ -1106,6 +1106,14 @@ body.tv-mode{display:block;background:#0b1420}
                 <div class="field"><label for="f-phone">연락처</label><input id="f-phone" placeholder="010-0000-0000"></div>
                 <div class="field"><label for="f-car">배차 차량명 / 번호</label><input id="f-car" list="vehicle-options" placeholder="차량 선택 또는 배차 차량명 직접 입력" aria-describedby="vehicle-name-help" onfocus="refreshReservationVehicleOptions()"><datalist id="vehicle-options"></datalist><small id="vehicle-name-help" class="field-help">외부 렌트카 차량명도 직접 입력·수정할 수 있습니다. 외부 차량번호는 전체 번호로 입력하세요.</small></div>
               </div>
+              <div class="field">
+                <label for="f-driver-service">기사 포함 여부</label>
+                <select id="f-driver-service">
+                  <option value="">자동 구분</option>
+                  <option value="driver">기사 포함</option>
+                  <option value="self">기사 미포함</option>
+                </select>
+              </div>
               <div class="reservation-row-date">
                 <div class="field"><label for="f-start">대여 시작</label><input id="f-start" type="datetime-local"></div>
                 <div class="field"><label for="f-end">반납 일시</label><input id="f-end" type="datetime-local"></div>
@@ -1133,7 +1141,6 @@ body.tv-mode{display:block;background:#0b1420}
                 <div class="field"><label for="f-balance">잔금 (원)</label><input id="f-balance" inputmode="decimal" placeholder="미확인은 공란"></div>
               </div>
               <p class="hint" id="balance-help">총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.</p>
-              <div class="field"><label for="f-driver-service">운행 구분</label><select id="f-driver-service"><option value="">자동 구분</option><option value="driver">운행기사</option><option value="self">일반 대여</option></select></div>
               <div class="field reservation-row-memo"><label for="f-memo">메모</label><textarea id="f-memo" rows="2" placeholder="추가 요청·운영 메모"></textarea></div>
               <div class="reservation-actions">
                 <button class="btn btn-gold btn-block" onclick="saveRes()" id="save-btn">예약 저장</button>
