@@ -328,7 +328,11 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
 .reservation-actions{display:grid;grid-template-columns:minmax(200px,1fr) auto;gap:10px;align-items:stretch;margin-top:2px}
 .reservation-actions .btn{min-height:42px}
 .reservation-form-panel input,.reservation-form-panel select,.reservation-form-panel textarea{width:100%;min-width:0;max-width:100%}
-.reservation-form-panel input[type="datetime-local"]{width:100%;min-width:0;font-size:14px;padding-left:12px;padding-right:8px}
+.reservation-datetime{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.reservation-datetime>input[type=date]{flex:1.2 1 145px;width:100%;min-width:0;max-width:100%;text-align:left;box-sizing:border-box}
+.reservation-clock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;flex:1 1 132px}
+.reservation-clock select{width:100%;min-width:0;padding-inline:7px}
+.reservation-time-hint[hidden]{display:none!important}
 .dashboard-schedule{margin-top:20px}
 .dashboard-schedule.card{margin-bottom:0}
 .schedule-table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:visible}
@@ -545,7 +549,7 @@ body.tv-mode{display:block;background:#0b1420}
 #reservation-panel .reservation-row-contact,#reservation-panel .reservation-row-location{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #reservation-panel .reservation-row-date{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #reservation-panel .reservation-row-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-#reservation-panel input[type="datetime-local"]{font-size:15px}
+#reservation-panel .reservation-datetime :is(input,select){font-size:16px;min-height:44px}
 #reservation-panel .reservation-actions{position:static;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin-top:4px;padding:10px 0 0;border-top:1px solid var(--line);background:#fff}
 #reservation-panel .reservation-actions .btn{min-height:46px;font-size:15px}
 #reservation-panel #balance-help{font-size:11px;color:#64748b;line-height:1.5}
@@ -925,8 +929,8 @@ body.tv-mode{display:block;background:#0b1420}
   .m-plate-btn.empty b{font-size:15px}
   .plate-picker.form-mode .plate-picker-search,.plate-picker.form-mode .plate-picker-foot>span{display:none}
   #reservation-panel .field,#reservation-panel .reservation-form-grid>*{min-width:0}
-  #reservation-panel input[type=datetime-local]{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:left}
-  #reservation-panel input[type=datetime-local]::-webkit-date-and-time-value{text-align:left}
+  #reservation-panel .reservation-datetime input[type=date]{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:left}
+  #reservation-panel .reservation-datetime input[type=date]::-webkit-date-and-time-value{text-align:left}
   .plate-picker{left:8px!important;width:auto;right:8px;max-width:none;z-index:120}
   .plate-picker-list{max-height:min(320px,45vh)}
   .plate-picker-foot>span{display:none}
@@ -1105,8 +1109,26 @@ body.tv-mode{display:block;background:#0b1420}
                 <small id="driver-phone-help" class="field-help">기사 배정 후 입력하세요. 고객에게 보내는 안내 문자 본문에 표시됩니다.</small>
               </div>
               <div class="reservation-row-date">
-                <div class="field"><label for="f-start">대여 시작</label><input id="f-start" type="datetime-local"></div>
-                <div class="field"><label for="f-end">반납 일시</label><input id="f-end" type="datetime-local"></div>
+                <div class="field"><label for="f-start-date">대여 시작</label>
+                  <div class="reservation-datetime" role="group" aria-label="대여 시작">
+                    <input type="date" id="f-start-date" aria-label="대여 시작 날짜">
+                    <div class="reservation-clock">
+                      <select id="f-start-hour" aria-label="대여 시작 시"></select>
+                      <select id="f-start-minute" aria-label="대여 시작 분" aria-describedby="f-start-hint"><option value="00">00분</option><option value="30">30분</option></select>
+                    </div>
+                  </div>
+                  <input type="hidden" id="f-start"><small id="f-start-hint" class="field-help reservation-time-hint" aria-live="polite" hidden></small>
+                </div>
+                <div class="field"><label for="f-end-date">반납 일시</label>
+                  <div class="reservation-datetime" role="group" aria-label="반납 일시">
+                    <input type="date" id="f-end-date" aria-label="반납 일시 날짜">
+                    <div class="reservation-clock">
+                      <select id="f-end-hour" aria-label="반납 일시 시"></select>
+                      <select id="f-end-minute" aria-label="반납 일시 분" aria-describedby="f-end-hint"><option value="00">00분</option><option value="30">30분</option></select>
+                    </div>
+                  </div>
+                  <input type="hidden" id="f-end"><small id="f-end-hint" class="field-help reservation-time-hint" aria-live="polite" hidden></small>
+                </div>
               </div>
               <div class="reservation-row-meta">
                 <div class="field"><label for="f-days">일수</label><input id="f-days" type="number" min="1" placeholder="3"></div>
@@ -2659,7 +2681,7 @@ function friendlyAIError(e){
 }
 let reservationFormVersion=0;
 function reservationInputSnapshot(){
-  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone'];
+  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone','f-start-date','f-start-hour','f-start-minute','f-end-date','f-end-hour','f-end-minute'];
   return JSON.stringify([editId,...ids.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'']);
 }
 async function smartParse(){
@@ -2677,9 +2699,53 @@ async function smartParse(){
   finally{setAIParsing(false)}
 }
 function set(id,v){
+  if(id==='f-start'||id==='f-end'){setReservationDateTime(id,v);return}
   document.getElementById(id).value=v??'';
   if(isDriverModeInput(id))refreshDriverPhoneField();
 }
+// Visible local date/hour/minute controls share one YYYY-MM-DDTHH:mm value with existing reservation flows.
+function reservationClockParts(id){
+  const by=suffix=>document.getElementById(id+suffix);
+  return {value:by(''),date:by('-date'),hour:by('-hour'),minute:by('-minute'),hint:by('-hint')};
+}
+function reservationClockHint(parts,message){
+  parts.hint.textContent=message;parts.hint.hidden=!message;
+}
+function setReservationDateTime(id,value,fromSaved=false){
+  const p=reservationClockParts(id),raw=String(value||''),match=/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(raw);
+  p.minute.querySelectorAll('[data-transient]').forEach(option=>option.remove());
+  p.date.value=match?match[1]:'';
+  p.hour.value=match?match[2]:(id==='f-start'?'09':'20');
+  p.minute.value=match?match[3]:'00';
+  p.value.value=match&&p.date.value&&p.hour.value&&p.minute.value?raw:'';
+  reservationClockHint(p,'');
+  if(match&&p.date.value&&p.hour.value&&!p.minute.value){
+    const opt=new Option(fromSaved?match[3]+'분 (기존)':'분 선택',fromSaved?match[3]:'');
+    opt.disabled=true;opt.dataset.transient='1';p.minute.prepend(opt);opt.selected=true;
+    if(fromSaved)p.value.value=raw;
+    reservationClockHint(p,fromSaved?'기존 '+match[2]+':'+match[3]+' 예약입니다. 일시를 변경할 때는 00분 또는 30분을 선택해 주세요.':'입력된 시간은 '+match[2]+':'+match[3]+'입니다. 00분 또는 30분을 선택해 주세요.');
+  }
+}
+function setupReservationClocks(){
+  for(const id of ['f-start','f-end']){
+    const p=reservationClockParts(id);
+    for(let i=0;i<24;i++){const h=String(i).padStart(2,'0');p.hour.add(new Option(h+'시',h))}
+    setReservationDateTime(id,'');
+    const sync=()=>{
+      const transient=p.minute.querySelector('[data-transient]'),old=p.value.value;
+      if(transient&&p.minute.value===transient.value&&transient.value&&old===p.date.value+'T'+p.hour.value+':'+p.minute.value)return;
+      if(transient&&p.minute.value!==transient.value){transient.remove();reservationClockHint(p,'')}
+      else if(transient&&transient.value){
+        transient.value='';transient.textContent='분 선택';transient.selected=true;
+        reservationClockHint(p,'변경할 시간의 분을 00 또는 30으로 선택해 주세요.');
+      }
+      p.value.value=p.date.value&&p.hour.value&&['00','30'].includes(p.minute.value)?p.date.value+'T'+p.hour.value+':'+p.minute.value:'';
+      if(old!==p.value.value)p.value.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    for(const control of [p.date,p.hour,p.minute]){control.addEventListener('input',sync);control.addEventListener('change',sync)}
+  }
+}
+setupReservationClocks();
 function isDriverModeInput(id){return ['f-driver-service','f-car','f-memo','f-pickup','f-return'].includes(id)}
 function refreshDriverPhoneField(){
   const included=isDriverReservation({driverService:val('f-driver-service'),car:val('f-car'),memo:val('f-memo'),pickup:val('f-pickup'),ret:val('f-return')});
@@ -3336,6 +3402,13 @@ function mergeReservationForm(current,form,baseline,original){
   return {record:merged};
 }
 function saveRes(){
+  for(const [key,label] of [['start','대여 시작'],['end','반납']]){
+    const p=reservationClockParts('f-'+key),t=p.value.value;
+    if(!p.date.value){toast(label+' 날짜를 선택해 주세요.');p.date.focus();return}
+    if(!t||(!/T\d{2}:(00|30)$/.test(t)&&!(editId&&_editingOriginal?.[key]===t))){
+      toast(label+' 시간은 00분 또는 30분 단위로 선택해 주세요.');p.minute.focus();return;
+    }
+  }
   applyVehicleNumberInput({notify:false});
   for(const id of ['f-total','f-paid','f-balance']){if(val(id)&&moneyNumber(val(id))===null){toast('금액은 숫자 또는 30만원 형식으로 입력하세요.');document.getElementById(id).focus();return}}
   const form=reservationFormRecord();let r={id:editId||uid(),...form};
@@ -3392,7 +3465,7 @@ function fillReservationEdit(original,position){
   const r=normalizeReservationLocationRecord(original);clearForm();
   editReturnPosition=position;
   set('f-driver-service',r.driverService||'');set('f-driver-phone',r.driverPhone||'');
-  set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
+  set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);setReservationDateTime('f-start',r.start,true);setReservationDateTime('f-end',r.end,true);set('f-days',r.days);
   set('f-ins',reservationInsurance(r)==='완전면책'?'완전자차':'일반면책');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
   const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
@@ -3635,8 +3708,9 @@ function setupFormPlatePicker(){
 let editingCell=null;
 function startEdit(td){
   const field=td.dataset.field;editRes(td.dataset.id);
-  const ids={start:'f-start',end:'f-end',carName:'f-car',plate:'f-car',name:'f-name',phone:'f-phone',pickup:'f-pickup',ret:'f-return',balance:'f-balance'};
-  setTimeout(()=>document.getElementById(ids[field]||'f-name')?.focus(),0);
+  const ids={start:'f-start-date',end:'f-end-date',carName:'f-car',plate:'f-car',name:'f-name',phone:'f-phone',pickup:'f-pickup',ret:'f-return',balance:'f-balance'};
+  // Apply the requested cell's focus after the form's default first-field focus.
+  requestAnimationFrame(()=>document.getElementById(ids[field]||'f-name')?.focus());
 }
 
 let dashboardPeriod='upcoming',dashboardMetric='all';
@@ -4857,8 +4931,8 @@ function paintHeaderClock(timestamp){
 function runLayoutSelfTest(){
   const root=document.documentElement,grid=document.querySelector('.dashboard-input-layout');
   const parser=document.querySelector('.parser-panel'),form=document.querySelector('.reservation-form-panel');
-  const schedule=document.querySelector('.dashboard-schedule'),start=document.getElementById('f-start'),end=document.getElementById('f-end');
-  start.value='2026-07-16T20:00';end.value='2026-07-20T20:00';
+  const schedule=document.querySelector('.dashboard-schedule'),start=document.getElementById('f-start-date'),end=document.getElementById('f-end-date');
+  set('f-start','2026-07-16T20:00');set('f-end','2026-07-20T20:00');
   const box=el=>el.getBoundingClientRect(),pb=box(parser),fb=box(form),sb=box(schedule),stb=box(start),enb=box(end);
   const cols=getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
   root.dataset.layoutViewport=`${innerWidth}x${innerHeight}`;
@@ -4866,7 +4940,7 @@ function runLayoutSelfTest(){
   root.dataset.layoutNoPageOverflow=String(root.scrollWidth<=root.clientWidth);
   root.dataset.layoutScheduleBelow=String(sb.top>=Math.max(pb.bottom,fb.bottom)-1);
   root.dataset.layoutWidths=`parser:${Math.round(pb.width)},form:${Math.round(fb.width)},start:${Math.round(stb.width)},end:${Math.round(enb.width)},schedule:${Math.round(sb.width)}`;
-  root.dataset.layoutDates=String(start.value==='2026-07-16T20:00'&&end.value==='2026-07-20T20:00');
+  root.dataset.layoutDates=String(start.value==='2026-07-16'&&end.value==='2026-07-20'&&val('f-start')==='2026-07-16T20:00'&&val('f-end')==='2026-07-20T20:00');
   root.dataset.layoutTest=(root.dataset.layoutNoPageOverflow==='true'&&root.dataset.layoutScheduleBelow==='true'&&root.dataset.layoutDates==='true')?'PASS':'FAIL';
 }
 
@@ -4894,7 +4968,7 @@ function runReservationSelfTest(){
   finally{
     window.confirm=originalConfirm;data=JSON.parse(backupData);undoStack=backupUndo;editId=backupEdit;
     if(backupStore===null)localStorage.removeItem(STORE);else localStorage.setItem(STORE,backupStore);
-    ids.forEach(id=>document.getElementById(id).value=backupForm[id]);render();
+    ids.forEach(id=>set(id,backupForm[id]));render();
   }
   const pass=Object.values(checks).filter(Boolean).length;
   root.dataset.reservationTest=`${pass}/${Object.keys(checks).length}`;
