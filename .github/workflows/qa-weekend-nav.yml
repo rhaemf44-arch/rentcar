@@ -1,0 +1,21 @@
+name: Disposable weekend navigation browser check
+on:
+  push:
+    branches: [qa/isolated-weekend-navigation-20261110]
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install browser automation
+        run: |
+          python -m venv "$RUNNER_TEMP/weekend-browser"
+          "$RUNNER_TEMP/weekend-browser/bin/pip" -q install playwright==1.55.0
+          "$RUNNER_TEMP/weekend-browser/bin/playwright" install --with-deps webkit
+      - name: Weekend grid mouse and touch with an isolated synthetic fleet
+        run: '"$RUNNER_TEMP/weekend-browser/bin/python" qa/isolated-weekend-nav.py'
