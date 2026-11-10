@@ -223,6 +223,11 @@ table.res-table-ins tr.ins-row:hover .ins-btn,
 .gantt tr.gantt-group td.short{background:rgba(209,67,67,.18);color:var(--danger);font-weight:700}
 .gantt tr.gantt-group td.full{background:rgba(184,137,43,.22);color:var(--gold);font-weight:700}
 .gantt .free{color:rgba(46,158,107,.55);font-size:12px}
+#gantt td>button{display:block;width:100%;padding:0;border:0;background:transparent;font:inherit;cursor:pointer}
+#gantt button.free{min-height:34px;color:#287354}
+#gantt button.free:hover{background:var(--gold-soft)}
+#gantt button:focus-visible{outline:2px solid #775714;outline-offset:-2px}
+.gantt-usage{margin:0 0 8px;font-size:12px;color:var(--ivory-dim)}
 .week-nav{display:flex;align-items:center;gap:8px}
 .week-nav .wk-btn{width:30px;height:30px;border:1px solid var(--line-strong);background:var(--panel-solid);color:var(--ivory);border-radius:8px;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
 .week-nav .wk-btn:hover{background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
@@ -867,7 +872,7 @@ body.tv-mode{display:block;background:#0b1420}
   #gantt .gantt-group td.vname{letter-spacing:0}
   #gantt .track{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(44px,auto);align-items:stretch}
   #gantt .track::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to right,transparent 0 calc(25% - 1px),var(--line) calc(25% - 1px) 25%)}
-  #gantt .track .free{align-self:center;color:var(--m-green);font-size:14px}
+  #gantt .track .free{min-height:44px;align-self:stretch;color:var(--m-green);font-size:14px}
   #gantt .track button{z-index:1;min-width:0;padding:4px 2px;border:0;background:transparent;font:inherit;cursor:pointer}
   #gantt .track .bar{margin:0;padding:4px 2px;min-height:28px;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.25}
   #gantt .key{padding:8px;color:var(--m-muted);font-size:12px;text-align:right}
@@ -1215,7 +1220,7 @@ body.tv-mode{display:block;background:#0b1420}
             <button class="wk-today" onclick="ganttWeek('today')">오늘</button>
           </div>
         </div>
-        <div class="card-b"><div class="gantt" id="gantt"></div></div>
+        <div class="card-b"><p class="gantt-usage">예약자명을 누르면 해당 예약을 열고, ○를 누르면 그 차량·날짜로 새 예약을 입력합니다.</p><div class="gantt" id="gantt"></div></div>
       </div>
     </div>
 
@@ -3261,8 +3266,10 @@ function confirmReservationWarnings(r,records=data){
 }
 let _editingOriginal=null,_editFormBaseline=null;
 let editReturnPosition=null;
+let cleanReservationInputs=reservationInputSnapshot();
 function captureEditReturnPosition(){
   const current=document.querySelector('.view.on')?.id;
+  if(current==='view-gantt')return {view:'gantt',pageY:window.scrollY,tableX:document.getElementById('gantt').scrollLeft};
   if(current==='view-schedule')return {view:'schedule',pageY:window.scrollY};
   if(current!=='view-reservations')return null;
   const list=document.getElementById('list'),table=list.querySelector('.res-table-wrap');
@@ -3333,6 +3340,7 @@ function saveRes(){
   clearForm();closeReservationPanel();
   if(position){
     go2(position.view);
+    if(position.view==='gantt')document.getElementById('gantt').scrollLeft=position.tableX;
     if(position.view==='reservations'){
       const list=document.getElementById('list');
       list.scrollTo(position.listX,position.listY);
@@ -3353,6 +3361,7 @@ function clearForm(){
   document.getElementById('save-btn').textContent='예약 저장';document.getElementById('edit-hint').textContent='';
   document.getElementById('reservation-panel-title').textContent='예약 입력';
   const status=document.getElementById('ai-parse-status');status.textContent='';status.classList.remove('on');updateFinanceBalance();
+  cleanReservationInputs=reservationInputSnapshot();
 }
 function fillReservationEdit(original,position){
   const r=normalizeReservationLocationRecord(original);clearForm();
@@ -3364,6 +3373,7 @@ function fillReservationEdit(original,position){
   const vehicle=reservationVehicleId(r);if(vehicle)document.getElementById('f-car').dataset.fullPlate=vehicle;
   editId=original.id;_editingOriginal=JSON.parse(JSON.stringify(original));_editFormBaseline=reservationFormRecord();
   document.getElementById('save-btn').textContent='수정 저장';document.getElementById('edit-hint').textContent='예약 수정';
+  cleanReservationInputs=reservationInputSnapshot();
 }
 function editRes(id,position=captureEditReturnPosition()){
   const original=data.find(x=>x.id===id);if(!original)return;
@@ -3889,8 +3899,25 @@ function ganttWeek(dir){
   else ganttWeekOffset+=dir;
   renderGantt();
 }
+function ganttBookingWindow(r){
+  if(r.deletedAt||r.status==='cancelled')return null;
+  const start=scheduleDateKey(r.start),end=scheduleDateKey(r.end);
+  if(!start||!end)return null;
+  const first=start.length===10?start+'T00:00':start,last=end.length===10?end+'T00:00':end;
+  return first<=last?{start:first,end:last}:null;
+}
+function ganttBookingButton(booking,label,position=''){
+  const name=esc(reservationCustomerName(booking)||'예약');
+  // A reservation ID, not a customer name or just the plate/day, identifies a booking.
+  const action=booking.id!=null&&String(booking.id)!==''?`data-booking="${esc(String(booking.id))}"`:'disabled';
+  return `<button type="button" ${action} aria-label="${esc(label)} ${name} · 예약 열기" title="예약 열기: ${name}" ${position}><span class="bar">${name}</span></button>`;
+}
+function ganttFreeButton(plate,day,position=''){
+  const label=esc(`${day} ${plate} · 새 예약 입력`);
+  return `<button type="button" class="free" data-plate="${esc(plate)}" data-day="${esc(day)}" aria-label="${label}" title="${label}" ${position}>○</button>`;
+}
 // A same-day return and pickup share a date column but need separate booking bars.
-function weekendTrack(bookings, dateKeys){
+function weekendTrack(bookings, dateKeys, plate){
   const laneEnds=[];
   const occupied=new Set();
   const bars=[];
@@ -3903,10 +3930,9 @@ function weekendTrack(bookings, dateKeys){
     if(lane===-1)lane=laneEnds.length;
     laneEnds[lane]=last;
     for(let day=first;day<=last;day++)occupied.add(day);
-    const name=esc(reservationCustomerName(booking)||'예약');
-    bars.push(`<button type="button" data-booking="${esc(booking.id)}" aria-label="${dateKeys[first]} ~ ${dateKeys[last]} ${name} · 임차인명 수정" style="grid-area:${lane+1}/${first+1}/span 1/${last+2}"><span class="bar">${name}</span></button>`);
+    bars.push(ganttBookingButton(booking,`${dateKeys[first]} ~ ${dateKeys[last]}`,`style="grid-area:${lane+1}/${first+1}/span 1/${last+2}"`));
   }
-  const free=dateKeys.map((day,i)=>occupied.has(i)?'':`<span class="free" aria-label="${day} 가용" style="grid-area:1/${i+1}">○</span>`);
+  const free=dateKeys.map((day,i)=>occupied.has(i)?'':ganttFreeButton(plate,day,`style="grid-area:1/${i+1}"`));
   return `<td colspan="4"><div class="track">${free.join('')}${bars.join('')}</div></td>`;
 }
 function renderGantt(){
@@ -3927,20 +3953,16 @@ function renderGantt(){
   const plates=sortPlates(Object.keys(PLATE_MAP).filter(p=>PLATE_MAP[p].base!=='승용'&&PLATE_MAP[p].base!=='SUV'));
   const mobile=isMobileApp();
   const dateKeys=cols.map(d=>toLocalDT(d).slice(0,10));
-  const byPlate=new Map();
-  if(mobile){
-    for(const booking of data){
-      if(booking.status==='cancelled'||!booking.start||!booking.end)continue;
-      const start=new Date(booking.start),end=new Date(booking.end);
-      if(!Number.isFinite(+start)||!Number.isFinite(+end))continue;
-      const first=toLocalDT(start),last=toLocalDT(end);
-      if(first>dateKeys[3]+'T23:59'||last<dateKeys[0]+'T00:00')continue;
-      const plate=reservationVehicleId(booking);
-      if(!byPlate.has(plate))byPlate.set(plate,[]);
-      byPlate.get(plate).push({...booking,start:first,end:last});
-    }
-    for(const bookings of byPlate.values())bookings.sort((a,b)=>a.start.localeCompare(b.start));
+  const byPlate=new Map(),weekBookings=[];
+  for(const r of data){
+    const range=ganttBookingWindow(r);
+    if(!range||range.start>dateKeys[3]+'T23:59'||range.end<dateKeys[0]+'T00:00')continue;
+    const plate=reservationVehicleId(r),booking={...r,...range,plate};
+    weekBookings.push(booking);
+    if(!byPlate.has(plate))byPlate.set(plate,[]);
+    byPlate.get(plate).push(booking);
   }
+  for(const bookings of byPlate.values())bookings.sort((a,b)=>a.start.localeCompare(b.start));
   let html='<table><thead><tr><th class="vname">차량</th>'+cols.map(d=>{
     const isT=toLocalDT(d).slice(0,10)===todayS;
     if(mobile){
@@ -3966,14 +3988,7 @@ function renderGantt(){
         const baseSet=new Set(basePlates);
         dayCells=cols.map(d=>{
           const ds=toLocalDT(d).slice(0,10);
-          const used=data.filter(r=>{
-            if(r.status==='cancelled')return false;
-            if(!r.start||!r.end)return false;
-            if(!(new Date(r.start)<=new Date(ds+'T23:59')&&new Date(r.end)>=new Date(ds+'T00:00')))return false;
-            const plate=reservationVehicleId(r);
-            if(plate)return baseSet.has(plate);
-            return carBase(r.car)===groupBase;
-          }).length;
+          const used=weekBookings.filter(r=>r.start<=ds+'T23:59'&&r.end>=ds+'T00:00'&&(r.plate?baseSet.has(r.plate):carBase(r.car)===groupBase)).length;
           if(used>baseCnt)return `<td class="short">부족 ${used-baseCnt}대</td>`;
           if(used===baseCnt&&baseCnt>0)return `<td class="full">만차</td>`;
           return `<td>${used}/${baseCnt}</td>`;
@@ -3985,35 +4000,52 @@ function renderGantt(){
     }
     if(mobile){
       const detail=[v.seat,v.fuel==='HEV'?'하이브리드':v.fuel].filter(Boolean).join(' · ')||v.n;
-      html+=`<tr><td class="vname" title="${esc(p)} · ${esc(v.n)}"><b class="vehicle-number">${esc(p.slice(-4))}</b><span class="vehicle-detail">${esc(detail)}</span></td>${weekendTrack(byPlate.get(p)||[],dateKeys)}</tr>`;
+      html+=`<tr><td class="vname" title="${esc(p)} · ${esc(v.n)}"><b class="vehicle-number">${esc(p.slice(-4))}</b><span class="vehicle-detail">${esc(detail)}</span></td>${weekendTrack(byPlate.get(p)||[],dateKeys,p)}</tr>`;
       return;
     }
-    html+=`<tr><td class="vname">${v.n} <span style="color:var(--gold)">${p.slice(-4)}</span></td>`;
-    cols.forEach(d=>{
-      const ds=toLocalDT(d).slice(0,10);
-      const hit=data.find(r=>r.status!=='cancelled'&&reservationVehicleId(r)===p&&r.start&&r.end&&new Date(r.start)<=new Date(ds+'T23:59')&&new Date(r.end)>=new Date(ds+'T00:00'));
-      if(hit){const who=esc(reservationCustomerName(hit));
-        html+=`<td><div class="bar" title="클릭하여 이름 수정: ${who}" onclick="editGanttName('${hit.id}')">${who}</div></td>`}
-      else html+='<td class="free">○</td>';
-    });
+    html+=`<tr><td class="vname">${esc(v.n)} <span style="color:var(--gold)">${esc(p.slice(-4))}</span></td>`;
+    for(const day of dateKeys){
+      const hits=(byPlate.get(p)||[]).filter(b=>b.start<=day+'T23:59'&&b.end>=day+'T00:00');
+      html+='<td>'+(hits.length?hits.map(b=>ganttBookingButton(b,day)).join(''):ganttFreeButton(p,day))+'</td>';
+    }
     html+='</tr>';
   });
   html+='</tbody></table>';
   if(mobile)html+='<div class="key">○ 가용 <i class="key-mark"></i> 예약</div>';
   el.innerHTML=html;
-  el.onclick=mobile?event=>{
-    const button=event.target.closest('button[data-booking]');
-    if(button)editGanttName(button.dataset.booking);
-  }:null;
+  el.onclick=event=>{
+    const button=event.target.closest('button');if(!button||!el.contains(button))return;
+    if(button.hasAttribute('data-booking'))openGanttBooking(button.dataset.booking);
+    else if(button.hasAttribute('data-day'))startGanttBooking(button.dataset.plate,button.dataset.day);
+  };
 }
-// 간트 셀에서 임차인명 바로 수정
-function editGanttName(id){
-  const r=data.find(x=>x.id===id);if(!r)return;
-  const cur=reservationCustomerName(r);
-  const v=prompt('임차인명을 입력하세요',cur);
-  if(v===null)return; // 취소
-  snapshot();r.name=reservationCustomerName({name:v.trim()});save();render();
-  toast('임차인명 수정: '+reservationCustomerName(r));
+function canReplaceGanttForm(){
+  return reservationInputSnapshot()===cleanReservationInputs||confirm('예약 입력 화면에 저장하지 않은 내용이 있습니다. 입력 내용을 바꾸고 선택한 예약을 열까요?');
+}
+function openGanttBooking(id){
+  const r=data.find(row=>String(row.id)===id&&!row.deletedAt&&row.status!=='cancelled');
+  if(!r){renderGantt();toast('예약이 변경되었습니다. 최신 가용성에서 다시 선택해 주세요.');return}
+  if(editId===r.id){editReturnPosition=captureEditReturnPosition();openReservationPanel('manual');return}
+  if(canReplaceGanttForm())editRes(r.id);
+}
+function startGanttBooking(plate,day){
+  if(!Object.hasOwn(PLATE_MAP,plate)||!/^\d{4}-\d{2}-\d{2}$/.test(day)||scheduleDateKey(day)!==day)return;
+  // Data can change between painting the grid and opening an empty day.
+  if(data.some(r=>{
+    if(reservationVehicleId(r)!==plate)return false;
+    const range=ganttBookingWindow(r);
+    return range&&range.start<=day+'T23:59'&&range.end>=day+'T00:00';
+  })){
+    renderGantt();toast('해당 차량·날짜에 예약이 생겼습니다. 최신 가용성에서 선택해 주세요.');return;
+  }
+  if(!canReplaceGanttForm())return;
+  const position=captureEditReturnPosition();
+  clearForm();
+  set('f-car',plate);applyVehicleNumberInput({notify:false});
+  set('f-start',day+'T09:00');set('f-end',day+'T20:00');
+  editReturnPosition=position;
+  cleanReservationInputs=reservationInputSnapshot();
+  openReservationPanel('manual');
 }
 let vehQuery='';
 function filterVeh(v){vehQuery=(v||'').toLowerCase();renderVehicles()}
