@@ -1205,8 +1205,8 @@ body.tv-mode{display:block;background:#0b1420}
       <div class="card">
         <div class="card-h"><h2>일정표</h2>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="printSchedule()">🖨 인쇄 · PDF</button>
-            <button class="btn btn-ghost btn-sm" onclick="exportScheduleExcel()">엑셀 양식</button>
+            <button class="btn btn-ghost btn-sm" id="schedule-print" onclick="printSchedule()">🖨 인쇄 · PDF</button>
+            <button class="btn btn-ghost btn-sm" id="schedule-excel" onclick="exportScheduleExcel()">엑셀 양식</button>
           </div>
         </div>
         <div class="card-b">
@@ -1222,7 +1222,7 @@ body.tv-mode{display:block;background:#0b1420}
             <div><strong>배차 하루 전 안내</strong><p id="dispatch-notice-summary" role="status"></p><small>예약의 ‘문자·카톡’에서 안내를 보내고 문자 발송내역을 확인하세요.</small></div>
             <button class="btn btn-ghost btn-sm" id="dispatch-notice-filter" aria-pressed="false" onclick="toggleDispatchNoticeFilter()">24시간 내 안내 필요</button>
           </div>
-          <div class="schedule-range"><span id="schedule-range-label"></span><label><input type="checkbox" id="schedule-include-earlier" onchange="renderSchedule()">이전 일정 포함</label></div>
+          <div class="schedule-range"><span id="schedule-range-label"></span><label><input type="checkbox" id="schedule-include-earlier" autocomplete="off" onchange="scheduleIncludeEarlier=this.checked;renderSchedule()">이전 일정 포함</label></div>
           <div class="res-list" id="sched-list" style="max-height:none"></div>
         </div>
       </div>
@@ -3484,7 +3484,11 @@ function resTable(rows,withNotice=false){
   }).join('');
   return `<div class="res-table-wrap"><table class="res-table">${head}<tbody>${body}</tbody></table></div>`;
 }
-function fmtShort(dt){if(!dt)return '-';const d=new Date(dt);if(isNaN(d))return esc(dt);const D=['일','월','화','수','목','금','토'];return `${d.getMonth()+1}.${d.getDate()}(${D[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function fmtShort(dt){
+  const key=scheduleDateKey(dt);if(!key)return dt?esc(dt):'-';
+  const day=key.slice(0,10),weekday='일월화수목금토'[new Date(day+'T00:00:00Z').getUTCDay()];
+  return Number(day.slice(5,7))+'.'+Number(day.slice(8,10))+'('+weekday+') '+(key.slice(11)||'00:00');
+}
 
 /* ===== 표의 빈 번호 칸: 차량을 검색해 바로 배정 =====
    예약 입력 폼에서 고를 때와 같은 형식(car: "차명 (끝4자리)", vehicleId: 전체 번호)으로 저장해
@@ -3794,15 +3798,66 @@ function insertBetween(idx){
 }
 
 /* ===== 일정표: 날짜별 그룹 + 날짜 사이 추가버튼 ===== */
-function scheduleRows(now=Date.now()){
-  const includeEarlier=document.getElementById('schedule-include-earlier').checked;
+let scheduleIncludeEarlier=false;
+const scheduleClock={serverTime:null,sampledAt:0,nextCheck:0,pending:false};
+function scheduleNow(){
+  return scheduleClock.serverTime===null?Date.now():scheduleClock.serverTime+performance.now()-scheduleClock.sampledAt;
+}
+async function syncScheduleClock(force=false){
+  if(scheduleClock.pending||(!force&&performance.now()<scheduleClock.nextCheck))return;
+  scheduleClock.pending=true;
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+  let verified=false;
+  try{
+    const url=new URL(location.pathname,location.origin);
+    url.searchParams.set('_schedule_clock',Math.random().toString(36).slice(2));
+    const response=await fetch(url,{method:'HEAD',cache:'no-store',signal:controller.signal});
+    const serverTime=Date.parse(response.headers.get('Date')||'');
+    if(response.ok&&Number.isFinite(serverTime)){
+      const age=Number(response.headers.get('Age'));
+      scheduleClock.serverTime=serverTime+(Number.isFinite(age)&&age>0?age*1000:0);
+      scheduleClock.sampledAt=performance.now();
+      verified=true;
+    }
+  }catch{/* Offline schedules use the last verified time or the device clock. */}
+  finally{
+    clearTimeout(timer);
+    scheduleClock.nextCheck=performance.now()+(verified?300000:30000);
+    scheduleClock.pending=false;
+    if(document.getElementById('view-schedule').classList.contains('on')&&!editingCell)renderSchedule();
+  }
+}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&document.getElementById('view-schedule').classList.contains('on'))syncScheduleClock(true);
+});
+function scheduleRangeText(now){
+  if(scheduleIncludeEarlier)return '이전 일정 포함 · 전체 기간';
+  const minute=koreanNow(new Date(now));
+  if(schedTab==='done')return '배차일 기준 · '+dashboardDayOffset(minute.slice(0,10),-1)+'부터';
+  return '배차일시 기준 · '+minute.replace('T',' ')+'부터';
+}
+// Reservation form values are Korean wall times. Only timestamps with an offset need conversion.
+function scheduleDateKey(value){
+  const raw=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw)){
+    const ms=Date.parse(raw);
+    return Number.isFinite(ms)?koreanNow(new Date(ms)):'';
+  }
+  const m=raw.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?$/);
+  if(!m)return '';
+  const day=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  const date=new Date(day+'T00:00:00Z');
+  if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==day||Number(m[4])>23||Number(m[5])>59)return '';
+  return day+(m[4]?'T'+m[4].padStart(2,'0')+':'+m[5]:'');
+}
+function scheduleRows(now=scheduleNow()){
   const currentMinute=koreanNow(new Date(now));
   // 배차 일정은 현재 분부터, 대여종료 탭은 기존처럼 어제 배차분부터 조회한다.
   const cutoff=schedTab==='done'?dashboardDayOffset(currentMinute.slice(0,10),-1):currentMinute;
   return data.filter(r=>{
     if(r.deletedAt||r.status==='cancelled')return false;
-    const start=String(r.start||'').slice(0,16);
-    if(!includeEarlier&&start&&start<cutoff.slice(0,start.length))return false;
+    const start=scheduleDateKey(r.start);
+    if(!scheduleIncludeEarlier&&r.start&&(!start||start<cutoff.slice(0,start.length)))return false;
     if(dispatchNoticeOnly&&!dispatchNoticeDue(r,now))return false;
     if(schedTab==='done')return r.status==='done';
     if(r.status==='done'&&r.end&&reservationTime(r.end)<now)return false;
@@ -3810,21 +3865,24 @@ function scheduleRows(now=Date.now()){
     if(schedTab==='driver')return isDriverReservation(r);
     const vehicle=PLATE_MAP[reservationVehicleId(r)];
     return vehicle?vehicle.base===schedTab:carBase(r.car)===schedTab||((r.car||'').includes(schedTab));
-  }).sort((a,b)=>String(a.start||'').localeCompare(String(b.start||'')));
+  }).sort((a,b)=>scheduleDateKey(a.start).localeCompare(scheduleDateKey(b.start)));
 }
 function renderSchedule(){
   const el=document.getElementById('sched-list');if(!el)return;
-  const now=Date.now(),today=koreanNow(new Date(now)).slice(0,10),yesterday=dashboardDayOffset(today,-1);
-  const includeEarlier=document.getElementById('schedule-include-earlier').checked;
+  syncScheduleClock();
+  const checking=scheduleClock.pending&&scheduleClock.serverTime===null&&scheduleClock.nextCheck===0;
+  for(const id of ['schedule-print','schedule-excel'])document.getElementById(id).disabled=checking;
+  document.getElementById('schedule-include-earlier').checked=scheduleIncludeEarlier;
+  const now=scheduleNow(),today=koreanNow(new Date(now)).slice(0,10),yesterday=dashboardDayOffset(today,-1);
+  paintHeaderClock(now);
   const range=document.getElementById('schedule-range-label');
-  if(includeEarlier)range.textContent='배차일시 기준 · 전체 기간';
-  else if(schedTab==='done')range.textContent='배차일 기준 · 어제부터';
-  else range.textContent='배차일시 기준 · 현재 시각부터';
+  range.textContent=checking?'일정표 기준 시각 확인 중…':scheduleRangeText(now)+(scheduleClock.serverTime===null?' (기기 시각)':' (한국 시각)');
+  if(checking){el.replaceChildren();return}
   const rows=scheduleRows(now);
   updateDispatchNoticeSummary();
   // 날짜별 그룹
   const groups=Object.create(null);
-  rows.forEach(r=>{const d=(r.start||'미정').slice(0,10);(groups[d]=groups[d]||[]).push(r)});
+  rows.forEach(r=>{const d=scheduleDateKey(r.start).slice(0,10)||'미정';(groups[d]=groups[d]||[]).push(r)});
   const dates=Object.keys(groups).sort();
   const D=['일','월','화','수','목','금','토'];
   const dayLabel=ds=>{if(ds==='미정')return '날짜 미정';const dt=new Date(ds+'T00:00');return `${ds.slice(5).replace('-','.')} (${D[dt.getDay()]})`};
@@ -4175,10 +4233,9 @@ function renderVehicles(){
 /* ===== 일정표 양식 내보내기 (원본 예약현황표 형식) ===== */
 // 대여: "7.6 14:00(월)" (그룹 첫 행만 요일) / 반납: "7.8 21:00"
 function fmtSheetDT(dt,withDow){
-  if(!dt)return '';const d=new Date(dt);if(isNaN(d))return String(dt);
-  const D=['일','월','화','수','목','금','토'];
-  const base=`${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  return withDow?`${base}(${D[d.getDay()]})`:base;
+  const key=scheduleDateKey(dt);if(!key)return String(dt||'');
+  const base=Number(key.slice(5,7))+'.'+Number(key.slice(8,10))+' '+(key.slice(11)||'00:00');
+  return withDow?base+'('+'일월화수목금토'[new Date(key.slice(0,10)+'T00:00:00Z').getUTCDay()]+')':base;
 }
 function schedulePrintPlaceHtml(record){
   const {pickup,ret}=normalizedLocationPair(record.pickup,record.ret||record.returnLocation,{defaultOffice:false});
@@ -4190,11 +4247,11 @@ function schedulePrintPlaceHtml(record){
   return `배차: ${origin}\n회차: ${esc(to||'미기재')}`;
 }
 // 내보낼 행 구성: 날짜별 그룹 + 그룹 사이 빈 줄, 첫 행에만 요일
-function buildSheetRows(){
-  const rows=scheduleRows().filter(r=>r.start);
+function buildSheetRows(now=scheduleNow()){
+  const rows=scheduleRows(now).filter(r=>r.start);
   const out=[];let lastDay=null;
   rows.forEach(r=>{
-    const day=r.start.slice(0,10);
+    const day=scheduleDateKey(r.start).slice(0,10)||'미정';
     const first=day!==lastDay;
     if(lastDay!==null&&first){out.push(null);out.push(null);} // 날짜 바뀌면 빈 줄 2개(HWP 양식)
     const plate=reservationVehicleId(r);
@@ -4216,20 +4273,20 @@ function buildSheetRows(){
   return out;
 }
 function exportScheduleExcel(){
-  const rows=buildSheetRows();
+  const now=scheduleNow(),rows=buildSheetRows(now);
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const aoa=[['대여예정일시','반납예정일시','차량','차량번호','임차인명','임차인연락처','배차','회차']];
   rows.forEach(r=>aoa.push(r?[r.대여예정일시,r.반납예정일시,r.차량,r.차량번호,r.임차인명,r.임차인연락처,r.배차,r.회차]:['','','','','','','','']));
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=[{wch:16},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:34},{wch:30}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'예약현황표');
-  XLSX.writeFile(wb,`경일렌트카_예약현황표_${todayStr()}.xlsx`);
+  XLSX.writeFile(wb,`경일렌트카_예약현황표_${koreanNow(new Date(now)).slice(0,10)}.xlsx`);
   toast('예약현황표 엑셀이 저장되었습니다');
 }
 function printSchedule(){
-  const rows=buildSheetRows();
+  const now=scheduleNow(),rows=buildSheetRows(now);
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
-  const amount=n=>n===null?'미확인':n.toLocaleString('ko-KR')+'원';
+  const amount=n=>n==null?'':n.toLocaleString('ko-KR')+'원';
   const body=rows.map(r=>{
     if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
     // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
@@ -4268,7 +4325,7 @@ function printSchedule(){
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
   </style></head><body>
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
-  <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${todayStr()} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
+  <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${scheduleRangeText(now)}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
   <table>
     <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup>
     <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>
@@ -4746,9 +4803,13 @@ function runKakaoAnalyzerTests(){
 /* ===== clock ===== */
 let _lastClockMinute='';
 function tick(){
-  const now=koreanNow(),day=new Date(now+':00+09:00');
-  document.getElementById('clock').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(day);
-  if(_lastClockMinute!==now){_lastClockMinute=now;render()}
+  const now=document.getElementById('view-schedule').classList.contains('on')?scheduleNow():Date.now();
+  paintHeaderClock(now);
+  const minute=koreanNow(new Date(now));
+  if(_lastClockMinute!==minute){_lastClockMinute=minute;render()}
+}
+function paintHeaderClock(timestamp){
+  document.getElementById('clock').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(timestamp));
 }
 
 /* 반납 완료는 직원이 확인해 변경합니다. 예정시각 경과만으로 완료 처리하지 않습니다. */
@@ -5679,7 +5740,7 @@ function dispatchNoticeCanShare(body){try{return typeof navigator.share==='funct
 function changeDispatchNoticeChannel(){editDispatchNotice()}
 function dispatchNoticeButton(r){
   if(r.deletedAt)return '';
-  const sent=dispatchNoticeSentCurrent(r),due=dispatchNoticeDue(r),changed=!!r.dispatchNoticeSent&&!sent;
+  const sent=dispatchNoticeSentCurrent(r),due=dispatchNoticeDue(r,scheduleNow()),changed=!!r.dispatchNoticeSent&&!sent;
   const latest=[...Object.values(r.ppurioReceipts||{}),...Object.values(r.ppurioLastSms||{})].filter(item=>item?.at).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
   const count=smsSuccessCount(r,r.ppurioServerCount);
   const detail=latest?(count===null?smsTime(latest.at)+' 전송 접수':'문자 발송 '+count+'회'):sent?dispatchNoticeChannelLabel(r.dispatchNoticeSent.channel)+' · '+dispatchNoticeShortTime(r.dispatchNoticeSent.confirmedAt):changed?'이전 기록 있음 · 재안내 확인':due?'24시간 내 · 안내 필요':'안내 작성';
@@ -5688,7 +5749,7 @@ function dispatchNoticeButton(r){
 }
 function updateDispatchNoticeSummary(){
   const el=document.getElementById('dispatch-notice-summary');if(!el)return;
-  const rows=data.filter(r=>dispatchNoticeDue(r)),missing=rows.filter(r=>!normalizeDispatchPhone(r.phone)).length;
+  const now=scheduleNow(),rows=data.filter(r=>dispatchNoticeDue(r,now)),missing=rows.filter(r=>!normalizeDispatchPhone(r.phone)).length;
   el.textContent=`전체 예약 중 24시간 내 배차 · 안내 필요 ${rows.length}건${missing?' / 연락처 확인 '+missing+'건':''} (한국 시간 기준)`;
   const button=document.getElementById('dispatch-notice-filter');button.setAttribute('aria-pressed',String(dispatchNoticeOnly));button.textContent=dispatchNoticeOnly?'전체 일정 보기':'24시간 내 안내 필요';
 }
