@@ -1,0 +1,16 @@
+name: Weekend navigation on preinstalled Chrome
+on:
+  push:
+    branches: [qa/standalone-weekend-navigation-20261110]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Isolated desktop and mobile navigation, no dependency install
+        run: python qa/standalone-weekend-nav.py
