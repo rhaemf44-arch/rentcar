@@ -533,7 +533,7 @@ body.tv-mode{display:block;background:#0b1420}
 #reservation-panel .reservation-input-tabs button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #reservation-panel .reservation-panel-body{padding:0;overflow:visible;overscroll-behavior:auto;min-height:0}
 #reservation-panel .dashboard-input-layout{display:block;width:100%;min-width:0}
-#reservation-panel [role="tabpanel"][hidden]{display:none!important}
+#reservation-panel [role="tabpanel"][hidden],#driver-phone-field[hidden]{display:none!important}
 #reservation-panel .dashboard-input-layout>.card{margin:0;border:0;border-radius:0;background:#fff;box-shadow:none;backdrop-filter:none}
 #reservation-panel .card-h{padding:14px 18px 0;border:0;flex-wrap:wrap;gap:6px}
 #reservation-panel .card-h h2{font-size:14px;color:#475569}
@@ -1098,6 +1098,11 @@ body.tv-mode{display:block;background:#0b1420}
                   <option value="driver">기사 포함</option>
                   <option value="self">기사 미포함</option>
                 </select>
+              </div>
+              <div class="field" id="driver-phone-field" hidden>
+                <label for="f-driver-phone">운행기사 연락처</label>
+                <input type="tel" inputmode="tel" autocomplete="off" id="f-driver-phone" placeholder="010-0000-0000" maxlength="24" aria-describedby="driver-phone-help">
+                <small id="driver-phone-help" class="field-help">기사 배정 후 입력하세요. 고객에게 보내는 안내 문자 본문에 표시됩니다.</small>
               </div>
               <div class="reservation-row-date">
                 <div class="field"><label for="f-start">대여 시작</label><input id="f-start" type="datetime-local"></div>
@@ -2217,7 +2222,11 @@ function applyParsingGuide(raw,r){
   if(r.start&&r.end){const d=Math.ceil((new Date(r.end)-new Date(r.start))/86400000);if(d>=0)r.days=d||1}
   r.confidence=scoreResult(r);return r;
 }
-function parseRawToObject(raw){const cleaned=cleanReservationText(raw);return applyParsingGuide(cleaned,parseRawToObjectBase(cleaned))}
+function parseRawToObject(raw){
+  const contact=splitDriverContact(raw),cleaned=cleanReservationText(contact.clean),result=applyParsingGuide(cleaned,parseRawToObjectBase(cleaned));
+  if(contact.hasLabel){result.driverContactLabeled=true;result.driverService=driverServiceFromText(raw)||(contact.phone?'driver':'');result.driverPhone=result.driverService==='driver'?contact.phone:''}
+  return result;
+}
 function parseRawToObjectBase(raw){
   raw=String(raw||'').trim();
   const confirmFields=parseConfirmationFields(raw);
@@ -2571,7 +2580,8 @@ function mergeParserResults(local,aiRaw){
   ['payment_method','memo'].forEach(fill);
   if(ai.name&&out.name&&ai.name!==out.name){out.name=ai.name;warnings.push('고객명 해석이 달라 AI 결과를 적용했습니다')}else fill('name');
   if(ai.car&&out.car&&ai.car!==out.car&&ai.car.length>=out.car.length){out.car=ai.car;warnings.push('차량명 표기가 달라 더 구체적인 결과를 적용했습니다')}else fill('car');
-  if(!validPhone(out.phone)&&validPhone(ai.phone))out.phone=ai.phone;
+  if(local.driverContactLabeled)out.phone=local.phone;
+  else if(!validPhone(out.phone)&&validPhone(ai.phone))out.phone=ai.phone;
   else if(validPhone(out.phone)&&validPhone(ai.phone)&&out.phone!==ai.phone){out.phone=ai.phone;warnings.push('연락처가 충돌하여 AI 결과를 적용했습니다')}
   if(!validDatePair(out.start,out.end)&&validDatePair(ai.start,ai.end)){out.start=ai.start;out.end=ai.end}
   else if(validDatePair(out.start,out.end)&&validDatePair(ai.start,ai.end)&&(out.start!==ai.start||out.end!==ai.end)){
@@ -2596,7 +2606,7 @@ function applyParsedResult(r){
   const plate=resolvePlate(r.plate),car=(plate&&PLATE_MAP[plate]?PLATE_MAP[plate].n:r.car)||'';
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',[car,plate?`(${plate})`:''].filter(Boolean).join(' '));
   set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
-  set('f-driver-service',r.driverService||'');
+  set('f-driver-service',r.driverService||'');set('f-driver-phone',r.driverPhone||'');
   // Insurance is selected by staff; parsing must preserve the form selection.
   populateFinanceForm(r);
   set('f-memo',[r.memo,buildFinancialMemo(r,r.memo)].filter(Boolean).join(' · '));
@@ -2649,7 +2659,7 @@ function friendlyAIError(e){
 }
 let reservationFormVersion=0;
 function reservationInputSnapshot(){
-  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service'];
+  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone'];
   return JSON.stringify([editId,...ids.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'']);
 }
 async function smartParse(){
@@ -2666,7 +2676,17 @@ async function smartParse(){
     showParseStatus(local,{error:friendlyAIError(e),elapsed:performance.now()-started});toast('기존 파서 결과를 적용했습니다')}
   finally{setAIParsing(false)}
 }
-function set(id,v){document.getElementById(id).value=v??''}
+function set(id,v){
+  document.getElementById(id).value=v??'';
+  if(isDriverModeInput(id))refreshDriverPhoneField();
+}
+function isDriverModeInput(id){return ['f-driver-service','f-car','f-memo','f-pickup','f-return'].includes(id)}
+function refreshDriverPhoneField(){
+  const included=isDriverReservation({driverService:val('f-driver-service'),car:val('f-car'),memo:val('f-memo'),pickup:val('f-pickup'),ret:val('f-return')});
+  document.getElementById('driver-phone-field').hidden=!included;
+  document.getElementById('f-driver-phone').disabled=!included;
+}
+for(const eventType of ['input','change'])document.addEventListener(eventType,event=>{if(isDriverModeInput(event.target.id))refreshDriverPhoneField()});
 
 /* ===== 카카오톡 예약 이벤트 분석기 ===== */
 const KAKAO_AI_SCORE_MIN=7,KAKAO_REVIEW_SCORE_MIN=4,KAKAO_CLUSTER_SAME_SENDER_MIN=10,KAKAO_CLUSTER_MAX_GAP_MIN=30;
@@ -2837,6 +2857,8 @@ function kakaoLocationInfo(text){
 }
 function kakaoEvidence(text,fields){return fields.map(([field,re])=>{const m=String(text).match(re);return m?{field,sourceText:m[0].slice(0,80)}:null}).filter(Boolean)}
 function parseKakaoReservationEvent(text,baseDate,forcedType=''){
+  const contact=splitDriverContact(text),service=driverServiceFromText(text)||(contact.phone?'driver':'');
+  text=contact.clean;
   const score=scoreKakaoCandidate(text),clusterType=forcedType||classifyKakaoText(text,score.score),warnings=[];
   const date=parseKakaoDateRange(text,baseDate),person=kakaoPersonInfo(text),plates=kakaoPlateCandidates(text);warnings.push(...date.warnings);
   let plate='',plateCandidates=plates.candidates;if(plateCandidates.length===1)plate=plateCandidates[0];else if(plateCandidates.length>1)warnings.push('차량번호 후보가 여러 개이므로 확인이 필요합니다');
@@ -2855,7 +2877,7 @@ function parseKakaoReservationEvent(text,baseDate,forcedType=''){
   const memo=[/자차\s*면책금[^\n]*/.test(text)?(String(text).match(/자차\s*면책금[^\n]*/)||[])[0]:'',opNotes.join(' / ')].filter(Boolean).join(' · ');
   return{action,reservationNumber:'',targetReservationId:'',customerName:person.customerName,sourceName:person.sourceName,phone:person.phone,secondaryPhones:person.secondaryPhones,
     car:car.car,carClass:car.carClass,plate,plateCandidates,quantity,start:date.start,end:date.end,days:date.days,
-    driverService:driverServiceFromText(text),insurance,pickup:loc.pickup,returnLocation:loc.returnLocation,returnLocationExplicit:loc.returnLocationExplicit,total:money.total,deposit:money.deposit,balance:money.balance,paymentMethod:money.paymentMethod,paymentStatus:money.paymentStatus,
+    driverService:service,driverPhone:service==='driver'?contact.phone:'',driverContactLabeled:contact.hasLabel,insurance,pickup:loc.pickup,returnLocation:loc.returnLocation,returnLocationExplicit:loc.returnLocationExplicit,total:money.total,deposit:money.deposit,balance:money.balance,paymentMethod:money.paymentMethod,paymentStatus:money.paymentStatus,
     status:action==='CANCEL'?'cancelled':'pending',memo,operationNotes:opNotes,changedFields:[...new Set(changedFields)],confidence,warnings:[...new Set(warnings)],
     evidence:kakaoEvidence(text,[['phone',/(?:\+82\s*10|01[016789])[-\s.]?\d{3,4}[-\s.]?\d{4}/],['car',/카니발[^\n]*|스타리아[^\n]*|쏠라티[^\n]*|아반떼[^\n]*|셀토스[^\n]*/],['date',/\d{1,2}[\/월]\d{1,2}[^\n]*/],['payment',/(?:계약금|잔금|완납|입완|현\d|카\d)[^\n]*/]])};
 }
@@ -2882,7 +2904,7 @@ function matchKakaoReservation(event){
 function kakaoCandidateSummaries(event){return matchKakaoReservation(event).map(m=>{const r=data.find(x=>x.id===m.reservationId);return{id:r.id,name:reservationCustomerName(r),phone:r.phone,car:r.car,start:r.start,end:r.end,pickup:r.pickup,score:m.score,reasons:m.reasons}})}
 function mergeKakaoAIResponse(local,ai){
   if(!ai||!Array.isArray(ai.reservations))return local;const merged={...local,...ai};
-  merged.reservations=ai.reservations.map((r,i)=>{const l=local.reservations[i]||{},x={...l,...r};x.plate=resolvePlate(x.plate)||x.plate||'';if(l.returnLocationExplicit===true)x.returnLocation=l.returnLocation===l.pickup?x.pickup:l.returnLocation;else if(l.returnLocationExplicit===false||l.returnLocation===l.pickup)x.returnLocation=x.pickup;x.warnings=[...new Set([...(l.warnings||[]),...(r.warnings||[])])];return x});return merged;
+  merged.reservations=ai.reservations.map((r,i)=>{const l=local.reservations[i]||{},x={...l,...r,driverPhone:l.driverPhone||''};if(l.driverContactLabeled){x.phone=l.phone||'';x.secondaryPhones=l.secondaryPhones||[];x.driverService=l.driverService}x.plate=resolvePlate(x.plate)||x.plate||'';if(l.returnLocationExplicit===true)x.returnLocation=l.returnLocation===l.pickup?x.pickup:l.returnLocation;else if(l.returnLocationExplicit===false||l.returnLocation===l.pickup)x.returnLocation=x.pickup;x.warnings=[...new Set([...(l.warnings||[]),...(r.warnings||[])])];return x});return merged;
 }
 async function callKakaoClusterAI(cluster,local){
   const useSupabase=Boolean(SUPABASE_URL&&SUPABASE_ANON_KEY);
@@ -2927,7 +2949,7 @@ function renderKakaoAnalysis(messageCount=0,clusterCount=0){
 }
 function kakaoDisplayName(e){return reservationCustomerName({name:[e.sourceName?e.sourceName+' 고객':'',e.customerName].filter(Boolean).join(' ')||e.name||''})}
 function kakaoCarField(e,existing=''){const source=String(e.car||existing||'').trim(),p=resolvePlate(e.plate)||e.plate||reservationVehicleId({car:source}),car=source?reservationVehicleName({car:source}):'';return [car,p?`(${p})`:''].filter(Boolean).join(' ')}
-function fillKakaoEventForm(e){clearForm();set('f-driver-service',e.driverService||'');populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
+function fillKakaoEventForm(e){clearForm();set('f-driver-service',e.driverService||'');set('f-driver-phone',e.driverPhone||'');populateFinanceForm(e);if(typeof openReservationPanel==='function')openReservationPanel('manual');set('f-name',kakaoDisplayName(e));set('f-phone',e.phone);set('f-car',kakaoCarField(e));set('f-start',e.start);set('f-end',e.end);set('f-days',e.days);set('f-memo',[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · '));applyLocationPairToForm(e.pickup,e.returnLocation);document.getElementById('edit-hint').textContent='카톡 분석 결과 확인 후 저장';}
 function chooseKakaoMatch(e){
   const matches=matchKakaoReservation(e).filter(m=>m.score>=50);if(!matches.length)return null;const top=matches[0],second=matches[1];if(top.score>=80&&(!second||top.score-second.score>=30))return data.find(r=>r.id===top.reservationId);
   const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${reservationCustomerName(r)} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
@@ -2942,7 +2964,7 @@ function applyKakaoRow(i){
   snapshot();const before=JSON.parse(JSON.stringify(target)),changed=[];const setField=(key,val)=>{if(val!==''&&val!=null&&target[key]!==val){target[key]=val;changed.push(key)}};
   if(e.action==='CANCEL'){setField('status','cancelled')}
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
-  if(e.action==='UPDATE'){if(e.driverService)setField('driverService',e.driverService);if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
+  if(e.action==='UPDATE'){if(e.driverService)setField('driverService',e.driverService);if(e.driverPhone&&isDriverReservation(target))setField('driverPhone',e.driverPhone);if(e.driverService==='self'&&target.driverPhone){target.driverPhone='';changed.push('driverPhone')}if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
   if(['UPDATE','LOCATION_UPDATE'].includes(e.action)){if(e.pickup)setField('pickup',e.pickup);if(e.returnLocation)setField('ret',e.returnLocation)}
   if(e.action==='PAYMENT_UPDATE'){if(e.total!=null)setField('total',e.total);if(e.deposit!=null){setField('deposit',e.deposit);setField('paid',e.deposit)}if(e.balance!=null){setField('balance',e.balance);if(moneyNumber(target.total)!==null)setField('paid',Math.max(0,moneyNumber(target.total)-e.balance));else setField('paid',null)}if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
   const extra=[e.memo,...(e.operationNotes||[]),buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod}),e.paymentStatus?`결제상태 ${e.paymentStatus}`:''].filter(Boolean).join(' · ');if(extra&&!String(target.memo||'').includes(extra))setField('memo',[target.memo,extra].filter(Boolean).join(' · '));
@@ -2950,7 +2972,7 @@ function applyKakaoRow(i){
   const invalid=validateReservation(target);if(invalid){data[data.findIndex(x=>x.id===target.id)]=before;toast(invalid);return}if(!confirmReservationWarnings(target)){data[data.findIndex(x=>x.id===target.id)]=before;return}
   saveKakaoHistory(target.id,e.action,changed,before,JSON.parse(JSON.stringify(target)),row.cluster.messages.map(m=>m.text.slice(0,120)));save();render();row.ignored=true;renderKakaoAnalysis();toast('예약에 반영하고 변경 이력을 저장했습니다');
 }
-function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.driverService)set('f-driver-service',e.driverService);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
+function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.driverService)set('f-driver-service',e.driverService);if(e.driverPhone)set('f-driver-phone',e.driverPhone);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
 function ignoreKakaoRow(i){if(!kakaoAnalysisState[i])return;kakaoAnalysisState[i].ignored=true;renderKakaoAnalysis();toast('이 분석 결과를 무시했습니다')}
 
 /* ===== 카톡 신규 예약을 폼 안 거치고 바로 Firestore에 저장 ===== */
@@ -2967,7 +2989,7 @@ function kakaoEventToReservation(e){
     status:'wait',
     pickup:e.pickup||'사무실',
     ret:e.returnLocation||e.pickup||'사무실',
-    driverService:e.driverService||'',
+    driverService:e.driverService||'',driverPhone:e.driverService==='driver'?e.driverPhone||'':'',
     total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
@@ -3252,6 +3274,7 @@ function validateReservation(r){
   if(!Number.isFinite(start)||!Number.isFinite(end))return '대여 시작과 반납 일시를 정확히 입력하세요.';
   if(end<=start)return '반납 일시는 대여 시작보다 늦어야 합니다.';
   if(!String(r.car||'').trim())return '차종을 입력하세요. 차량번호는 나중에 배정할 수 있습니다.';
+  if(isDriverReservation(r)&&r.driverPhone&&!normalizedDriverPhone(r.driverPhone))return '운행기사 휴대폰 번호를 확인하세요. 미배정이면 비워 두세요.';
   const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
   if(total!==null&&paid!==null&&paid>total)return '입금액이 총금액보다 큽니다. 금액을 확인하세요.';
   return '';
@@ -3294,6 +3317,8 @@ function reservationFormRecord(){
   const car=val('f-car'),pickup=val('f-pickup')||'사무실';
   const candidate={name:reservationCustomerName({name:val('f-name')}),phone:val('f-phone'),car,start:val('f-start'),end:val('f-end'),days:val('f-days'),ins:val('f-ins'),insuranceFee:val('f-ins-price'),status:val('f-status'),pickup,ret:val('f-return')||pickup,memo:val('f-memo'),total:moneyNumber(val('f-total')),paid:moneyNumber(val('f-paid')),paymentMethod:val('f-payment'),balance:moneyNumber(val('f-balance'))};
   candidate.driverService=val('f-driver-service');
+  const driverPhone=val('f-driver-phone');
+  candidate.driverPhone=isDriverReservation(candidate)?(normalizedDriverPhone(driverPhone)||driverPhone):'';
   candidate.vehicleId=reservationVehicleId({car});
   const selected=document.getElementById('f-car').dataset.fullPlate;
   if(selected&&PLATE_MAP[selected]&&car===`${PLATE_MAP[selected].n} (${selected.slice(-4)})`)candidate.vehicleId=selected;
@@ -3353,7 +3378,7 @@ function saveRes(){
 function clearForm(){
   editReturnPosition=null;
   reservationFormVersion++;
-  ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service'].forEach(i=>set(i,''));
+  ['f-name','f-phone','f-car','f-start','f-end','f-days','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone'].forEach(i=>set(i,''));
   document.getElementById('f-ins').value='일반면책';document.getElementById('f-status').value='wait';
   delete document.getElementById('f-car').dataset.fullPlate;
   document.getElementById('f-car').title='';
@@ -3366,7 +3391,7 @@ function clearForm(){
 function fillReservationEdit(original,position){
   const r=normalizeReservationLocationRecord(original);clearForm();
   editReturnPosition=position;
-  set('f-driver-service',r.driverService||'');
+  set('f-driver-service',r.driverService||'');set('f-driver-phone',r.driverPhone||'');
   set('f-name',reservationCustomerName(r));set('f-phone',r.phone);set('f-car',r.car);set('f-start',r.start);set('f-end',r.end);set('f-days',r.days);
   set('f-ins',reservationInsurance(r)==='완전면책'?'완전자차':'일반면책');set('f-status',r.status||'wait');set('f-memo',r.memo);
   applyLocationPairToForm(r.pickup,r.ret,{moveNote:false});populateFinanceForm(r);
@@ -3427,6 +3452,20 @@ function reservationActionButtons(r,compact=false){
   if(r.status==='cancelled'||r.status==='done')return '';
   if(r.status==='active')return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'done')">반납 완료</button>`;
   return `<button class="${cls}" onclick="event.stopPropagation();setReservationStatus(${id},'active')">배차 완료</button>`;
+}
+function normalizedDriverPhone(value){
+  const text=String(value??'').trim();
+  if(!/^(?:0|\+82)[\d ().-]+$/.test(text))return '';
+  const national=text.replace(/[ ().-]/g,'').replace(/^\+82(?:0)?/,'0');
+  const m=national.match(/^(010)(\d{4})(\d{4})$/)||national.match(/^(01[16789])(\d{3,4})(\d{4})$/);
+  return m?m.slice(1).join('-'):'';
+}
+// Remove labelled staff numbers before any customer or vehicle-number detection.
+function splitDriverContact(text){
+  const numbers=new Set();let hasLabel=false;
+  const clean=String(text??'').replace(/(^|[^가-힣A-Za-z0-9])((?:(?:운행|담당|배정|탁송|배차|회차|대리)[ \t]*)?기사(?:님)?)[ \t]*(?:연락처|(?:휴대)?전화(?:번호)?|휴대폰(?:[ \t]*번호)?|번호)[\] \t]*[:：]?[ \t]*(?:\r?\n[ \t]*)?((?:0|\+82[ \t.-]*)(?:[\d(][\d() \t.-]*?\d))(?=[ \t]*(?:$|[^\d(). \t-]))/gm,
+    (_,prefix,label,raw)=>{const number=normalizedDriverPhone(raw);if(!/^(탁송|배차|회차|대리)/.test(label)){hasLabel=true;if(number)numbers.add(number)}return prefix;});
+  return {clean,hasLabel,phone:numbers.size===1?[...numbers][0]:''};
 }
 function driverServiceFromText(text){
   const note=String(text||'').replace(/(?:탁송|배차|회차|대리)[ \t]*기사(?:님)?/g,'');
@@ -4641,6 +4680,7 @@ function renderMobileSheet(){
     <dl class="m-kv">
       <div><dt>배차</dt><dd><b>${esc(fmtShort(r.start))}</b><small id="m-sheet-value-pickup">${esc(r.pickup||'장소 미정')}</small>${copy('pickup','배차 주소',r.pickup)}</dd></div>
       <div><dt>반납</dt><dd><b>${esc(fmtShort(r.end))}</b><small id="m-sheet-value-ret">${esc(r.ret||r.pickup||'장소 미정')}</small>${copy('ret','반납 주소',r.ret||r.pickup)}</dd></div>
+      ${isDriverReservation(r)?`<div><dt>운행기사 연락처</dt><dd>${esc(normalizedDriverPhone(r.driverPhone)||'미등록')}</dd></div>`:''}
       ${r.days?`<div><dt>기간</dt><dd>${esc(r.days)}일</dd></div>`:''}
       <div><dt>보험</dt><dd>${esc(reservationInsurance(r))}</dd></div>
       ${r.memo?`<div><dt>메모</dt><dd style="white-space:pre-wrap">${esc(r.memo)}</dd></div>`:''}
@@ -4942,6 +4982,7 @@ function auditMergeReservation(local,ai){
   const r=ai?.reservation||{},out={...local};
   const map={customerName:'customerName',sourceName:'sourceName',phone:'phone',car:'car',plate:'plate',start:'start',end:'end',insurance:'insurance',pickup:'pickup',returnLocation:'returnLocation',total:'total',deposit:'deposit',balance:'balance',paymentMethod:'paymentMethod',paymentStatus:'paymentStatus',status:'status',memo:'memo',reservationNumber:'reservationNumber'};
   Object.entries(map).forEach(([src,dst])=>{const v=r[src];if(v!==''&&v!==null&&v!==undefined)out[dst]=v});
+  if(local.driverContactLabeled)out.phone=local.phone||'';
   if(local.returnLocationExplicit===true)out.returnLocation=local.returnLocation===local.pickup?out.pickup:local.returnLocation;
   else if(local.returnLocationExplicit===false||local.returnLocation===local.pickup||!out.returnLocation)out.returnLocation=out.pickup;
   const actionMap={CREATE_RESERVATION:'CREATE',UPDATE_RESERVATION:'UPDATE',CANCEL_RESERVATION:'CANCEL',PAYMENT_UPDATE:'PAYMENT_UPDATE',VEHICLE_ASSIGNMENT:'VEHICLE_ASSIGNMENT',LOCATION_UPDATE:'LOCATION_UPDATE',OPERATION_NOTE:'OPERATION_NOTE'};
@@ -5011,7 +5052,7 @@ function auditEventToReservation(e){
   return normalizeReservationLocationRecord({
     id:uid(),name,phone:e.phone||'',car,start:e.start||'',end:e.end||'',days:e.days||'',
     ins:'일반면책',status:'wait',pickup:e.pickup||'사무실',ret:e.returnLocation||e.pickup||'사무실',
-    driverService:e.driverService||'',
+    driverService:e.driverService||'',driverPhone:e.driverService==='driver'?e.driverPhone||'':'',
     total:moneyNumber(e.total),paid:moneyNumber(e.deposit),paymentMethod:e.paymentMethod||'',insuranceFee:e.insurance==='자포'?'included':e.insurance==='자별'?'excluded':'',vehicleId:reservationVehicleId({car:kakaoCarField(e)}),
     balance:(e.balance!=null&&e.balance!=='')?String(e.balance):'',
     memo:[e.memo,buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod})].filter(Boolean).join(' · ')
@@ -5419,6 +5460,10 @@ function normalizeJSONPasteRecord(raw,index){
   // Location normalization may add old payment notes; preserve the supplied source memo exactly.
   normalized.memo=r.memo;
   normalized.name=reservationCustomerName(normalized);
+  if(isDriverReservation(normalized)&&raw.driverPhone!=null){
+    const phone=jsonPasteText(raw.driverPhone,'운행기사 연락처',errors,24).trim();
+    normalized.driverPhone=normalizedDriverPhone(phone)||phone;
+  }
   const invalid=validateReservation(normalized);if(invalid)errors.push(invalid);
   return{record:normalized,errors:[...new Set(errors)]};
 }
@@ -5553,17 +5598,17 @@ document.getElementById('json-paste-overlay').addEventListener('keydown',event=>
       <div class="confirmation-notice-fields" id="confirmation-notice-fields" hidden>
         <div class="confirmation-notice-grid">
           <div class="field"><label for="confirmation-notice-number">예약번호</label><input id="confirmation-notice-number" maxlength="100" placeholder="예약번호 입력" oninput="editConfirmationNoticeFields()"></div>
-          <div class="field"><label for="confirmation-notice-fuel">유종</label><input id="confirmation-notice-fuel" maxlength="60" placeholder="예: LPG, 디젤, 가솔린" oninput="editConfirmationNoticeFields()"></div>
-          <div class="field"><label for="confirmation-notice-insurance">보험 · 일반/완전</label><select id="confirmation-notice-insurance" onchange="editConfirmationInsuranceField('insurance')"><option value="일반면책" selected>일반면책</option><option value="완전면책">완전면책</option></select></div>
-          <div class="field"><label for="confirmation-notice-deductible">자차면책금</label><input id="confirmation-notice-deductible" maxlength="100" placeholder="예: 50만원, 0원" oninput="editConfirmationInsuranceField('deductible')"></div>
-          <div class="field"><label for="confirmation-notice-limit">자차한도</label><input id="confirmation-notice-limit" maxlength="100" placeholder="예: 500만원, 무제한" oninput="editConfirmationInsuranceField('limit')"></div>
+          <div class="field" data-self-confirmation><label for="confirmation-notice-fuel">유종</label><input id="confirmation-notice-fuel" maxlength="60" placeholder="예: LPG, 디젤, 가솔린" oninput="editConfirmationNoticeFields()"></div>
+          <div class="field" data-self-confirmation><label for="confirmation-notice-insurance">보험 · 일반/완전</label><select id="confirmation-notice-insurance" onchange="editConfirmationInsuranceField('insurance')"><option value="일반면책" selected>일반면책</option><option value="완전면책">완전면책</option></select></div>
+          <div class="field" data-self-confirmation><label for="confirmation-notice-deductible">자차면책금</label><input id="confirmation-notice-deductible" maxlength="100" placeholder="예: 50만원, 0원" oninput="editConfirmationInsuranceField('deductible')"></div>
+          <div class="field" data-self-confirmation><label for="confirmation-notice-limit">자차한도</label><input id="confirmation-notice-limit" maxlength="100" placeholder="예: 500만원, 무제한" oninput="editConfirmationInsuranceField('limit')"></div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="regenerateDispatchNotice()">입력값으로 안내문 생성</button>
-        <p class="dispatch-notice-help">보험·면책금·자차한도는 입력 즉시 안내문에 반영됩니다. 보험을 바꿔도 금액은 입력한 값을 유지합니다. 예약번호·유종 변경 후에는 안내문 생성 버튼을 눌러 주세요. 이 값은 해당 안내의 초안에 저장됩니다.</p>
+        <p class="dispatch-notice-help" id="confirmation-notice-fields-help">보험·면책금·자차한도는 입력 즉시 안내문에 반영됩니다. 보험을 바꿔도 금액은 입력한 값을 유지합니다. 예약번호·유종 변경 후에는 안내문 생성 버튼을 눌러 주세요. 이 값은 해당 안내의 초안에 저장됩니다.</p>
       </div>
       <div class="dispatch-notice-channel-row"><div class="field"><label for="dispatch-notice-channel">보낼 방법</label><select id="dispatch-notice-channel" onchange="changeDispatchNoticeChannel()"><option value="sms">문자</option><option value="kakao">카카오톡</option></select></div><div class="field" id="dispatch-notice-recipient-field" hidden><label for="dispatch-notice-recipient">카카오톡 받을 고객 / 대화방</label><input id="dispatch-notice-recipient" maxlength="100" autocomplete="off" placeholder="실제로 보낼 고객 또는 대화방 이름" oninput="editDispatchNotice()"><p class="dispatch-notice-help">공유할 때 이 고객의 대화방을 직접 선택하세요.</p></div></div>
       <div class="field"><label for="dispatch-notice-phone">고객 휴대폰 번호</label><input type="tel" id="dispatch-notice-phone" autocomplete="off" inputmode="tel" placeholder="010-0000-0000" oninput="editDispatchNotice()"><p class="dispatch-notice-help">문자는 이 예약에 저장된 고객 번호로만 보낼 수 있습니다.</p></div>
-      <div class="field"><div class="dispatch-notice-message-label"><label for="dispatch-notice-body">안내 내용 · 직접 수정 가능</label><button class="btn btn-ghost btn-sm" onclick="regenerateDispatchNotice()">예약 정보로 다시 작성</button></div><textarea id="dispatch-notice-body" maxlength="2000" spellcheck="false" oninput="editDispatchNotice()"></textarea><p class="dispatch-notice-help" id="dispatch-notice-length"></p><p class="dispatch-notice-help">보험·면책금·보상한도와 차량별 주의사항을 계약 조건에 맞게 확인하세요. 실내 클리닝 비용도 발송 전에 확인하세요. 내부 메모는 문자에 포함하지 않습니다.</p></div>
+      <div class="field"><div class="dispatch-notice-message-label"><label for="dispatch-notice-body">안내 내용 · 직접 수정 가능</label><button class="btn btn-ghost btn-sm" onclick="regenerateDispatchNotice()">예약 정보로 다시 작성</button></div><textarea id="dispatch-notice-body" maxlength="2000" spellcheck="false" oninput="editDispatchNotice()"></textarea><p class="dispatch-notice-help" id="dispatch-notice-length"></p><p class="dispatch-notice-help" id="dispatch-notice-review-help">보험·면책금·보상한도와 차량별 주의사항을 계약 조건에 맞게 확인하세요. 실내 클리닝 비용도 발송 전에 확인하세요. 내부 메모는 문자에 포함하지 않습니다.</p></div>
       <div class="dispatch-notice-warning" id="dispatch-notice-warning" role="status"></div>
       <div id="dispatch-missing-actions" hidden>
         <button class="btn btn-ghost btn-sm" type="button" onclick="selectMissingNoticeField()">본문에서 수정하기</button>
@@ -5607,7 +5652,10 @@ function dispatchNoticeLocations(r){
 }
 function dispatchNoticeSource(r){
   const loc=dispatchNoticeLocations(r);
-  return JSON.stringify([reservationCustomerName(r),String(r.phone||''),String(r.start||''),String(r.end||''),String(r.car||''),reservationVehicleName(r),reservationVehicleId(r),loc.pickup,loc.ret,String(r.ins||'')]);
+  const snapshot=[reservationCustomerName(r),String(r.phone||''),String(r.start||''),String(r.end||''),String(r.car||''),reservationVehicleName(r),reservationVehicleId(r),loc.pickup,loc.ret,String(r.ins||'')];
+  // Existing self-drive drafts/receipts keep their fingerprint; old chauffeur drafts must be reviewed.
+  if(isDriverReservation(r))snapshot.push('chauffeur-v1',normalizedDriverPhone(r.driverPhone));
+  return JSON.stringify(snapshot);
 }
 function dispatchNoticeSentCurrent(r){
   const source=dispatchNoticeSource(r);
@@ -5621,6 +5669,13 @@ function dispatchNoticeFormat(value){
   const t=typeof value==='number'?value:reservationTime(value);if(!Number.isFinite(t))return '[일시 확인 필요]';
   return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(t));
 }
+function chauffeurNoticeLines(r){
+  return ['[운행기사 안내]',
+    '운행기사 연락처: '+(normalizedDriverPhone(r.driverPhone)||'배정 후 안내드리겠습니다.'),
+    '탑승 전 운행기사가 고객님께 연락드려 만날 장소를 확인할 예정입니다.',
+    '안전한 운행을 위해 운행기사에게 욕설·폭언을 하거나 위협·폭행하는 행동은 금지됩니다.','',
+    '사고 발생, 긴급출동 요청 등 긴급한 상황에서는 경일렌트카 010-4164-2820으로 연락해 주세요.'];
+}
 function buildDispatchNotice(r,now=Date.now()){
   const loc=dispatchNoticeLocations(r),name=reservationCustomerName(r).trim(),plate=reservationVehicleId(r);
   const car=(String(r.car||'').trim()||plate)?reservationVehicleName(r):'[차량 확인 필요]';
@@ -5628,6 +5683,14 @@ function buildDispatchNotice(r,now=Date.now()){
   const solati=/[쏠솔]\s*라\s*티|\bsolati(?=\d|\b)/i.test(car);
   const tomorrow=koreanNow(new Date(now+86400000)).slice(0,10)===String(r.start||'').slice(0,10);
   const timing=tomorrow?'내일 ':'';
+  if(isDriverReservation(r))return [
+    '[경일렌트카] 운행기사 동행 · '+(tomorrow?'탑승 하루 전 안내':'탑승 안내'),'',
+    (name?name+'님, ':'안녕하세요. ')+timing+'이용하실 차량과 탑승 일정을 안내드립니다.','',
+    `차량: ${car}${plate?' ('+plate+')':''}`,
+    `탑승: ${dispatchNoticeFormat(r.start)} / ${loc.pickup||'[탑승지 확인 필요]'}`,
+    `도착 예정: ${dispatchNoticeFormat(r.end)} / ${loc.ret||'[도착지 확인 필요]'}`,'',
+    ...chauffeurNoticeLines(r)
+  ].join('\n');
   return [
     '[경일렌트카] '+(solati?'쏠라티 ':'')+(tomorrow?'배차 하루 전 안내':'배차 안내'),'',
     (name?name+'님, ':'안녕하세요. ')+timing+'이용하실 차량의 배차 정보를 안내드립니다.','',
@@ -5690,6 +5753,15 @@ function buildConfirmationNotice(r,fields=confirmationNoticeFields(r)){
   const method=confirmationNoticeValue(r.paymentMethod||r.payment_method),payment={'카드':'카드결제','이체':'계좌이체','현금':'현금결제'}[method]||method;
   const car=(String(r.car||'').trim()||reservationVehicleId(r))?reservationVehicleName(r):'';
   const amount=(value,label)=>value===null?`[${label} 확인 필요]`:value.toLocaleString('ko-KR')+'원';
+  if(isDriverReservation(r))return [
+    '[경일렌트카] 운행기사 동행 · 예약 완료','',
+    `예약번호 : ${required(fields.number,'예약번호')}`,`예약자명 : ${reservationCustomerName(r)}`,`고객 연락처 : ${required(r.phone,'연락처')}`,
+    `차량 : ${required(car,'차량')}`,`탑승일시 : ${confirmationNoticeDate(r.start)}`,`탑승장소 : ${required(loc.pickup,'탑승장소')}`,
+    `도착 예정일시 : ${confirmationNoticeDate(r.end)}`,`도착장소 : ${required(loc.ret,'도착장소')}`,
+    `이용기간 : ${confirmationNoticeDuration(r)}`,...(balance===0?[]:[`잔금 : ${amount(balance,'잔금')}`]),
+    `총합계 : ${amount(total,'총합계')}`,`결제방법 : ${required(payment,'결제방법')}`,'입금계좌 : 하나은행 899-910400-97507 경일렌트카','',
+    ...chauffeurNoticeLines(r)
+  ].join('\n');
   return ['[경일렌트카] 예약 완료','',`예약번호 : ${required(fields.number,'예약번호')}`,`예약자명 : ${reservationCustomerName(r)}`,`연락처 : ${required(r.phone,'연락처')}`,`차량 : ${required(car,'차량')}`,`유종 : ${required(fields.fuel,'유종')}`,`배차일시 : ${confirmationNoticeDate(r.start)}`,`반차일시 : ${confirmationNoticeDate(r.end)}`,`이용기간 : ${confirmationNoticeDuration(r)}`,`배차주소 : ${required(loc.pickup,'배차주소')}`,`회차주소 : ${required(loc.ret,'회차주소')}`,`보험 : ${insurance}`,`자차면책금 : ${confirmationNoticeTerm(fields.deductible)||'[자차면책금 확인 필요]'}`,`자차한도 : ${confirmationNoticeTerm(fields.limit)||'[자차한도 확인 필요]'}`,...(balance===0?[]:[`잔금 : ${amount(balance,'잔금')}`]),`총합계 : ${amount(total,'총합계')}`,`결제방법 : ${required(payment,'결제방법')}`,'입금계좌 : 하나은행 899-910400-97507 경일렌트카','','배차시간은 전날 다시 연락드린 후 차량 배차 예정입니다.','면허증 지참 부탁드립니다.','문의 : 010-4942-2829','','자차보험 면책사항 : 휠·타이어·앞유리 파손은 자차보험 보상 대상에서 제외됩니다.','실내 클리닝 비용 : 실내 흡연, 오염물 또는 비린내 등 악취로 인해 실내 클리닝이 필요한 경우 클리닝 비용이 청구될 수 있습니다.'].join('\n');
 }
 function readConfirmationNoticeFields(){return{insurance:document.getElementById('confirmation-notice-insurance').value,number:document.getElementById('confirmation-notice-number').value.trim(),fuel:document.getElementById('confirmation-notice-fuel').value.trim(),deductible:document.getElementById('confirmation-notice-deductible').value.trim(),limit:document.getElementById('confirmation-notice-limit').value.trim()}}
@@ -5808,7 +5880,7 @@ function dispatchNoticeValidation(options={}){
   if(dispatchNoticeKind()==='confirmation'&&dispatchNoticeState?.fieldsDirty)errors.push('추가 입력값이 변경되었습니다. ‘입력값으로 안내문 생성’을 눌러 주세요.');
   if(!body)errors.push('문자 내용을 입력해 주세요.');
   if(body.length>2000)errors.push('문자 내용은 2,000자 이내로 작성해 주세요.');
-  const smsBytes=channel==='sms'&&dispatchNoticeKind()==='reminder'?dispatchNoticeSmsBytes(body):null;
+  const smsBytes=channel==='sms'&&(dispatchNoticeKind()==='reminder'||(r&&isDriverReservation(r)))?dispatchNoticeSmsBytes(body):null;
   if(smsBytes>2000)errors.push('장문 문자는 2,000바이트까지 발송할 수 있습니다. 내용을 줄여 주세요.');
   const missing=missingNoticeFields(body);
   if(missing.length)errors.push('발송 전 확인할 항목: '+missing.map(s=>s.slice(1,-1).replace(/ 확인 필요$/,'')).join(', '));
@@ -5820,7 +5892,11 @@ function refreshDispatchNotice(){
   const start=r?reservationTime(r.start):NaN,sent=r?.[noticeSentKey()];
   document.getElementById('dispatch-notice-title').textContent=(confirmation?'예약 완료 안내':'배차 하루 전 안내')+' · 문자/카카오톡';
   document.getElementById('confirmation-notice-fields').hidden=!confirmation;
-  document.getElementById('dispatch-notice-description').textContent=confirmation?'예약번호·차량·금액·보험 조건을 확인한 뒤 고객에게 보내세요.':'예약 정보를 바탕으로 작성한 초안입니다. 장소·차량 주의사항·보험 내용을 확인해 주세요.';
+  const chauffeur=!!r&&isDriverReservation(r);
+  document.querySelectorAll('[data-self-confirmation]').forEach(el=>el.hidden=chauffeur);
+  document.getElementById('confirmation-notice-fields-help').textContent=chauffeur?'예약번호를 변경한 뒤에는 안내문 생성 버튼을 눌러 주세요.':'보험·면책금·자차한도는 입력 즉시 안내문에 반영됩니다. 보험을 바꿔도 금액은 입력한 값을 유지합니다. 예약번호·유종 변경 후에는 안내문 생성 버튼을 눌러 주세요. 이 값은 해당 안내의 초안에 저장됩니다.';
+  document.getElementById('dispatch-notice-description').textContent=chauffeur?'탑승 일정과 장소, 운행기사 연락처를 확인한 뒤 고객에게 보내세요.':confirmation?'예약번호·차량·금액·보험 조건을 확인한 뒤 고객에게 보내세요.':'예약 정보를 바탕으로 작성한 초안입니다. 장소·차량 주의사항·보험 내용을 확인해 주세요.';
+  document.getElementById('dispatch-notice-review-help').textContent=chauffeur?'운행기사 연락처는 예약에 저장한 번호를 사용합니다. 미입력 시 배정 후 안내한다고 표시됩니다. 문자는 고객 휴대폰으로 보냅니다.':'보험·면책금·보상한도와 차량별 주의사항을 계약 조건에 맞게 확인하세요. 실내 클리닝 비용도 발송 전에 확인하세요. 내부 메모는 문자에 포함하지 않습니다.';
   document.getElementById('dispatch-notice-info').textContent=r?`${reservationCustomerName(r)}${reservationCustomerName(r)?' · ':''}${reservationVehicleName(r)}\n배차 : ${dispatchNoticeFormat(r.start)}${confirmation?'\n예약 완료 안내 기록은 하루 전 안내와 별도로 관리합니다.':'\n권장 안내 시각 : '+dispatchNoticeFormat(Number.isFinite(start)?start-86400000:NaN)+' (배차 24시간 전)'}${sent?'\n'+(selectedNoticeSentCurrent(r)?'보냈다':'이전 보냈다 기록 · 재확인 필요')+' · '+dispatchNoticeChannelLabel(sent.channel)+' · '+dispatchNoticeFormat(Date.parse(sent.confirmedAt)):''}`:'예약을 찾을 수 없습니다.';
   document.getElementById('dispatch-notice-sent-record').hidden=!sent;
   document.getElementById('dispatch-notice-sent-meta').textContent=sent?`${dispatchNoticeChannelLabel(sent.channel)} · 받는 사람 : ${sent.channel==='kakao'?sent.recipient||'기록 없음':sent.phone||'기록 없음'}\n기록 시각 : ${dispatchNoticeFormat(Date.parse(sent.confirmedAt))}\n직원이 실제 발송을 확인한 기록입니다. 수신·읽음 결과는 확인되지 않습니다.`:'';
