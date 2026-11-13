@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>KY MOBILITY · 경일렌트카 예약관리</title>
 <!-- reservation-ui-assets -->
-<link rel="stylesheet" href="./assets/reservations-J2F74TRK.css">
-<script defer src="./assets/reservations-KQRPLBTS.js"></script>
+<link rel="stylesheet" href="./assets/reservations-7W24IBVZ.css">
+<script defer src="./assets/reservations-H2YPQSTZ.js"></script>
 <!-- /reservation-ui-assets -->
 <style>
 :root{
@@ -3746,6 +3746,20 @@ function openReservationPanel(mode='paste'){
 function closeReservationPanel(){setReservationInputTab(editId?'manual':'paste')}
 function dashboardDayOffset(day,offset){const d=new Date(day+'T12:00:00+09:00');d.setUTCDate(d.getUTCDate()+offset);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
 function dashboardRange(){const t=todayStr();if(['upcoming','all'].includes(dashboardPeriod))return null;if(dashboardPeriod==='tomorrow'){const d=dashboardDayOffset(t,1);return[d,d]}if(dashboardPeriod==='week'){const weekday=new Date(t+'T12:00:00+09:00').getUTCDay();return[dashboardDayOffset(t,-((weekday+6)%7)),dashboardDayOffset(t,6-((weekday+6)%7))]}return[t,t]}
+// A period shows dispatch/return events in that period, not every rental overlapping it.
+// Use the same event for filtering, ordering and mobile date headings.
+function reservationListEvent(r,range=dashboardRange(),metric=dashboardMetric){
+  const start=String(r.start||''),end=String(r.end||'');
+  if(metric==='pickup')return{type:'pickup',time:start};
+  if(metric==='return')return{type:'return',time:end};
+  if(metric==='all'&&range){
+    const within=time=>time&&time.slice(0,10)>=range[0]&&time.slice(0,10)<=range[1];
+    if(within(start))return{type:'pickup',time:start};
+    if(within(end))return{type:'return',time:end};
+    return null;
+  }
+  return r.status==='active'&&end?{type:'return',time:end}:{type:'pickup',time:start};
+}
 function dashboardOpenRecord(r){return r.status!=='cancelled'&&r.status!=='done'}
 function dashboardUpcomingRecord(r,today=todayStr()){
   return !r.deletedAt&&dashboardOpenRecord(r)&&!pastReservation(r,today);
@@ -3761,7 +3775,7 @@ function dashboardAttentionReasons(r){
   if(r.status==='wait'&&r.start&&String(r.start)<nowText)reasons.push('배차 확인 필요');
   return reasons;
 }
-function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';renderReservationList();updateDashboardStats()}
+function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';updateDashboardStats();renderReservationList()}
 function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=dashboardMetric==='all'?'upcoming':['pickup','return'].includes(dashboardMetric)?'today':'all';go2('reservations')}
 function resetDashboardFilters(){dashboardPeriod='upcoming';dashboardMetric='all';document.getElementById('search').value='';render()}
 function dashboardMetricMatch(r){if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();if(dashboardMetric==='active')return r.status==='active';if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;if(dashboardMetric==='unassigned')return dashboardOpenRecord(r)&&!reservationVehicleId(r);if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;return true}
@@ -3772,12 +3786,13 @@ function renderDashboard(){
 function reservationListRows(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase(),range=dashboardRange(),today=todayStr();
   let rows=data.filter(r=>{
+    if(r.deletedAt)return false;
     if(!dashboardMetricMatch(r))return false;
     if(dashboardMetric==='all'&&dashboardPeriod==='upcoming'&&!dashboardUpcomingRecord(r,today))return false;
-    if(dashboardMetric==='all'&&range){if(r.status==='cancelled')return false;const start=String(r.start||'').slice(0,10),end=String(r.end||r.start||'').slice(0,10);const intersects=start&&start<=range[1]&&end>=range[0];if(!intersects&&!(dashboardPeriod==='today'&&r.status==='active'&&dashboardUpcomingRecord(r,today)))return false}
+    if(dashboardMetric==='all'&&range&&(r.status==='cancelled'||!reservationListEvent(r,range)))return false;
     if(q&&![reservationCustomerName(r),r.car,r.phone,r.pickup,r.ret,r.memo,isDriverReservation(r)?'운행기사':''].join(' ').toLowerCase().includes(q))return false;return true;
   });
-  const eventTime=r=>dashboardMetric==='return'||(r.status==='active'&&r.end)?String(r.end||''):String(r.start||'');
+  const eventTime=r=>reservationListEvent(r,range)?.time||'';
   rows.sort((a,b)=>eventTime(a).localeCompare(eventTime(b))||reservationCustomerName(a).localeCompare(reservationCustomerName(b)));
   return rows;
 }
@@ -3785,7 +3800,7 @@ function renderReservationList(){
   const rows=reservationListRows(),range=dashboardRange(),q=(document.getElementById('search').value||'').trim();
   const periodLabels={upcoming:'예정 예약 · 운행중',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
   document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||(dashboardPeriod==='upcoming'?periodLabels.upcoming:periodLabels[dashboardPeriod]+' 업무');
-  document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${dashboardPeriod==='today'&&dashboardMetric==='all'?' · 운행중 포함':''}${dashboardPeriod==='upcoming'&&dashboardMetric==='all'?' · 고객·차량·배차·반납 일정':''}`;
+  document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${range&&dashboardMetric==='all'?' · 배차·반납일 기준':''}${dashboardPeriod==='upcoming'&&dashboardMetric==='all'?' · 고객·차량·배차·반납 일정':''}`;
   document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='upcoming'&&dashboardMetric==='all'&&!q;
   document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('on',b.dataset.period===dashboardPeriod));
   paintReservationList(rows);
@@ -4635,7 +4650,7 @@ function openMobileNoticeList(){dispatchNoticeOnly=true;schedTab='all';document.
 /* 예약 행 목록 */
 function mobileReservationRows(rows){
   if(!rows.length)return '<div class="m-empty">선택한 조건에 해당하는 예약이 없습니다<small>기간이나 필터를 바꿔 확인하세요</small></div>';
-  const byEnd=r=>dashboardMetric==='return'||(r.status==='active'&&!!r.end);
+  const byEnd=r=>reservationListEvent(r)?.type==='return';
   const groups=[];let cur=null;
   rows.forEach(r=>{const day=String((byEnd(r)?r.end:r.start)||'').slice(0,10);if(!cur||cur.day!==day){cur={day,rows:[]};groups.push(cur)}cur.rows.push(r)});
   const t=todayStr();
@@ -4936,6 +4951,9 @@ function tick(){
   const minute=koreanNow(new Date(now));
   if(_lastClockMinute!==minute){_lastClockMinute=minute;render()}
 }
+// Mobile browsers suspend timers while backgrounded; refresh dates immediately on return.
+window.addEventListener('pageshow',tick);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
 function paintHeaderClock(timestamp){
   document.getElementById('clock').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(timestamp));
 }

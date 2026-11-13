@@ -112,12 +112,13 @@ function ReservationTable({rows}) {
   </Table>;
 }
 
-function MobileReservations({rows, metric}) {
+function MobileReservations({rows, metric, range}) {
   let previousDay = null;
   return <div className="ky-mobile-list">
     {rows.map(record => {
-      const byEnd = metric === 'return' || (record.status === 'active' && !!record.end);
-      const date = String((byEnd ? record.end : record.start) || '').slice(0, 10);
+      const event = app.reservationListEvent(record, range, metric);
+      const byEnd = event?.type === 'return';
+      const date = String(event?.time || '').slice(0, 10);
       const showDate = date !== previousDay;
       previousDay = date;
       const balance = app.reservationBalance(record);
@@ -169,13 +170,15 @@ function Reservations({rows, period, metric, query, compact, metrics, title, ran
         </div>
       </div>
       <div className="ky-result">
-        <span role="status" aria-live="polite"><b>{rows.length.toLocaleString('ko-KR')}건</b>{metric !== 'all' && ' · ' + title}</span>
+        <span role="status" aria-live="polite"><b>{rows.length.toLocaleString('ko-KR')}건</b>{metric !== 'all' && ' · ' + title}
+          {range && <span className="ky-range">{range[0]}{range[0] !== range[1] && ' ~ ' + range[1]}{metric === 'all' && ' · 배차·반납일 기준'}</span>}
+        </span>
         {filtered && <Button label="필터 초기화" variant="ghost" size="sm" onClick={() => app.resetDashboardFilters()}/>}
       </div>
       {!rows.length ? <div className="ky-empty"><strong>조건에 맞는 예약이 없습니다</strong>
         <span>조회 기간을 바꾸거나 새 예약을 추가해 주세요.</span>
         <Button label="예약 추가" variant="secondary" onClick={() => app.insertBetween(-1)}/>
-      </div> : compact ? <MobileReservations rows={rows} metric={metric}/> : <ReservationTable rows={rows}/>}
+      </div> : compact ? <MobileReservations rows={rows} metric={metric} range={range}/> : <ReservationTable rows={rows}/>}
     </section>
   </div>;
 }

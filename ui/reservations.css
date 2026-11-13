@@ -61,6 +61,8 @@
 .ky-search input::placeholder { color: var(--ky-muted); }
 .ky-result { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 4px 20px; color: var(--ky-muted); }
 .ky-result b { color: var(--ky-ink); font-weight: 700; }
+.ky-range { display: block; font-size: 12px; line-height: 1.5; }
+.ky-result > .astryx-button { flex-shrink: 0; }
 .ky-reservations .astryx-table-scroll-wrapper { max-height: 68vh; overflow: auto; scrollbar-color: #b6bcc4 transparent; scrollbar-width: thin; }
 .ky-reservations .ky-table { min-width: 1060px; width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 14px; }
 .ky-table th { max-width: none; position: sticky; top: 0; z-index: 2; background: var(--ky-navy); color: #fff; padding: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid var(--ky-line); white-space: nowrap; }
