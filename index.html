@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>KY MOBILITY · 경일렌트카 예약관리</title>
+<!-- reservation-ui-assets -->
+<link rel="stylesheet" href="./assets/reservations-FHQC32SM.css">
+<script defer src="./assets/reservations-KQRPLBTS.js"></script>
+<!-- /reservation-ui-assets -->
 <style>
 :root{
   --ivory:#1E2330; --ivory-dim:#6B7280; --gold:#B8892B; --gold-soft:rgba(184,137,43,.12);
@@ -1172,6 +1176,7 @@ body.tv-mode{display:block;background:#0b1420}
 
     <!-- ===== 예약 관리(전용 큰 목록) ===== -->
     <div class="view" id="view-reservations">
+    <div id="reservation-astryx-root" hidden></div>
     <section class="stats" aria-label="예약 업무 현황">
       <button class="stat accent" data-metric="pickup" onclick="setDashboardMetric('pickup')" aria-pressed="false"><div class="k">오늘 배차</div><div class="v" id="s-today">0<small>건</small></div><span class="sub">오늘 출발하는 예약</span></button>
       <button class="stat" data-metric="return" onclick="setDashboardMetric('return')" aria-pressed="false"><div class="k">오늘 반납</div><div class="v" id="s-return">0<small>건</small></div><span class="sub">오늘 돌아오는 차량</span></button>
@@ -3361,7 +3366,7 @@ function captureEditReturnPosition(){
   if(current==='view-gantt')return {view:'gantt',pageY:window.scrollY,tableX:document.getElementById('gantt').scrollLeft};
   if(current==='view-schedule')return {view:'schedule',pageY:window.scrollY};
   if(current!=='view-reservations')return null;
-  const list=document.getElementById('list'),table=list.querySelector('.res-table-wrap');
+  const list=document.getElementById('list'),table=document.querySelector('#reservation-astryx-root .astryx-table-scroll-wrapper')||list.querySelector('.res-table-wrap');
   return {view:'reservations',pageY:window.scrollY,listY:list.scrollTop,listX:list.scrollLeft,
     tableY:table?.scrollTop||0,tableX:table?.scrollLeft||0};
 }
@@ -3442,7 +3447,7 @@ function saveRes(){
     if(position.view==='reservations'){
       const list=document.getElementById('list');
       list.scrollTo(position.listX,position.listY);
-      list.querySelector('.res-table-wrap')?.scrollTo(position.tableX,position.tableY);
+      (document.querySelector('#reservation-astryx-root .astryx-table-scroll-wrapper')||list.querySelector('.res-table-wrap'))?.scrollTo(position.tableX,position.tableY);
     }
     window.scrollTo(0,position.pageY);
   }else render();
@@ -3833,6 +3838,16 @@ reservationTouchInput.addEventListener('change',()=>{
 function renderReservations(){renderReservationList()}
 function paintReservationList(rows){
   const el=document.getElementById('list');if(!el)return;
+  if(window.kyReservationUI){
+    const metrics={};
+    ['s-today','s-return','s-active','s-unpaid','s-unassigned','s-flag'].forEach(id=>{metrics[id]=document.getElementById(id).textContent});
+    window.kyReservationUI.render({
+      rows,period:dashboardPeriod,metric:dashboardMetric,query:document.getElementById('search').value,
+      compact:isMobileApp()&&reservationTouchInput.matches,metrics,
+      title:document.getElementById('dashboard-list-title').textContent,range:dashboardRange()
+    });
+    return;
+  }
   if(isMobileApp() && reservationTouchInput.matches){
     el.innerHTML=mobileReservationRows(rows);
     return;
