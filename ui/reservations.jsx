@@ -35,7 +35,7 @@ function EditValue({record, field, children, label, className = ''}) {
 function ReservationStatus({record}) {
   const [label, variant] = statuses[record.status] || statuses.wait;
   return <span className="ky-status">
-    <Badge label={label} variant={variant}/>
+    <Badge label={app.isAutoReturned(record) ? '자동 반납' : label} variant={variant}/>
     {app.isDriverReservation(record) && <Badge label="운행기사" variant="teal"/>}
     {app.hasConflict(record) && <Badge label="일정 중복" variant="red"/>}
   </span>;

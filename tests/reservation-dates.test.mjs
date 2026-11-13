@@ -35,6 +35,7 @@ function setup(at = '2026-11-14T02:35:00+09:00') {
     isDriverReservation: () => false,
     pastReservation: r => r.end && r.end.slice(0, 10) < new Date(now + 9 * 3600000).toISOString().slice(0, 10),
     paintHeaderClock: () => {},
+    autoReturnExpiredReservations: () => {},
     render: () => { ctx.renders++; },
   });
   vm.runInContext(code, ctx);

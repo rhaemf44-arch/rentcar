@@ -6,7 +6,7 @@
 <title>KY MOBILITY · 경일렌트카 예약관리</title>
 <!-- reservation-ui-assets -->
 <link rel="stylesheet" href="./assets/reservations-7W24IBVZ.css">
-<script defer src="./assets/reservations-H2YPQSTZ.js"></script>
+<script defer src="./assets/reservations-UHT6XYE2.js"></script>
 <!-- /reservation-ui-assets -->
 <style>
 :root{
@@ -1667,6 +1667,7 @@ function startFirestoreSync(){
     storageApplyRecords(storageMergedRecords());saveLocal();storageRender();
     if(Object.keys(_pendingWrites).length){setSyncState('pending',fromCache?'오프라인 · 변경사항을 기기에 보관 중':'서버 전송 대기');if(_firestoreReady)flushReservationWrites()}
     else setSyncState(fromCache?'offline':'saved',fromCache?'오프라인 · 마지막 저장 자료 표시 중':'서버 저장 완료');
+    if(!fromCache)void autoReturnExpiredReservations();
   },err=>{
     _firestoreReady=false;setSyncState('error','서버 연결 실패 · 변경사항은 기기에 보관');
     console.error('Firestore 연결 오류:',err.code||'unknown');
@@ -3421,6 +3422,7 @@ function saveRes(){
     const current=data.find(x=>x.id===editId);
     if(!current){toast('다른 화면에서 삭제된 예약입니다. 신규 예약으로 확인해 주세요.');return}
     if(_editFormBaseline&&_editingOriginal){const merged=mergeReservationForm(current,form,_editFormBaseline,_editingOriginal);if(merged.error){toast(merged.error);return}r=merged.record}else r={...current,...r};
+    if(r.status!==current.status){r.returnSource='manual';if(r.status==='done')r.returnedAt=new Date().toISOString()}
   }
   normalizeStoredCoverage(r);
   const invalid=validateReservation(r);if(invalid){toast(invalid);return}
@@ -3487,7 +3489,7 @@ function setReservationStatus(id,status){
   const r=data.find(x=>x.id===id);if(!r||!['wait','active','done','cancelled'].includes(status)||r.status===status)return;
   if(status==='active'&&!reservationVehicleId(r)){toast('배차 전에 차량번호를 배정해 주세요.');editRes(id);return}
   if(!confirm(`${reservationCustomerName(r)} · ${status==='done'?'실제 반납을 확인했습니까?':status==='active'?'배차 완료로 변경할까요?':'상태를 변경할까요?'}`))return;
-  snapshot();r.status=status;r[status==='active'?'dispatchedAt':status==='done'?'returnedAt':'statusChangedAt']=new Date().toISOString();save();render();
+  snapshot();r.status=status;r.returnSource='manual';r[status==='active'?'dispatchedAt':status==='done'?'returnedAt':'statusChangedAt']=new Date().toISOString();save();render();
 }
 function cycleStatus(id){const r=data.find(x=>x.id===id);if(!r)return;if(r.status==='cancelled'||r.status==='done'){editRes(id);return}setReservationStatus(id,r.status==='active'?'done':'active')}
 
@@ -4566,6 +4568,7 @@ function mDayLabel(day){
   return `${Number(day.slice(5,7))}.${Number(day.slice(8,10))} (${w})${day===t?' 오늘':day===dashboardDayOffset(t,1)?' 내일':''}`;
 }
 function mStatus(r){
+  if(isAutoReturned(r))return['자동 반납','m-st-done'];
   if(r.status!=='cancelled'&&r.status!=='done'&&dashboardAttentionReasons(r).length)return['확인 필요','m-st-warn'];
   return{active:['운행중','m-st-active'],done:['완료','m-st-done'],cancelled:['취소','m-st-cancel']}[r.status]||['대기','m-st-wait'];
 }
@@ -4770,7 +4773,7 @@ function renderMobileSheet(){
   const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.id?`id="${attrs.id}"`:''} ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
   document.getElementById('m-sheet-body').innerHTML=`
     <header class="m-sheet-head"><div>
-      <div class="m-task-tags">${driverBadge(r)}<span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
+      <div class="m-task-tags">${driverBadge(r)}<span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(isAutoReturned(r)?'자동 반납 완료':({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
       <h2 id="m-sheet-title">${esc(v.name||'차량 미정')}</h2>
       <button type="button" class="m-plate-btn${v.plate?'':' empty'}" id="m-sheet-plate" onclick="openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">${v.plate?`<b>${esc(v.plate)}</b><span>번호 변경</span>`:'<b>＋ 차량번호 배정</b>'}</button>
       <div class="m-sheet-contact"><p>${esc(reservationCustomerName(r))}${r.phone?' · <span id="m-sheet-value-phone">'+esc(r.phone)+'</span>':''}</p>${copy('phone','전화번호',r.phone)}</div>
@@ -4946,19 +4949,66 @@ function runKakaoAnalyzerTests(){
 /* ===== clock ===== */
 let _lastClockMinute='';
 function tick(){
+  void autoReturnExpiredReservations();
   const now=document.getElementById('view-schedule').classList.contains('on')?scheduleNow():Date.now();
   paintHeaderClock(now);
   const minute=koreanNow(new Date(now));
   if(_lastClockMinute!==minute){_lastClockMinute=minute;render()}
 }
 // Mobile browsers suspend timers while backgrounded; refresh dates immediately on return.
-window.addEventListener('pageshow',tick);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+window.addEventListener('pageshow',()=>{void autoReturnExpiredReservations(true);tick()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){void autoReturnExpiredReservations(true);tick()}});
 function paintHeaderClock(timestamp){
   document.getElementById('clock').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(timestamp));
 }
 
-/* 반납 완료는 직원이 확인해 변경합니다. 예정시각 경과만으로 완료 처리하지 않습니다. */
+/* Automatically finish overdue rentals using verified time and the latest server record. */
+const autoReturnState={running:false,retryAt:0};
+function isAutoReturned(r){return r.status==='done'&&r.returnSource==='scheduled'&&r.autoReturnEnd===r.end}
+function reservationReturnDue(r,now){
+  if(!r||r.deletedAt||r.status!=='active'||!Number.isFinite(now))return false;
+  const start=reservationTime(r.start),end=reservationTime(r.end);
+  return Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end<=now;
+}
+function autoReturnRecordBusy(id){
+  const editingForm=editId===id&&(mSheetEditing||document.getElementById('view-dashboard')?.classList.contains('on'));
+  return !!_pendingWrites[id]||editingForm||editingCell?.dataset?.id===id;
+}
+async function autoReturnExpiredReservations(forceClock=false){
+  if(autoReturnState.running||!_firestoreReady||!_currentUser||document.hidden||performance.now()<autoReturnState.retryAt)return;
+  autoReturnState.running=true;
+  let completed=0;
+  try{
+    await syncScheduleClock(forceClock);
+    // Never change stored status using an unverified or stale device clock.
+    if(scheduleClock.serverTime===null||performance.now()-scheduleClock.sampledAt>600000)return;
+    const userId=_currentUser?.uid;
+    const candidates=data.filter(r=>reservationReturnDue(r,scheduleNow())&&!autoReturnRecordBusy(r.id));
+    for(const candidate of candidates){
+      if(!_firestoreReady||_currentUser?.uid!==userId)break;
+      const ref=db.collection(RESERVATIONS_COL).doc(candidate.id);
+      const changed=await db.runTransaction(async transaction=>{
+        const snap=await transaction.get(ref),now=scheduleNow();
+        // A concurrent extension, cancellation, deletion or completion wins on retry.
+        if(!snap.exists||!_firestoreReady||_currentUser?.uid!==userId||autoReturnRecordBusy(candidate.id)||performance.now()-scheduleClock.sampledAt>600000)return false;
+        const latest=snap.data();
+        if(!reservationReturnDue(latest,now))return false;
+        const at=new Date(now).toISOString();
+        transaction.update(ref,{status:'done',returnedAt:at,returnSource:'scheduled',autoReturnEnd:latest.end,updatedAt:at,updatedBy:userId});
+        return true;
+      });
+      if(changed)completed++;
+    }
+    // Firestore's listener applies and persists the committed record on every device.
+  }catch(err){
+    autoReturnState.retryAt=performance.now()+30000;
+    console.error('자동 반납 저장 오류:',err.code||'unknown');
+    toast('자동 반납 저장 실패 · 연결 후 다시 시도합니다');
+  }finally{
+    autoReturnState.running=false;
+    if(completed)toast(`반납 시간이 지난 ${completed}건을 자동 반납 처리했습니다`);
+  }
+}
 
 /* 개발 점검용: 화면 너비별 대시보드 배치와 날짜 입력칸을 데이터 속성으로 기록한다. */
 function runLayoutSelfTest(){
