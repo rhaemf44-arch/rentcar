@@ -4,16 +4,18 @@
 #view-reservations.astryx-ready > .dashboard-schedule { display: none !important; }
 #reservation-astryx-root { min-width: 0; }
 #reservation-astryx-root[hidden] { display: none; }
+.content:has(#view-reservations.on) { background: #e5ebf2; }
 .ky-reservations {
   --font-family-body: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-family-heading: var(--font-family-body);
-  --ky-ink: #20242c;
-  --ky-muted: #616873;
-  --ky-line: #e1e4e8;
-  --ky-surface: #ffffff;
-  --ky-hover: #f4f5f7;
-  --ky-gold: #805d18;
-  --ky-danger: #b42318;
+  --ky-ink: #172b46;
+  --ky-muted: #3e4f65;
+  --ky-line: #b8c5d5;
+  --ky-surface: #f8fafc;
+  --ky-hover: #e2eaf4;
+  --ky-gold: #75500f;
+  --ky-danger: #a3261c;
+  --ky-navy: #243b5b;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -23,8 +25,8 @@
   font-variant-numeric: tabular-nums;
   color-scheme: light;
 }
-.ky-reservations h2 { font: 600 24px/1.4 var(--font-family-heading); letter-spacing: -.02em; }
-.ky-reservations h3 { font: 600 14px/1.5 var(--font-family-heading); }
+.ky-reservations h2 { color: var(--ky-ink); font: 700 24px/1.4 var(--font-family-heading); letter-spacing: -.02em; }
+.ky-reservations h3 { font: 700 14px/1.5 var(--font-family-heading); }
 .ky-reservations p { font: inherit; color: var(--ky-muted); margin-top: 4px; }
 .ky-reservations button, .ky-reservations input { font-family: inherit; }
 .ky-reservations ::selection { background: #e8dfc8; color: var(--ky-ink); }
@@ -32,28 +34,36 @@
 .ky-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ky-header-actions { display: flex; gap: 8px; }
 .ky-reservations .astryx-button { font-size: 14px; min-height: 40px; border-radius: 6px; padding: 8px 12px; }
+.ky-reservations .astryx-button[data-variant="primary"] { background: var(--ky-navy); color: #fff; }
+.ky-reservations .astryx-button[data-variant="secondary"] { background: #dce5f0; color: var(--ky-ink); border-color: #a7b8cd; }
+.ky-reservations .astryx-button[data-variant="ghost"] { color: var(--ky-ink); }
+.ky-header-actions .astryx-button { font-weight: 600; }
 .ky-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--ky-line); border-radius: 12px; overflow: hidden; background: var(--ky-surface); }
-.ky-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 0; border-right: 1px solid var(--ky-line); background: transparent; color: var(--ky-ink); text-align: left; cursor: pointer; }
-
+.ky-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 0; border-right: 1px solid var(--ky-line); background: #dde7f3; color: var(--ky-ink); text-align: left; cursor: pointer; }
+.ky-metric:nth-child(4), .ky-metric:nth-child(6) { background: #f5e2df; }
+.ky-metric:nth-child(5) { background: #f1e5cb; }
 .ky-metric:last-child { border-right: 0; }
-.ky-metric > span { color: var(--ky-muted); font-size: 14px; }
-.ky-metric > strong { font-size: clamp(18px, 1.8vw, 24px); font-weight: 600; white-space: nowrap; }
+.ky-metric > span { color: var(--ky-ink); font-size: 14px; font-weight: 600; }
+.ky-metric > strong { font-size: clamp(18px, 1.8vw, 24px); font-weight: 700; white-space: nowrap; }
 .ky-metric-money > strong { font-size: 20px; }
-.ky-metric:hover, .ky-metric[aria-pressed="true"] { background: var(--ky-hover); }
-.ky-metric[aria-pressed="true"] > span { color: var(--ky-ink); font-weight: 600; }
+.ky-metric-money > strong, .ky-metric:nth-child(6) > strong { color: var(--ky-danger); }
+.ky-metric:nth-child(5) > strong { color: var(--ky-gold); }
+.ky-metric[aria-pressed="true"] { background: var(--ky-navy); }
+.ky-metric[aria-pressed="true"] > span, .ky-metric[aria-pressed="true"] > strong { color: #fff; }
 .ky-attention, .ky-balance-due { color: var(--ky-danger); }
 .ky-register { min-width: 0; background: var(--ky-surface); border: 1px solid var(--ky-line); border-radius: 12px; overflow: hidden; }
-.ky-filterbar { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--ky-line); }
+.ky-filterbar { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--ky-line); background: #edf2f8; }
 .ky-periods { display: flex; gap: 4px; flex-wrap: wrap; }
-.ky-periods .astryx-button[aria-pressed="true"] { background: var(--ky-hover); color: var(--ky-ink); font-weight: 600; }
+.ky-periods .astryx-button { font-weight: 600; }
+.ky-periods .astryx-button[aria-pressed="true"] { background: var(--ky-navy); color: #fff; font-weight: 700; }
 .ky-search { margin-left: auto; flex: 1 1 280px; max-width: 360px; min-width: 200px; }
-.ky-search input { min-height: 40px; background: var(--ky-surface); color: var(--ky-ink); font-size: 14px; }
+.ky-search input { min-height: 40px; background: #fff; color: var(--ky-ink); border-color: #8fa2b9; font-size: 14px; }
 .ky-search input::placeholder { color: var(--ky-muted); }
 .ky-result { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 4px 20px; color: var(--ky-muted); }
-.ky-result b { color: var(--ky-ink); font-weight: 600; }
+.ky-result b { color: var(--ky-ink); font-weight: 700; }
 .ky-reservations .astryx-table-scroll-wrapper { max-height: 68vh; overflow: auto; scrollbar-color: #b6bcc4 transparent; scrollbar-width: thin; }
 .ky-reservations .ky-table { min-width: 1060px; width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 14px; }
-.ky-table th { max-width: none; position: sticky; top: 0; z-index: 2; background: var(--ky-hover); color: var(--ky-muted); padding: 12px; font-weight: 500; text-align: left; border-bottom: 1px solid var(--ky-line); white-space: nowrap; }
+.ky-table th { max-width: none; position: sticky; top: 0; z-index: 2; background: var(--ky-navy); color: #fff; padding: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid var(--ky-line); white-space: nowrap; }
 .ky-table td { max-width: none; padding: 12px; vertical-align: middle; background: var(--ky-surface); border-bottom: 1px solid var(--ky-line); overflow-wrap: anywhere; }
 .ky-table .ky-col-0, .ky-table .ky-col-1 { width: 80px; }
 .ky-table .ky-col-2 { width: 160px; }
@@ -65,24 +75,24 @@
 .ky-table .ky-actions-cell, .ky-table .ky-col-8 { position: sticky; right: 0; box-shadow: -1px 0 0 var(--ky-line); }
 .ky-table .ky-actions-cell { z-index: 1; }
 .ky-table .ky-col-8 { z-index: 3; }
-.ky-table tr:hover > td { background: #fafbfc; }
-.ky-table .ky-conflict-row > td { background: #fff9f8; }
+.ky-table tr[data-reservation-id]:nth-child(4n) > td { background: #edf2f8; }
+.ky-table .ky-conflict-row > td { background: #f9e9e5; }
 .ky-cell-edit { display: block; min-height: 32px; max-width: 100%; border: 0; border-radius: 4px; padding: 4px 0; background: transparent; color: inherit; font: inherit; line-height: 1.5; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .ky-cell-edit:hover { color: var(--ky-gold); text-decoration: underline; text-underline-offset: 3px; }
 .ky-cell-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
-.ky-car, .ky-customer { font-weight: 600; }
+.ky-car, .ky-customer { font-weight: 700; }
 .ky-secondary { color: var(--ky-muted); font-size: 13px; }
 .ky-plate { border: 0; background: transparent; border-radius: 4px; color: var(--ky-gold); font: 600 14px/1.5 var(--font-family-body); }
 button.ky-plate { min-height: 32px; padding: 4px 0; text-align: left; cursor: pointer; }
 button.ky-plate:hover { text-decoration: underline; text-underline-offset: 3px; }
 .ky-plate.ky-missing { color: var(--ky-danger); }
 .ky-time { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
-.ky-time > span { font-size: 13px; color: var(--ky-muted); }
+.ky-time > span { font-size: 13px; color: var(--ky-muted); font-weight: 500; }
 .ky-time > strong { font-size: 16px; font-weight: 600; }
 .ky-table .ky-money { text-align: right; }
 .ky-money .ky-cell-edit { min-width: 100%; text-align: right; white-space: nowrap; font-weight: 600; }
 .ky-status { display: flex; flex-wrap: wrap; gap: 4px; }
-.ky-reservations .astryx-badge { font-size: 12px; font-weight: 500; border-radius: 4px; padding: 4px 8px; }
+.ky-reservations .astryx-badge { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 4px 8px; }
 .ky-row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .ky-row-actions .astryx-button { min-height: 32px; padding: 4px 8px; font-size: 13px; }
 .ky-row-actions .ky-delete { color: var(--ky-muted); }
@@ -93,13 +103,18 @@ button.ky-plate:hover { text-decoration: underline; text-underline-offset: 3px; 
 .ky-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 24px; text-align: center; }
 .ky-empty strong { font-size: 16px; font-weight: 600; }
 .ky-empty > span { color: var(--ky-muted); }
-.ky-day { padding: 16px 16px 8px; color: var(--ky-muted); }
+.ky-day { padding: 16px 16px 8px; color: var(--ky-ink); background: #d8e2ef; border-top: 1px solid var(--ky-line); border-bottom: 1px solid var(--ky-line); }
 .ky-mobile-row { display: flex; width: 100%; flex-direction: column; gap: 8px; padding: 16px; text-align: left; color: var(--ky-ink); background: var(--ky-surface); border: 0; border-bottom: 1px solid var(--ky-line); cursor: pointer; font: inherit; }
-.ky-mobile-row:hover { background: var(--ky-hover); }
+.ky-mobile-row:nth-of-type(even) { background: #edf2f8; }
 .ky-mobile-title { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.ky-mobile-title strong { font-size: 16px; font-weight: 600; }
-.ky-mobile-summary, .ky-mobile-location { color: var(--ky-muted); overflow-wrap: anywhere; }
+.ky-mobile-title strong { font-size: 16px; font-weight: 700; }
+.ky-mobile-summary, .ky-mobile-location { color: var(--ky-muted); font-weight: 500; overflow-wrap: anywhere; }
 .ky-mobile-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+@media(hover:hover) {
+  .ky-metric:hover { box-shadow: inset 0 0 0 2px #7187a3; }
+  .ky-table tr[data-reservation-id]:hover > td, .ky-mobile-row:hover { background: var(--ky-hover); }
+  .ky-periods .astryx-button[aria-pressed="true"]:hover, .ky-reservations .astryx-button[data-variant="primary"]:hover { background: #172b46; color: #fff; }
+}
 @media(max-width:1100px) {
   .ky-filterbar { flex-wrap: wrap; }
   .ky-search { max-width: none; }
