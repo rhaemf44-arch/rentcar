@@ -31,13 +31,14 @@
 .ky-reservations :focus-visible { outline: 2px solid var(--ky-gold); outline-offset: 2px; }
 .ky-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ky-header-actions { display: flex; gap: 8px; }
-.ky-reservations .astryx-button { font-size: 14px; min-height: 40px; border-radius: 6px; }
+.ky-reservations .astryx-button { font-size: 14px; min-height: 40px; border-radius: 6px; padding: 8px 12px; }
 .ky-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--ky-line); border-radius: 12px; overflow: hidden; background: var(--ky-surface); }
 .ky-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 0; border-right: 1px solid var(--ky-line); background: transparent; color: var(--ky-ink); text-align: left; cursor: pointer; }
-.ky-metric-money > strong { font-size: 20px; }
+
 .ky-metric:last-child { border-right: 0; }
 .ky-metric > span { color: var(--ky-muted); font-size: 14px; }
 .ky-metric > strong { font-size: clamp(18px, 1.8vw, 24px); font-weight: 600; white-space: nowrap; }
+.ky-metric-money > strong { font-size: 20px; }
 .ky-metric:hover, .ky-metric[aria-pressed="true"] { background: var(--ky-hover); }
 .ky-metric[aria-pressed="true"] > span { color: var(--ky-ink); font-weight: 600; }
 .ky-attention, .ky-balance-due { color: var(--ky-danger); }
@@ -52,8 +53,8 @@
 .ky-result b { color: var(--ky-ink); font-weight: 600; }
 .ky-reservations .astryx-table-scroll-wrapper { max-height: 68vh; overflow: auto; scrollbar-color: #b6bcc4 transparent; scrollbar-width: thin; }
 .ky-reservations .ky-table { min-width: 1180px; width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 14px; }
-.ky-table th { position: sticky; top: 0; z-index: 2; background: var(--ky-hover); color: var(--ky-muted); padding: 12px; font-weight: 500; text-align: left; border-bottom: 1px solid var(--ky-line); white-space: nowrap; }
-.ky-table td { padding: 12px; vertical-align: middle; background: var(--ky-surface); border-bottom: 1px solid var(--ky-line); overflow-wrap: anywhere; }
+.ky-table th { max-width: none; position: sticky; top: 0; z-index: 2; background: var(--ky-hover); color: var(--ky-muted); padding: 12px; font-weight: 500; text-align: left; border-bottom: 1px solid var(--ky-line); white-space: nowrap; }
+.ky-table td { max-width: none; padding: 12px; vertical-align: middle; background: var(--ky-surface); border-bottom: 1px solid var(--ky-line); overflow-wrap: anywhere; }
 .ky-table .ky-col-0, .ky-table .ky-col-1 { width: 96px; }
 .ky-table .ky-col-2 { width: 176px; }
 .ky-table .ky-col-3 { width: 144px; }
