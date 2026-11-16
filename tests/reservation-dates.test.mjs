@@ -6,7 +6,8 @@ import vm from 'node:vm';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const section = (start, end) => html.slice(html.indexOf(start), html.indexOf(end, html.indexOf(start)));
 const code = [
-  section('function koreanNow(', 'function reservationTime('),
+  section('function koreanNow(', 'function moneyNumber('),
+  section('function pastReservation(', 'function renderPast('),
   'function todayStr(){return koreanNow().slice(0,10)}',
   section('function dashboardDayOffset(', 'function renderDashboard('),
   section('function reservationListRows(', 'function renderReservationList('),
@@ -33,7 +34,7 @@ function setup(at = '2026-11-14T02:35:00+09:00') {
     reservationVehicleId: r => r.vehicleId || '',
     hasConflict: () => false,
     isDriverReservation: () => false,
-    pastReservation: r => r.end && r.end.slice(0, 10) < new Date(now + 9 * 3600000).toISOString().slice(0, 10),
+    scheduleNow: () => now,
     paintHeaderClock: () => {},
     autoReturnExpiredReservations: () => {},
     render: () => { ctx.renders++; },
@@ -110,6 +111,31 @@ test('long running rentals remain accessible through active and all filters', ()
   assert.deepEqual(ids(ctx), ['active']);
   ctx.dashboardMetric = 'all';
   assert.deepEqual(ids(ctx), ['active']);
+});
+
+test('expired waiting rentals disappear from upcoming and unassigned filters at their return time', () => {
+  const {ctx, setTime} = setup('2026-11-16T22:48:00+09:00');
+  ctx.data = [
+    row('old-waiting', '2026-11-07T08:00', '2026-11-15T20:00'),
+    row('today-waiting', '2026-11-16T08:00', '2026-11-16T22:00'),
+    row('today-active', '2026-11-16T08:00', '2026-11-16T22:00', 'active'),
+    row('upcoming', '2026-11-17T08:00', '2026-11-18T20:00'),
+    row('returning', '2026-11-16T08:00', '2026-11-16T23:00', 'active'),
+  ];
+  ctx.dashboardPeriod = 'upcoming';
+  assert.deepEqual(ids(ctx), ['returning', 'upcoming']);
+  ctx.dashboardMetric = 'unassigned'; ctx.dashboardPeriod = 'all';
+  assert.deepEqual(ids(ctx), ['returning', 'upcoming']);
+  ctx.dashboardMetric = 'active';
+  assert.deepEqual(ids(ctx), ['returning']);
+  assert.equal(ctx.pastReservation(ctx.data[1], ctx.todayStr()), true);
+  assert.equal(ctx.dashboardAttentionReasons(ctx.data[0]).length, 0);
+  setTime('2026-11-16T23:00:00+09:00');
+  assert.deepEqual(ids(ctx), []);
+  ctx.dashboardMetric = 'unassigned';
+  assert.deepEqual(ids(ctx), ['upcoming']);
+  ctx.dashboardMetric = 'all';
+  assert.equal(ids(ctx).length, 5, 'all reservations keep their history');
 });
 
 test('foreground restoration and midnight refresh date filters without reloading or editing reservations', () => {

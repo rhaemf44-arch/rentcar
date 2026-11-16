@@ -36,24 +36,30 @@ function setup(records=[rental('expired')]){
   return{ctx,remote,writes,messages,setElapsed:n=>elapsed=n,setFail:v=>fail=v,onRead:fn=>beforeRead=fn};
 }
 
-test('only due active rentals become done, preserving financial and reservation fields',async()=>{
+test('due active and waiting rentals become done, preserving financial and reservation fields',async()=>{
   const s=setup([
     rental('expired'),rental('boundary',{end:'2026-11-14T02:47'}),
     rental('future',{end:'2026-11-14T03:00'}),rental('wait',{status:'wait'}),
+    rental('future-wait',{status:'wait',end:'2026-11-14T03:00'}),
+    rental('legacy',{status:undefined}),rental('unknown',{status:'unknown'}),
     rental('cancelled',{status:'cancelled'}),rental('done',{status:'done'}),
     rental('deleted',{deletedAt:'2026-11-13'}),rental('invalid',{end:'2026-02-30T20:00'}),
     rental('reversed',{start:'2026-11-13T09:00'}),rental('missing',{end:''}),
   ]);
   await s.ctx.autoReturnExpiredReservations();
-  assert.deepEqual(s.writes.map(x=>x.id),['expired','boundary']);
+  assert.deepEqual(s.writes.map(x=>x.id),['expired','boundary','wait','legacy']);
   const result=s.remote.get('expired');
   assert.equal(result.status,'done');
   assert.equal(result.returnedAt,new Date(at).toISOString());
   assert.equal(s.ctx.isAutoReturned(result),true);
   for(const field of ['start','end','total','paid','memo'])assert.equal(result[field],rental('expired')[field]);
+  const waiting=s.remote.get('wait');
+  assert.equal(waiting.status,'done');
+  assert.equal(s.ctx.isAutoReturned(waiting),true);
+  for(const field of ['start','end','total','paid','memo'])assert.equal(waiting[field],rental('wait')[field]);
   assert.equal(s.ctx.data[0].status,'active','local display waits for the authoritative snapshot');
   await s.ctx.autoReturnExpiredReservations();
-  assert.equal(s.writes.length,2,'stale local data cannot complete a server record twice');
+  assert.equal(s.writes.length,4,'stale local data cannot complete a server record twice');
 });
 
 test('server extensions, cancellations, deletions and another device completion are respected',async()=>{

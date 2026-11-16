@@ -3518,14 +3518,14 @@ function setReservationStatus(id,status){
 function cycleStatus(id){const r=data.find(x=>x.id===id);if(!r)return;if(r.status==='cancelled'||r.status==='done'){editRes(id);return}setReservationStatus(id,r.status==='active'?'done':'active')}
 
 function delRes(id){if(!data.some(x=>x.id===id))return;if(!confirm('이 예약을 휴지통으로 이동할까요?'))return;snapshot();data=data.filter(x=>x.id!==id);save();storageRender();toast('휴지통으로 이동했습니다')}
-function pastReservation(r,today,now=Date.now()){
+function pastReservation(r,today,now=scheduleNow()){
   if(r.deletedAt||!r.end)return false;
-  if(dashboardOpenRecord(r)&&String(r.end).slice(0,10)>=today)return false;
-  return reservationTime(r.end)<now;
+  const end=reservationTime(r.end);
+  return Number.isFinite(end)&&end<=now;
 }
 function renderPast(){
   const el=document.getElementById('past-list');if(!el)return;
-  const today=todayStr(),now=Date.now(),q=(document.getElementById('past-search')?.value||'').toLowerCase();
+  const today=todayStr(),now=scheduleNow(),q=(document.getElementById('past-search')?.value||'').toLowerCase();
   const past=data.filter(r=>pastReservation(r,today,now));
   const rows=past.filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')+' '+(r.ret||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(b.start||'').localeCompare(String(a.start||'')));
@@ -3791,7 +3791,7 @@ function dashboardUpcomingRecord(r,today=todayStr()){
   return !r.deletedAt&&dashboardOpenRecord(r)&&!pastReservation(r,today);
 }
 function dashboardAttentionReasons(r){
-  if(!dashboardOpenRecord(r))return[];
+  if(!dashboardUpcomingRecord(r))return[];
   const reasons=[];if(!r.start||!r.end)reasons.push('일정 미입력');else if(String(r.end)<=String(r.start))reasons.push('반납 시간 확인');
   if(!r.phone)reasons.push('고객정보 확인');
   if(hasConflict(r))reasons.push('동일 차량 일정 중복');
@@ -3804,7 +3804,15 @@ function dashboardAttentionReasons(r){
 function setDashboardPeriod(value){dashboardPeriod=['upcoming','today','tomorrow','week','all'].includes(value)?value:'upcoming';dashboardMetric='all';updateDashboardStats();renderReservationList()}
 function setDashboardMetric(value){dashboardMetric=dashboardMetric===value?'all':value;dashboardPeriod=dashboardMetric==='all'?'upcoming':['pickup','return'].includes(dashboardMetric)?'today':'all';go2('reservations')}
 function resetDashboardFilters(){dashboardPeriod='upcoming';dashboardMetric='all';document.getElementById('search').value='';render()}
-function dashboardMetricMatch(r){if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();if(dashboardMetric==='active')return r.status==='active';if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;if(dashboardMetric==='unassigned')return dashboardOpenRecord(r)&&!reservationVehicleId(r);if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;return true}
+function dashboardMetricMatch(r){
+  if(dashboardMetric==='pickup')return r.status!=='cancelled'&&String(r.start||'').slice(0,10)===todayStr();
+  if(dashboardMetric==='return')return r.status!=='cancelled'&&String(r.end||'').slice(0,10)===todayStr();
+  if(dashboardMetric==='active')return r.status==='active'&&dashboardUpcomingRecord(r);
+  if(dashboardMetric==='unpaid')return r.status!=='cancelled'&&reservationBalance(r)>0;
+  if(dashboardMetric==='unassigned')return dashboardUpcomingRecord(r)&&!reservationVehicleId(r);
+  if(dashboardMetric==='attention')return dashboardAttentionReasons(r).length>0;
+  return true;
+}
 function renderDashboard(){
   document.getElementById('dashboard-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(new Date())+' · 예약 내용을 입력하고 저장하세요.';
   refreshReservationVehicleOptions();
@@ -3832,8 +3840,8 @@ function renderReservationList(){
   paintReservationList(rows);
 }
 function updateDashboardStats(){
-  const live=data.filter(r=>r.status!=='cancelled'),t=todayStr(),unpaid=live.filter(r=>reservationBalance(r)>0),unknown=live.filter(r=>dashboardOpenRecord(r)&&reservationBalance(r)===null).length;
-  const counts={'s-today':live.filter(r=>String(r.start||'').slice(0,10)===t).length,'s-return':live.filter(r=>String(r.end||'').slice(0,10)===t).length,'s-active':live.filter(r=>r.status==='active').length,'s-unassigned':live.filter(r=>dashboardOpenRecord(r)&&!reservationVehicleId(r)).length,'s-flag':live.filter(r=>dashboardAttentionReasons(r).length>0).length};
+  const live=data.filter(r=>r.status!=='cancelled'),t=todayStr(),open=live.filter(r=>dashboardUpcomingRecord(r,t)),unpaid=live.filter(r=>reservationBalance(r)>0),unknown=open.filter(r=>reservationBalance(r)===null).length;
+  const counts={'s-today':live.filter(r=>String(r.start||'').slice(0,10)===t).length,'s-return':live.filter(r=>String(r.end||'').slice(0,10)===t).length,'s-active':open.filter(r=>r.status==='active').length,'s-unassigned':open.filter(r=>!reservationVehicleId(r)).length,'s-flag':live.filter(r=>dashboardAttentionReasons(r).length>0).length};
   Object.entries(counts).forEach(([id,n])=>{document.getElementById(id).innerHTML=n.toLocaleString()+'<small>'+ (id==='s-active'?'대':'건')+'</small>'});
   document.getElementById('s-unpaid').innerHTML=unpaid.reduce((sum,r)=>sum+reservationBalance(r),0).toLocaleString('ko-KR')+'<small>원</small>';
   document.getElementById('s-unpaid-count').textContent=unpaid.length+'건 미수'+(unknown?' · '+unknown+'건 금액 미확인':'');
@@ -4690,7 +4698,7 @@ function mobileReservationRows(rows){
 }
 function updateMobileMetricChips(){
   const live=data.filter(r=>r.status!=='cancelled');
-  const n={unpaid:live.filter(r=>reservationBalance(r)>0).length,unassigned:live.filter(r=>dashboardOpenRecord(r)&&!reservationVehicleId(r)).length,attention:live.filter(r=>dashboardAttentionReasons(r).length>0).length};
+  const n={unpaid:live.filter(r=>reservationBalance(r)>0).length,unassigned:live.filter(r=>dashboardUpcomingRecord(r)&&!reservationVehicleId(r)).length,attention:live.filter(r=>dashboardAttentionReasons(r).length>0).length};
   Object.entries(n).forEach(([k,v])=>{const b=document.getElementById('m-chip-'+k);if(b)b.textContent=v||''});
 }
 
@@ -4990,7 +4998,7 @@ function paintHeaderClock(timestamp){
 const autoReturnState={running:false,retryAt:0};
 function isAutoReturned(r){return r.status==='done'&&r.returnSource==='scheduled'&&r.autoReturnEnd===r.end}
 function reservationReturnDue(r,now){
-  if(!r||r.deletedAt||r.status!=='active'||!Number.isFinite(now))return false;
+  if(!r||r.deletedAt||!['wait','active'].includes(r.status||'wait')||!Number.isFinite(now))return false;
   const start=reservationTime(r.start),end=reservationTime(r.end);
   return Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end<=now;
 }
