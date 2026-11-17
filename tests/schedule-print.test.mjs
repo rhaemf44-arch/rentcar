@@ -41,12 +41,51 @@ test('Friday through Sunday stay together, with other days and later weekends ke
   const dates=['2026-11-18','2026-11-20','2026-11-21','2026-11-22','2026-11-23','2026-11-27','2026-11-29'];
   const {ctx}=setup(dates.map((day,i)=>fixture(day,i)));
   const rows=ctx.buildSheetRows();
-  const pages=ctx.schedulePrintPages(rows);
-  assert.deepEqual(Array.from(pages,p=>p.weekend),['','2026-11-20','','2026-11-27']);
-  assert.deepEqual(Array.from(pages,p=>p.rows.filter(Boolean).length),[1,3,1,2]);
-  assert.deepEqual(Array.from(pages).flatMap(p=>Array.from(p.rows).filter(Boolean).map(r=>r.배차일)),dates);
+  const groups=ctx.schedulePrintGroups(rows);
+  assert.deepEqual(Array.from(groups,g=>g.weekend),['','2026-11-20','','2026-11-27']);
+  assert.deepEqual(Array.from(groups,g=>g.rows.filter(Boolean).length),[1,3,1,2]);
+  assert.deepEqual(Array.from(groups).flatMap(g=>Array.from(g.rows).filter(Boolean).map(r=>r.배차일)),dates);
   const yearEnd=setup(['2027-01-01','2027-01-02','2027-01-03'].map((day,i)=>fixture(day,i)));
-  assert.equal(yearEnd.ctx.schedulePrintPages(yearEnd.ctx.buildSheetRows()).length,1);
+  assert.equal(yearEnd.ctx.schedulePrintGroups(yearEnd.ctx.buildSheetRows()).length,1);
+});
+
+const weightedUnits=(weekdayCount,weekendHeight)=>[
+  ...Array.from({length:weekdayCount},(_,i)=>({id:'weekday-'+i,height:10})),
+  {id:'Fri-Sun',height:weekendHeight,weekend:true},
+];
+function pack(units,capacity){
+  const {ctx}=setup([]),resized=[];
+  const pages=ctx.packSchedulePrintUnits(units,items=>items.reduce((sum,item)=>sum+item.height,5)<=capacity,unit=>{
+    resized.push(unit.id);unit.height=capacity-5;
+  });
+  return {pages:Array.from(pages,p=>Array.from(p,u=>u.id)),resized};
+}
+
+test('a Monday through Sunday schedule stays on one page when it fits',()=>{
+  const {pages,resized}=pack(weightedUnits(4,45),90);
+  assert.deepEqual(pages,[['weekday-0','weekday-1','weekday-2','weekday-3','Fri-Sun']]);
+  assert.deepEqual(resized,[]);
+});
+
+test('only an overflowing weekend moves to the next page, without splitting or shrinking it',()=>{
+  const {pages,resized}=pack(weightedUnits(4,46),90);
+  assert.deepEqual(pages,[['weekday-0','weekday-1','weekday-2','weekday-3'],['Fri-Sun']]);
+  assert.deepEqual(resized,[]);
+});
+
+test('weekday overflow fills successive pages and later reservations reuse the space after a weekend',()=>{
+  const units=[...weightedUnits(9,20),{id:'Monday-next',height:10}];
+  const {pages,resized}=pack(units,55);
+  assert.deepEqual(pages,[['weekday-0','weekday-1','weekday-2','weekday-3','weekday-4'],['weekday-5','weekday-6','weekday-7','weekday-8'],['Fri-Sun','Monday-next']]);
+  assert.equal(pages.flat().length,units.length);
+  assert.deepEqual(resized,[]);
+});
+
+test('a weekend taller than a whole sheet is fitted only after moving it to a fresh page',()=>{
+  const {pages,resized}=pack(weightedUnits(2,100),90);
+  assert.deepEqual(pages,[['weekday-0','weekday-1'],['Fri-Sun']]);
+  assert.deepEqual(resized,['Fri-Sun']);
+  assert.deepEqual(pack([],90).pages,[]);
 });
 
 test('the yellow class covers the complete Solati row and print fitting preserves all cells and amounts',()=>{
@@ -58,30 +97,37 @@ test('the yellow class covers the complete Solati row and print fitting preserve
   assert(yellow);
   assert.equal((yellow[1].match(/<td(?:\s|>)/g)||[]).length,10);
   assert.match(output,/data-weekend="2026-11-20"/);
-  assert.match(output,/11\.20\(금\) ~ 11\.22\(일\)/);
+  assert.match(output,/data-first-day="2026-11-20" data-last-day="2026-11-22"/);
   assert.match(output,/300,000원/);
   assert.match(output,/0원 \(완납\)/);
   assert.doesNotMatch(output,/미확인|undefined|NaN/);
-  assert.match(output,/beforeprint',fitWeekendPages/);
+  assert.match(output,/beforeprint',paginateSchedule/);
   assert.match(output,/document\.fonts\.ready/);
+  assert.doesNotMatch(output,/weekend-page|\n\s*\.print-page\{[^}]*break-before/);
+  assert.doesNotMatch(output,/\.weekend-group\{[^}]*height:/);
 });
 
 test('the on-screen schedule remains one full-width table with one heading across weekdays and weekends',()=>{
   const dates=['2026-11-18','2026-11-20','2026-11-21','2026-11-22','2026-11-23'];
   const output=setup(dates.map((day,i)=>fixture(day,i))).print();
-  const screen=output.match(/<div class="screen-sheet">([\s\S]*?)<div class="print-sheets">/)[1];
+  const screen=output.match(/<div class="screen-sheet">([\s\S]*?)<template id="print-source">/)[1];
   assert.equal((screen.match(/<h1>/g)||[]).length,1);
   assert.equal((screen.match(/<table>/g)||[]).length,1);
   assert.equal((screen.match(/class="vehicle"/g)||[]).length,5);
   assert.match(screen,/총 5건/);
   assert.match(output,/\.screen-sheet\{width:100%\}/);
-  assert.match(output,/\.print-sheets\{[^}]*visibility:hidden/);
+  assert.match(output,/\.print-sheets,\.print-measure\{[^}]*visibility:hidden/);
   assert.match(output,/@media print\{[\s\S]*\.screen-sheet\{display:none\}/);
 });
 
 if(process.env.PRINT_PREVIEW_PATH){
   const records=[];
-  for(const [day,count] of [['2026-11-20',5],['2026-11-21',11],['2026-11-22',6]]){
+  const scenario=process.env.PRINT_PREVIEW_SCENARIO;
+  const counts=scenario==='week-fit'?Array.from({length:7},(_,index)=>[dayOffset('2026-11-16',index),1]):[
+    ...(scenario==='week-overflow'?[['2026-11-16',2],['2026-11-17',2],['2026-11-18',2],['2026-11-19',2]]:[]),
+    ['2026-11-20',5],['2026-11-21',11],['2026-11-22',6],
+  ];
+  for(const [day,count] of counts){
     for(let index=0;index<count;index++)records.push(fixture(day,index,{driverService:index===10?'driver':'self'}));
   }
   writeFileSync(process.env.PRINT_PREVIEW_PATH,setup(records).print());

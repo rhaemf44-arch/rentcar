@@ -4489,17 +4489,30 @@ function buildSheetRows(now=scheduleNow()){
   });
   return out;
 }
-function schedulePrintPages(rows){
-  const pages=[];
+function schedulePrintGroups(rows){
+  const groups=[];
   for(const row of rows){
     if(!row)continue;
     const day=row.배차일,weekday=new Date(day+'T00:00:00Z').getUTCDay();
     const weekend=[5,6,0].includes(weekday)?dashboardDayOffset(day,weekday===0?-2:5-weekday):'';
-    let page=pages[pages.length-1];
-    if(!page||page.weekend!==weekend){page={weekend,rows:[],lastDay:''};pages.push(page)}
-    if(page.lastDay&&page.lastDay!==day)page.rows.push(null,null);
-    page.rows.push(row);page.lastDay=day;
+    let group=groups[groups.length-1];
+    if(!group||group.weekend!==weekend){group={weekend,rows:[],lastDay:''};groups.push(group)}
+    if(group.lastDay&&group.lastDay!==day)group.rows.push(null,null);
+    group.rows.push(row);group.lastDay=day;
   }
+  return groups;
+}
+// A weekend is one unit; weekday reservations fill the remaining space row by row.
+// fits measures the heading and table at the actual A4 print width.
+function packSchedulePrintUnits(units,fits,fitOversize){
+  const pages=[];let page=[];
+  for(const unit of units){
+    if(fits([...page,unit])){page.push(unit);continue}
+    if(page.length){pages.push(page);page=[]}
+    if(!fits([unit]))fitOversize(unit);
+    page.push(unit);
+  }
+  if(page.length)pages.push(page);
   return pages;
 }
 function exportScheduleExcel(){
@@ -4517,7 +4530,7 @@ function printSchedule(){
   const now=scheduleNow(),rows=buildSheetRows(now);
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const amount=n=>n==null?'':n.toLocaleString('ko-KR')+'원';
-  const pages=schedulePrintPages(rows);
+  const groups=schedulePrintGroups(rows);
   const renderRow=r=>{
       if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
       // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
@@ -4533,23 +4546,21 @@ function printSchedule(){
       </tr>`;
   };
   const tableHead='<colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup><thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>';
-  const body=pages.map(page=>{
-    const rowHtml=page.rows.map(renderRow).join('');
-    const range=page.weekend?`${fmtSheetDT(page.weekend+'T00:00',true).replace(' 00:00','')} ~ ${fmtSheetDT(dashboardDayOffset(page.weekend,2)+'T00:00',true).replace(' 00:00','')}`:scheduleRangeText(now);
-    return `<section class="print-page${page.weekend?' weekend-page':''}"${page.weekend?' data-weekend="'+page.weekend+'"':''}><div class="page-content">
-      <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(range)}${scheduleClock.serverTime===null?' (기기 시각)':''} · ${page.rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
-      <table>${tableHead}<tbody>${rowHtml}</tbody></table></div></section>`;
+  const units=groups.flatMap(group=>group.weekend?[group]:group.rows.filter(Boolean).map(row=>({weekend:'',rows:[row]})));
+  const body=units.map(unit=>{
+    const records=unit.rows.filter(Boolean);
+    return `<tbody class="print-group${unit.weekend?' weekend-group':''}" data-first-day="${records[0].배차일}" data-last-day="${records[records.length-1].배차일}"${unit.weekend?' data-weekend="'+unit.weekend+'"':''}>${unit.rows.map(renderRow).join('')}</tbody>`;
   }).join('');
+  const heading=`<div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(scheduleRangeText(now))}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>`;
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
   <style>
     @page{size:A4 landscape;margin:8mm}
     *{box-sizing:border-box}
     body{font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;margin:0;padding:12px;color:#000}
     .screen-sheet{width:100%}
-    .print-sheets{position:absolute;left:0;top:0;width:281mm;height:0;overflow:hidden;visibility:hidden;pointer-events:none}
-    .print-page{width:281mm;margin:0 auto 16px}
-    .page-content{width:281mm;display:flow-root}
-    .weekend-page{height:194mm;--print-scale:1}
+    .print-sheets,.print-measure{position:absolute;left:0;top:0;width:281mm;height:0;overflow:hidden;visibility:hidden;pointer-events:none}
+    .print-page{width:281mm;display:flow-root}
+    .page-height{height:194mm}
     .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
     .head h1{font-size:17px;margin:0;letter-spacing:3px;font-weight:800}
     .head .sub{font-size:11px;color:#444}
@@ -4563,18 +4574,18 @@ function printSchedule(){
     tr{break-inside:avoid}
     tr.blank td{height:24px;border-color:#000}
     tr.dstart td{border-top:1.5px solid #000}
-    .weekend-page table{font-size:calc(11.5px * var(--print-scale))}
-    .weekend-page th,.weekend-page td{padding:calc(3px * var(--print-scale));height:calc(24px * var(--print-scale));line-height:1.25}
-    .weekend-page tr.blank td{height:calc(6px * var(--print-scale));padding:0}
+    .print-group{--print-scale:1;font-size:calc(11.5px * var(--print-scale))}
+    .print-group td{padding:calc(4px * var(--print-scale));height:calc(26px * var(--print-scale));line-height:1.35}
+    .print-group tr.blank td{height:calc(6px * var(--print-scale));padding:0}
     col.c1{width:9.5%}col.c2{width:8.5%}col.c3{width:13%}col.c4{width:7%}col.c5{width:6%}col.c6{width:10%}col.c7{width:22%}col.amount{width:8%}
     @media print{
       body{padding:0}
       .noprint{display:none}
       .screen-sheet{display:none}
       .print-sheets{position:static;width:281mm;height:auto;overflow:visible;visibility:visible;pointer-events:auto}
-      .print-page{margin:0;break-before:page}
-      .print-page:first-of-type{break-before:auto}
-      .weekend-page{break-inside:avoid-page}
+      .print-measure{display:none}
+      .print-page+.print-page{break-before:page}
+      .weekend-group{break-inside:avoid-page}
       thead{display:table-header-group}
     }
     .noprint{margin-bottom:10px}
@@ -4582,28 +4593,60 @@ function printSchedule(){
   </style></head><body>
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
   <div class="screen-sheet">
-    <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(scheduleRangeText(now))}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
+    ${heading}
     <table>${tableHead}<tbody>${rows.map(renderRow).join('')}</tbody></table>
   </div>
-  <div class="print-sheets">${body}</div>
+  <template id="print-source"><section class="print-page">${heading}<table>${tableHead}${body}</table></section></template>
+  <div class="print-sheets"></div>
+  <div class="print-measure"><div class="page-height"></div><div class="measure-content"></div></div>
   <script>
-    function fitWeekendPages(){
-      document.querySelectorAll('.weekend-page').forEach(page=>{
-        const content=page.querySelector('.page-content');
-        const fits=()=>content.getBoundingClientRect().height<=page.clientHeight-8;
-        page.style.setProperty('--print-scale','1');
-        if(fits())return;
-        let minimum=0.1,maximum=1;
-        for(let attempt=0;attempt<10;attempt++){
-          const scale=(minimum+maximum)/2;
-          page.style.setProperty('--print-scale',String(scale));
-          if(fits())minimum=scale;else maximum=scale;
+    ${packSchedulePrintUnits.toString()}
+    function paginateSchedule(){
+      const source=document.getElementById('print-source').content;
+      const measure=document.querySelector('.print-measure');
+      // beforeprint must use the same physical-width measurements as initial load.
+      measure.style.display='block';
+      const maximumHeight=measure.querySelector('.page-height').getBoundingClientRect().height-4;
+      const mount=measure.querySelector('.measure-content');
+      const units=Array.from(source.querySelectorAll('tbody'));
+      units.forEach(unit=>unit.style.removeProperty('--print-scale'));
+      const makePage=items=>{
+        const page=source.querySelector('.print-page').cloneNode(true);
+        const table=page.querySelector('table');
+        table.querySelectorAll('tbody').forEach(group=>group.remove());
+        let previousDay='';
+        for(const unit of items){
+          const group=unit.cloneNode(true);
+          if(previousDay&&previousDay!==unit.dataset.firstDay){
+            for(let index=0;index<2;index++){
+              const spacer=document.createElement('tr');spacer.className='blank';
+              for(let column=0;column<10;column++)spacer.append(document.createElement('td'));
+              group.insertBefore(spacer,group.firstChild);
+            }
+          }
+          table.append(group);previousDay=unit.dataset.lastDay;
         }
-        page.style.setProperty('--print-scale',String(minimum));
-      });
+        return page;
+      };
+      const fits=items=>{
+        const page=makePage(items);mount.replaceChildren(page);
+        return page.getBoundingClientRect().height<=maximumHeight;
+      };
+      const fitOversize=unit=>{
+        let minimum=0.1,maximum=1;
+        for(let attempt=0;attempt<12;attempt++){
+          const scale=(minimum+maximum)/2;
+          unit.style.setProperty('--print-scale',String(scale));
+          if(fits([unit]))minimum=scale;else maximum=scale;
+        }
+        unit.style.setProperty('--print-scale',String(minimum));
+      };
+      const pages=packSchedulePrintUnits(units,fits,fitOversize);
+      document.querySelector('.print-sheets').replaceChildren(...pages.map(makePage));
+      mount.replaceChildren();measure.style.display='';
     }
-    window.addEventListener('beforeprint',fitWeekendPages);
-    document.fonts.ready.then(()=>{fitWeekendPages();setTimeout(()=>window.print(),400)});
+    window.addEventListener('beforeprint',paginateSchedule);
+    document.fonts.ready.then(()=>{paginateSchedule();setTimeout(()=>window.print(),400)});
   <\/script>
   </body></html>`;
   const w=window.open('','_blank');
