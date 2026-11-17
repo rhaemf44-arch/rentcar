@@ -1000,7 +1000,20 @@ body.tv-mode{display:block;background:#0b1420}
 @media print{.m-tabbar,.m-sheet{display:none!important}.content{padding-bottom:0!important}}
 </style>
 </head>
-<body>
+<body data-staff-access="blocked">
+<style>
+body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){display:none!important}
+.staff-access-card{width:min(420px,100%);padding:28px;border:1px solid #b9c6d6;border-radius:18px;background:#fff;text-align:center;box-shadow:0 12px 36px #162d4612;color:#172c48}
+.staff-access-card h2{font-size:22px;margin:0 0 12px}.staff-access-card p{font-size:15px;line-height:1.65;color:#42556f}
+.staff-access-card label{display:block;font-size:13px;font-weight:700;text-align:left;margin-top:22px}
+.staff-access-card input{width:100%;min-width:0;margin:8px 0 12px;padding:12px;border:1px solid #91a5bf;border-radius:9px;background:#f3f7fc;font-size:13px;color:#172c48}
+.staff-access-actions{display:flex;gap:8px}.staff-access-actions button{flex:1;min-height:46px;border-radius:9px;font-size:14px;font-weight:700;border:1px solid #91a5bf;background:#edf3fb;color:#172c48;cursor:pointer}
+.staff-access-actions button:last-child{background:#203e62;color:#fff}.staff-access-note{min-height:24px;font-size:13px!important;margin-bottom:0}
+.staff-access-card input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#203e62}.staff-access-card .staff-remember{display:flex;align-items:center;gap:8px;margin:6px 0 18px;font-size:14px;cursor:pointer}
+.staff-login-submit{width:100%;min-height:48px;border:0;border-radius:10px;background:#203e62;color:#fff;font-size:16px;font-weight:700;cursor:pointer}.staff-login-submit:disabled{opacity:.6;cursor:wait}
+.staff-account-check{margin-top:18px;border-top:1px solid #d2dce8;padding-top:12px}.staff-account-check[hidden]{display:none}.staff-account-check input{font-size:11px}.staff-logout{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px;border:1px solid #b9c6d6;border-radius:9px;background:#edf3fb;color:#203e62;cursor:pointer}.staff-logout svg{width:20px;height:20px}
+@media(max-width:820px){.topbar-actions .sync-state{max-width:115px}}
+</style>
 <section id="tv-board" hidden aria-label="배차와 반납 예정 현황판">
   <div class="tv-board-inner">
     <header class="tv-header">
@@ -1033,12 +1046,29 @@ body.tv-mode{display:block;background:#0b1420}
 </section>
 
 
-<!-- ===== 로딩 스플래시 (자동 익명 로그인) ===== -->
-<div id="login-screen" style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;position:fixed;top:0;left:0;z-index:9999;background:var(--page-bg);">
-  <div style="text-align:center;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:var(--gold);color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:14px;">KY</div>
-    <h2 style="font-size:20px;font-weight:700;margin:0;">KY MOBILITY</h2>
-    <p style="color:var(--ivory-dim);font-size:13px;margin-top:6px;">서버 연결 중…</p>
+<!-- ===== 직원 계정 로그인 ===== -->
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100dvh;width:100%;position:fixed;inset:0;z-index:9999;background:#e5edf6;padding:20px;overflow:auto;">
+  <div class="staff-access-card" role="region" aria-label="직원 로그인">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:#203e62;color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:18px;">KY</div>
+    <h2>직원 로그인</h2>
+    <p id="staff-access-message" role="status">등록된 직원 계정으로 로그인해 주세요.</p>
+    <form id="staff-login-form" onsubmit="event.preventDefault();doLogin()">
+      <label for="staff-login-id">아이디</label>
+      <input id="staff-login-id" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="아이디 또는 이메일" required>
+      <label for="staff-login-password">비밀번호</label>
+      <input id="staff-login-password" name="password" type="password" autocomplete="current-password" required>
+      <label class="staff-remember" for="staff-login-remember"><input id="staff-login-remember" type="checkbox" checked>자동 로그인</label>
+      <button id="staff-login-submit" class="staff-login-submit" type="submit">로그인</button>
+    </form>
+    <div id="staff-account-check" class="staff-account-check" hidden>
+      <label for="staff-account-number">직원 계정 번호</label>
+      <input id="staff-account-number" readonly autocomplete="off">
+      <div class="staff-access-actions">
+        <button type="button" onclick="copyStaffAccountNumber()">계정 번호 복사</button>
+        <button type="button" onclick="retryStaffAccess()">승인 다시 확인</button>
+      </div>
+    </div>
+    <p id="staff-access-note" class="staff-access-note">경일렌트카 직원 전용 예약관리 시스템</p>
   </div>
 </div>
 
@@ -1079,7 +1109,7 @@ body.tv-mode{display:block;background:#0b1420}
       <button class="mobile-back" id="mobile-back" type="button" onclick="mobileBack()" aria-label="뒤로가기" hidden><span aria-hidden="true">‹</span><span>뒤로</span></button>
       <h1 id="page-title">예약 입력</h1>
     </div>
-    <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><div class="meta">
+    <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><button type="button" class="staff-logout" onclick="logoutStaff()" aria-label="로그아웃" title="로그아웃"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H4v16h5M13 8l4 4-4 4M8 12h13"/></svg></button><div class="meta">
       <div>내부 예약 관리 시스템</div>
       <div id="clock">—</div>
     </div></div>
@@ -1425,7 +1455,7 @@ body.tv-mode{display:block;background:#0b1420}
     <!-- ===== 차량 관리 ===== -->
     <div class="view" id="view-vehicles">
       <div class="card">
-        <div class="card-h"><h2>보유 차량 (PLATE_MAP · <span id="vehicle-count">66</span>대)</h2>
+        <div class="card-h"><h2>공유 차량 목록 · <span id="vehicle-count">66</span>대</h2>
           <div class="vehicle-card-actions">
             <button class="btn btn-gold btn-sm" id="vehicle-add-open-btn" onclick="toggleVehicleAddPanel(true)">＋ 차량 추가</button>
             <button class="btn btn-ghost btn-sm" onclick="resetPlateMap()">차량 목록 초기화</button>
@@ -1447,6 +1477,7 @@ body.tv-mode{display:block;background:#0b1420}
             <div class="vehicle-add-note">전체 차량번호 입력을 권장합니다. 끝번호 4자리만 등록할 수도 있지만 동일한 끝번호 차량이 생기면 예약 입력 시 전체 번호가 필요합니다.</div>
             <div class="vehicle-add-actions"><button type="button" class="btn btn-ghost btn-sm" onclick="clearVehicleAddForm()">입력 초기화</button><button type="submit" class="btn btn-gold btn-sm">차량 등록</button></div>
           </form>
+          <div class="toolbar" style="justify-content:space-between;gap:8px"><span id="fleet-sync-state" role="status">공유 차량 목록 연결 확인 중</span><button type="button" class="btn btn-ghost btn-sm" onclick="exportBusinessRecovery()">기기 자료 백업</button><button type="button" class="btn btn-ghost btn-sm" onclick="retrySharedBusinessSync()">공유 저장 다시 확인</button></div>
           <div class="gantt" id="vehicle-table"></div>
         </div>
       </div>
@@ -1493,6 +1524,8 @@ body.tv-mode{display:block;background:#0b1420}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared-business-sync.js?v=20261117-1"></script>
+<script src="staff-access.js?v=20261117-1"></script>
 <script>
 /* ===== Firebase 설정 ===== */
 const firebaseConfig = {
@@ -1583,14 +1616,39 @@ const PLATE_MAP={
 };
 const DEFAULT_PLATE_MAP=JSON.parse(JSON.stringify(PLATE_MAP));
 const PLATE_STORE='ky_platemap_v1';
-function savePlateMap(){try{localStorage.setItem(PLATE_STORE,JSON.stringify(PLATE_MAP))}catch(e){}refreshReservationVehicleOptions()}
+let fleetSync=null,historySync=null,fleetLastView={};
+function fleetInfo(row){return{n:String(row.n||''),seat:String(row.seat||''),fuel:String(row.fuel||''),base:String(row.base||'승용')}}
+function validFleetRow(row){return /^(?:\d{4}|\d{2,3}[가-힣]\d{4})$/.test(row.id)&&typeof row.n==='string'&&row.n.trim().length>0}
+function fleetCache(){
+  try{localStorage.setItem(PLATE_STORE,JSON.stringify(PLATE_MAP))}catch{}
+  refreshReservationVehicleOptions();
+}
+function applySharedFleet(rows){
+  for(const plate of Object.keys(PLATE_MAP))delete PLATE_MAP[plate];
+  rows.filter(row=>!row.deletedAt).forEach(row=>{PLATE_MAP[row.id]=fleetInfo(row)});
+  fleetLastView=JSON.parse(JSON.stringify(PLATE_MAP));fleetCache();
+  if(typeof editingCell==='undefined'||!editingCell)render();
+}
+function savePlateMap(){
+  if(!fleetSync){fleetCache();return false}
+  const desired=JSON.parse(JSON.stringify(PLATE_MAP)),before=fleetLastView;
+  let durable=true;
+  for(const [plate,info] of Object.entries(desired)){
+    const patch={};for(const key of ['n','seat','fuel','base'])if(info[key]!==before[plate]?.[key])patch[key]=info[key]||'';
+    if(!before[plate])patch.deletedAt=null;
+    if(Object.keys(patch).length)durable=fleetSync.queue(plate,patch,{id:plate,...info})&&durable;
+  }
+  for(const plate of Object.keys(before))if(!desired[plate])durable=fleetSync.queue(plate,{deletedAt:new Date().toISOString()},{id:plate,...before[plate]})&&durable;
+  fleetCache();return durable;
+}
 function loadPlateMap(){
   try{
     const stored=localStorage.getItem(PLATE_STORE);
     if(stored){
       const vehicles=JSON.parse(stored);
+      if(!vehicles||typeof vehicles!=='object'||Array.isArray(vehicles))throw new Error('invalid-fleet-cache');
       for(const plate of Object.keys(PLATE_MAP))delete PLATE_MAP[plate];
-      Object.assign(PLATE_MAP,vehicles);
+      for(const [plate,info] of Object.entries(vehicles))if(validFleetRow({id:plate,...info}))PLATE_MAP[plate]=fleetInfo(info);
     }
     // Existing devices keep a full custom fleet. Apply the removal once there too.
     const migration='ky_fleet_retired_127ho1643_v1';
@@ -1602,11 +1660,20 @@ function loadPlateMap(){
       localStorage.setItem(migration,'1');
     }
   }catch(e){}
+  fleetLastView=JSON.parse(JSON.stringify(PLATE_MAP));
+  if(!fleetSync){
+    let backupDeviceId='';try{backupDeviceId=localStorage.getItem('ky_fleet_backup_device_v1')||crypto.randomUUID();localStorage.setItem('ky_fleet_backup_device_v1',backupDeviceId)}catch{}
+    const seeds=Object.entries(PLATE_MAP).map(([id,info])=>({id,...info,deletedAt:null}));
+    fleetSync=new SharedCatalogSync({db,storage:localStorage,collection:'vehicles',storageKey:'ky_shared_vehicles_v1',seedRows:seeds,validate:validFleetRow,
+      emptyServerRows:Object.entries(DEFAULT_PLATE_MAP).filter(([id])=>!PLATE_MAP[id]).map(([id,info])=>({id,...info,deletedAt:new Date().toISOString()})),
+      backupCollection:'vehicleMigrations',backupDeviceId,keepLegacy:true,onRecords:applySharedFleet,onState:state=>setSharedBusinessState('vehicles',state)});
+  }
+  applySharedFleet(fleetSync.snapshot());
 }
 function resetPlateMap(){
-  if(!confirm('차량 목록을 기본값으로 복원할까요?\n삭제하거나 수정한 차량 정보가 모두 초기화됩니다.'))return;
+  if(!confirm('공유 차량 목록을 기본값으로 복원할까요?\n다른 컴퓨터의 차량 목록에도 적용됩니다. 기존 예약은 유지됩니다.'))return;
   for(const k in PLATE_MAP)delete PLATE_MAP[k];Object.assign(PLATE_MAP,JSON.parse(JSON.stringify(DEFAULT_PLATE_MAP)));
-  try{localStorage.removeItem(PLATE_STORE)}catch(e){}
+  savePlateMap();
   renderVehicles();render();toast('차량 목록을 기본값으로 복원했습니다');
 }
 const VANS=['쏠라티','스타리아','스타렉스','카니발'];
@@ -1622,6 +1689,8 @@ let _serverRecords=new Map(),_savedActive=new Map(),_pendingWrites=Object.create
 let _syncFlushing=false,_syncRetryTimer=null,_loadedLocalRecords=[],_firstServerSnapshot=true,_undoing=false;
 let _localDurable=true;
 let _syncState={status:'connecting',message:'서버 연결 확인 중',pending:0};
+let reservationSyncState={..._syncState};
+const sharedBusinessStates={vehicles:{status:'connecting',pending:0},history:{status:'connecting',pending:0}};
 const storageCopy=value=>JSON.parse(JSON.stringify(value));
 const storageEqual=(a,b)=>{if(a===b)return true;if(a===null||b===null||typeof a!=='object'||typeof b!=='object')return false;const ak=Object.keys(a),bk=Object.keys(b);return ak.length===bk.length&&ak.every(k=>Object.prototype.hasOwnProperty.call(b,k)&&storageEqual(a[k],b[k]))};
 const storageValidRecord=r=>r&&typeof r.id==='string'&&r.id.length>0&&!r.id.includes('/');
@@ -1629,10 +1698,57 @@ const storageRecordsMap=rows=>new Map(rows.filter(storageValidRecord).map(r=>[r.
 function storageBusinessRecord(r){if(!r)return null;const c=storageCopy(r);delete c._mutationId;delete c.updatedAt;delete c.updatedBy;return c}
 function setSyncState(status,message){
   if(!_localDurable){status='error';message=Object.keys(_pendingWrites).length?'기기 저장 실패 · 미전송 변경 있음 · 창을 닫지 말고 백업하세요':'기기 저장 실패 · 창을 닫지 말고 백업하세요'}
-  _syncState={status,message,pending:Object.keys(_pendingWrites).length,localDurable:_localDurable};
-  const el=document.getElementById('sync-state');if(el){el.textContent=message;el.dataset.state=status;el.title=message;el.setAttribute('role','status')}
+  reservationSyncState={status,message,pending:Object.keys(_pendingWrites).length,localDurable:_localDurable};
+  updateCombinedSyncState();
+}
+function setSharedBusinessState(kind,state){
+  sharedBusinessStates[kind]={...state};
+  const el=kind==='vehicles'?document.getElementById('fleet-sync-state'):null;
+  if(el){el.textContent=sharedBusinessMessage(kind,state);el.dataset.state=state.status;el.style.color=state.status==='error'?'var(--danger)':'var(--muted)'}
+  updateCombinedSyncState();
+}
+function sharedBusinessMessage(kind,state){
+  const label=kind==='vehicles'?'차량 목록':'변경 이력';
+  if(state.error==='local-storage-failed')return label+' 기기 보관 실패 · 차량 관리의 기기 자료 백업을 눌러주세요';
+  if(state.error==='permission-denied')return label+' 공유 권한 확인 필요 · 기기에 보관 중';
+  if(state.status==='error')return label+' 서버 연결 실패 · 기기에 보관 중';
+  if(state.status==='offline')return label+' 오프라인 · 기기에 보관 중';
+  if(state.status==='saved')return label+' 서버 저장 완료 · 모든 기기 공유';
+  if(state.status==='saving'||state.status==='pending')return label+(state.migrating?' 기존 자료 서버 병합 중':' 서버 저장 중');
+  return label+' 서버 연결 확인 중';
+}
+function updateCombinedSyncState(){
+  const states=[reservationSyncState,...Object.entries(sharedBusinessStates).map(([kind,state])=>({...state,message:sharedBusinessMessage(kind,state)}))];
+  const rank={error:0,offline:1,connecting:2,pending:3,saving:3,saved:4};
+  const selected=states.reduce((a,b)=>(rank[b.status]??0)<(rank[a.status]??0)?b:a);
+  _syncState={...selected,pending:states.reduce((n,state)=>n+(state.pending||0),0)};
+  if(states.every(state=>state.status==='saved'))_syncState.message='서버 저장 완료';
+  const el=document.getElementById('sync-state');if(el){el.textContent=_syncState.message;el.dataset.state=_syncState.status;el.title=states.map(state=>state.message).join('\n');el.setAttribute('role','status')}
   if(typeof window!=='undefined'&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('reservation-sync-state',{detail:{..._syncState}}));
 }
+function historyToFirestore(row){
+  const encoded={};for(const key of ['id','reservationId','timestamp','action','updatedAt','updatedBy','_mutationId'])if(row[key]!==undefined)encoded[key]=row[key];
+  for(const key of ['changedFields','before','after','sourceMessages'])encoded[key+'Json']=JSON.stringify(row[key]??(key==='before'||key==='after'?null:[]));
+  return encoded;
+}
+function historyFromFirestore(row){
+  if(!Object.hasOwn(row,'beforeJson'))return row;
+  try{const decoded={...row};for(const key of ['changedFields','before','after','sourceMessages']){decoded[key]=JSON.parse(row[key+'Json']);delete decoded[key+'Json']}return decoded}catch{return null}
+}
+function initSharedHistory(){
+  if(historySync)return;
+  let legacy=[];try{legacy=JSON.parse(localStorage.getItem(KAKAO_HISTORY_STORE)||'[]')}catch{}
+  historySync=new SharedCatalogSync({db,storage:localStorage,collection:'reservationHistory',storageKey:'ky_shared_history_v1',seedRows:legacy,
+    validate:row=>typeof row.reservationId==='string'&&typeof row.timestamp==='string',encode:historyToFirestore,decode:historyFromFirestore,query:collection=>collection.orderBy('timestamp','desc').limit(500),
+    onRecords:()=>{if(historySync?.migrated)try{localStorage.removeItem(KAKAO_HISTORY_STORE)}catch{}},onState:state=>setSharedBusinessState('history',state)});
+}
+function startSharedBusinessSync(){
+  initSharedHistory();
+  if(!_currentUser){fleetSync?.emit('offline');historySync?.emit('offline');return}
+  fleetSync?.start(_currentUser);historySync?.start(_currentUser);
+}
+function retrySharedBusinessSync(){fleetSync?.retry();historySync?.retry();retryReservationSync()}
+if(typeof window!=='undefined')window.addEventListener('online',retrySharedBusinessSync);
 function getReservationSyncState(){return{..._syncState}}
 function getDeletedReservations(){return storageCopy(trashData)}
 function getLocalRecoveryReservations(){return storageCopy(localRecoveryData)}
@@ -1762,7 +1878,6 @@ async function flushReservationWrites(){
   }finally{_syncFlushing=false}
 }
 function retryReservationSync(){saveLocal();if(_syncRetryTimer){clearTimeout(_syncRetryTimer);_syncRetryTimer=null}if(!_firestoreReady&&_currentUser)startFirestoreSync();else flushReservationWrites()}
-if(typeof window!=='undefined')window.addEventListener('online',retryReservationSync);
 // Retained entry points for older callers. Deletes now remain recoverable on every device.
 function deleteFromFirestore(id){const r=data.find(x=>x.id===id);if(r){snapshot();data=data.filter(x=>x.id!==id);save()}}
 async function migrateToFirestore(){/* Migration is handled after the first confirmed server snapshot. */}
@@ -1805,6 +1920,12 @@ function restoreLocalRecovery(id){
 }
 
 /* ===== JSON 백업 내보내기/가져오기 ===== */
+function exportBusinessRecovery(){
+  const catalog=store=>store?{records:store.snapshot(),pending:store.pending,legacy:store.legacy,migrated:store.migrated}:null;
+  const payload={format:'ky-device-recovery',version:1,exportedAt:new Date().toISOString(),reservations:{records:[...data,...trashData],pending:_pendingWrites,recovery:localRecoveryData},vehicles:catalog(fleetSync),history:catalog(historySync)};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='KY_기기자료백업_'+todayStr()+'.json';link.click();URL.revokeObjectURL(url);toast('현재 기기의 예약·차량·이력과 미전송 자료를 백업했습니다');
+}
 function exportJSON(){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -3092,7 +3213,9 @@ function chooseKakaoMatch(e){
   const msg=matches.map((m,i)=>{const r=data.find(x=>x.id===m.reservationId);return `${i+1}. ${reservationCustomerName(r)} / ${fmtShort(r.start)} / ${r.car} (${m.score}점)`}).join('\n');const pick=prompt(`적용할 기존 예약 번호를 입력하세요.\n\n${msg}`,'1');const n=Number(pick);return n>=1&&n<=matches.length?data.find(r=>r.id===matches[n-1].reservationId):null;
 }
 function saveKakaoHistory(reservationId,action,changedFields,before,after,sourceMessages){
-  let h=[];try{h=JSON.parse(localStorage.getItem(KAKAO_HISTORY_STORE)||'[]')}catch(e){}h.push({id:uid(),reservationId,timestamp:new Date().toISOString(),action,changedFields,before,after,sourceMessages});if(h.length>500)h=h.slice(-500);localStorage.setItem(KAKAO_HISTORY_STORE,JSON.stringify(h));
+  initSharedHistory();
+  const entry={id:uid(),reservationId,timestamp:new Date().toISOString(),action,changedFields,before,after,sourceMessages};
+  if(!historySync.queue(entry.id,entry,entry))toast('변경 이력 기기 보관 실패 · 창을 닫지 말고 백업하세요');
 }
 function applyKakaoRow(i){
   const row=kakaoAnalysisState[i],e=row?.event;if(!e||row.ignored)return;if(e.confidence==='LOW'&&!confirm('신뢰도가 LOW입니다. 직접 확인 화면으로 이동할까요?'))return;
@@ -4408,23 +4531,23 @@ function addVehicle(event){
   const fuel=inferVehicleFuel(name,fuelValue);
   const base=baseValue||inferVehicleBase(name);
   PLATE_MAP[plate]={n:name,seat,fuel,base};
-  savePlateMap();vehQuery='';clearVehicleAddForm();toggleVehicleAddPanel(false);
+  const durable=savePlateMap();vehQuery='';clearVehicleAddForm();toggleVehicleAddPanel(false);
   render();
-  toast(`${name} (${last4}) 차량을 등록했습니다`);
+  toast(durable?`${name} (${last4}) 차량을 등록했습니다. 상단 공유 저장 상태를 확인하세요.`:'차량 기기 보관 실패 · 창을 닫지 말고 백업하세요');
 }
 
 function editVehicleName(plate){
   const v=PLATE_MAP[plate];if(!v)return;
   const name=prompt('차종명 수정',v.n);if(name===null)return;
   const next=name.trim();if(!next||next===v.n)return;
-  v.n=next;savePlateMap();renderVehicles();render();toast('차종명을 수정했습니다');
+  v.n=next;const durable=savePlateMap();renderVehicles();render();toast(durable?'차종명을 수정했습니다. 상단 공유 저장 상태를 확인하세요.':'차량 기기 보관 실패 · 창을 닫지 말고 백업하세요');
 }
 function deleteVehicle(plate){
   if(!PLATE_MAP[plate])return;
   const linked=data.filter(r=>reservationVehicleId(r)===plate).length;
   const note=linked?`\n\n이 차량으로 등록된 예약 ${linked}건은 유지됩니다.`:'';
   if(!confirm('이 차량을 목록에서 삭제할까요?'+note))return;
-  delete PLATE_MAP[plate];savePlateMap();renderVehicles();render();toast('차량을 목록에서 삭제했습니다');
+  delete PLATE_MAP[plate];const durable=savePlateMap();renderVehicles();render();toast(durable?'공유 차량 목록에서 삭제했습니다. 기존 예약은 유지됩니다.':'차량 기기 보관 실패 · 창을 닫지 말고 백업하세요');
 }
 function renderVehicles(){
   const el=document.getElementById('vehicle-table');if(!el)return;
@@ -5684,15 +5807,26 @@ function setTVBoardActive(active){
 }
 
 
-/* ===== 자동 익명 로그인 ===== */
-function doLogin(){
-  auth.signInAnonymously().catch(err=>{
-    console.error('익명 로그인 실패:',err);
-    toast('서버 연결 실패 — 오프라인 모드로 사용합니다');
-    document.getElementById('login-screen').style.display='none';
-    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupFormPlatePicker();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
-    const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
-  });
+/* ===== 직원 아이디·비밀번호 로그인 ===== */
+let staffLoginBusy=false;
+async function doLogin(){
+  if(staffLoginBusy)return;
+  const identifier=document.getElementById('staff-login-id').value;
+  const passwordInput=document.getElementById('staff-login-password');
+  const remember=document.getElementById('staff-login-remember').checked;
+  const button=document.getElementById('staff-login-submit'),message=document.getElementById('staff-access-message');
+  staffLoginBusy=true;button.disabled=true;button.textContent='로그인 중…';message.textContent='로그인 정보를 확인하고 있어요.';
+  try{
+    await signInStaff(auth,identifier,passwordInput.value,remember,firebase.auth.Auth.Persistence);
+    try{localStorage.setItem('ky_staff_remember_v1',remember?'1':'0')}catch{}
+  }catch(error){
+    const code=error.code||error.message;
+    message.textContent=code==='invalid-identifier'?'아이디는 영문·숫자 3~32자 또는 이메일로 입력해 주세요.'
+      :code==='missing-password'?'비밀번호를 입력해 주세요.'
+      :code==='auth/too-many-requests'?'로그인 시도가 많아요. 잠시 후 다시 시도해 주세요.'
+      :code==='auth/network-request-failed'?'인터넷 연결을 확인하고 다시 시도해 주세요.'
+      :'아이디 또는 비밀번호를 확인해 주세요.';
+  }finally{passwordInput.value='';staffLoginBusy=false;button.disabled=false;button.textContent='로그인'}
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
@@ -5700,6 +5834,7 @@ function initApp(){
   loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupFormPlatePicker();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
   const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
   startFirestoreSync();
+  startSharedBusinessSync();
   migrateToFirestore();
 }
 
@@ -5727,20 +5862,48 @@ function showSmsDeviceNumber(){
 }
 window.addEventListener('hashchange',showSmsDeviceNumber);
 
-/* ===== Firebase Auth 상태 감시 ===== */
+/* ===== 직원 계정 승인 확인 후에만 공동 자료와 기기 캐시를 엽니다 ===== */
+let staffAppInitialized=false;
+function showStaffAccessBlocked(reason,user){
+  _currentUser=null;_firestoreReady=false;
+  if(_unsubFirestore){_unsubFirestore();_unsubFirestore=null}
+  fleetSync?.stop();historySync?.stop();
+  if(_syncRetryTimer){clearTimeout(_syncRetryTimer);_syncRetryTimer=null}
+  document.body.dataset.staffAccess='blocked';
+  document.getElementById('login-screen').style.display='flex';
+  const account=user&&!user.isAnonymous?user:null;
+  document.getElementById('staff-account-number').value=account?.uid||'';
+  document.getElementById('staff-account-check').hidden=!account;
+  document.getElementById('staff-access-message').textContent=reason==='approval-required'
+    ?'직원 권한 승인이 필요한 계정이에요. 계정 번호를 관리자에게 전달해 주세요.'
+    :reason==='unavailable'?'직원 승인을 확인할 수 없어요. 인터넷 연결을 확인하고 다시 시도해 주세요.'
+    :reason==='checking'?'직원 계정 권한을 확인하고 있어요.'
+    :'등록된 직원 계정으로 로그인해 주세요.';
+}
+const staffAccessGate=new StaffAccessGate({db,onBlocked:showStaffAccessBlocked,onGranted:user=>{
+  _currentUser=user;document.body.dataset.staffAccess='allowed';
+  document.getElementById('login-screen').style.display='none';showSmsDeviceNumber();
+  if(!staffAppInitialized){staffAppInitialized=true;initApp()}
+  else{startFirestoreSync();startSharedBusinessSync()}
+}});
+function retryStaffAccess(){
+  document.getElementById('staff-access-note').textContent='승인 상태를 다시 확인하고 있어요.';
+  staffAccessGate.start(auth.currentUser);
+}
+async function copyStaffAccountNumber(){
+  const input=document.getElementById('staff-account-number');
+  if(!input.value)return;
+  try{await navigator.clipboard.writeText(input.value);document.getElementById('staff-access-note').textContent='계정 번호를 복사했어요. 관리자에게 전달해 주세요.'}
+  catch{input.focus();input.select();document.getElementById('staff-access-note').textContent='선택된 계정 번호를 복사해 주세요.'}
+}
+async function logoutStaff(){
+  try{await auth.signOut();document.getElementById('staff-login-password').value=''}
+  catch{toast('로그아웃하지 못했어요. 연결을 확인하고 다시 시도해 주세요.')}
+}
+try{document.getElementById('staff-login-remember').checked=localStorage.getItem('ky_staff_remember_v1')!=='0'}catch{}
 auth.onAuthStateChanged(user=>{
-  const loginScreen=document.getElementById('login-screen');
-  if(user){
-    _currentUser=user;
-    loginScreen.style.display='none';
-    showSmsDeviceNumber();
-    initApp();
-  }else{
-    _currentUser=null;
-    if(_unsubFirestore){_unsubFirestore();_unsubFirestore=null}
-    _firestoreReady=false;
-    doLogin(); // 자동 익명 로그인 시도
-  }
+  staffAccessGate.start(user);
+  if(user?.isAnonymous)void auth.signOut();
 });
 
 // 개발 회귀 테스트는 tests/의 로컬 VM 환경에서만 수동 실행합니다.

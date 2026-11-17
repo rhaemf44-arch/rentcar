@@ -1,0 +1,102 @@
+rules_version = '2';
+// Shared business data for the existing ky-rent-system application.
+// Staff sign in with an ID/email and password; authentication alone grants no business access.
+// Only an administrator can provision staffAccounts/{uid} with enabled=true.
+// This prototype restricts both existing reservations and new shared catalogs.
+// staffAccounts/{uid}: enabled boolean, optional admin-managed label/approvedAt.
+// Clients can read only their own approval, and cannot create, edit or list it.
+//
+// reservations/{id}: existing reservation schema and permissions, unchanged.
+// vehicles/{plate}: id, n (1..200), seat/fuel/base (0..60), deletedAt
+//   (null or ISO string), updatedAt (ISO), updatedBy (request UID), optional
+//   _mutationId (1..100). Shared editable catalog; deletion is a tombstone.
+// vehicleMigrations/{uid}/devices/{deviceId}: version=1, capturedAt ISO,
+//   deviceId (16..64), rowsJson (0..300000). Immutable, own account only;
+//   separate browser backups even when the same employee uses several PCs.
+// reservationHistory/{id}: immutable snapshot, id (1..200), reservationId
+//   (1..500), timestamp/updatedAt ISO, action (1..60), updatedBy UID;
+//   bounded JSON strings: changedFieldsJson <=4000, beforeJson/afterJson
+//   <=200000 each, sourceMessagesJson <=40000; optional _mutationId <=100.
+//   JSON is opaque to rules. The client decodes it and validates the record.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+    function staff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/staffAccounts/$(request.auth.uid))
+        && get(/databases/$(database)/documents/staffAccounts/$(request.auth.uid)).data.enabled == true;
+    }
+    function ownsDevice(uid) { return signedIn() && request.auth.uid == uid; }
+    function bounded(value, minimum, maximum) {
+      return value is string && value.size() >= minimum && value.size() <= maximum;
+    }
+    function iso(value) {
+      return bounded(value, 20, 40)
+        && value.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.*Z');
+    }
+    function validMutation(data) {
+      return !('_mutationId' in data) || bounded(data._mutationId, 1, 100);
+    }
+    function validVehicle(data, plate) {
+      return data.keys().hasAll(['id', 'n', 'seat', 'fuel', 'base', 'deletedAt', 'updatedAt', 'updatedBy'])
+        && data.keys().hasOnly(['id', 'n', 'seat', 'fuel', 'base', 'deletedAt', 'updatedAt', 'updatedBy', '_mutationId'])
+        && bounded(data.id, 4, 9) && data.id == plate
+        && plate.matches('([0-9]{4}|[0-9]{2,3}[가-힣][0-9]{4})')
+        && bounded(data.n, 1, 200) && bounded(data.seat, 0, 60)
+        && bounded(data.fuel, 0, 60) && bounded(data.base, 0, 60)
+        && (data.deletedAt == null || iso(data.deletedAt))
+        && iso(data.updatedAt) && bounded(data.updatedBy, 1, 128)
+        && data.updatedBy == request.auth.uid && validMutation(data);
+    }
+    function validBackup(data, deviceId) {
+      return data.keys().hasAll(['version', 'capturedAt', 'deviceId', 'rowsJson'])
+        && data.keys().hasOnly(['version', 'capturedAt', 'deviceId', 'rowsJson'])
+        && data.version == 1 && iso(data.capturedAt)
+        && bounded(data.deviceId, 16, 64) && data.deviceId == deviceId
+        && deviceId.matches('[a-zA-Z0-9-]{16,64}')
+        && bounded(data.rowsJson, 0, 300000);
+    }
+    function validHistory(data, id) {
+      return data.keys().hasAll(['id', 'reservationId', 'timestamp', 'action', 'changedFieldsJson', 'beforeJson', 'afterJson', 'sourceMessagesJson', 'updatedAt', 'updatedBy'])
+        && data.keys().hasOnly(['id', 'reservationId', 'timestamp', 'action', 'changedFieldsJson', 'beforeJson', 'afterJson', 'sourceMessagesJson', 'updatedAt', 'updatedBy', '_mutationId'])
+        && bounded(data.id, 1, 200) && data.id == id
+        && bounded(data.reservationId, 1, 500) && iso(data.timestamp)
+        && bounded(data.action, 1, 60) && iso(data.updatedAt)
+        && bounded(data.updatedBy, 1, 128)
+        && bounded(data.changedFieldsJson, 0, 4000)
+        && bounded(data.beforeJson, 0, 200000) && bounded(data.afterJson, 0, 200000)
+        && bounded(data.sourceMessagesJson, 0, 40000) && validMutation(data);
+    }
+    match /staffAccounts/{uid} {
+      allow get: if ownsDevice(uid);
+      allow list, create, update, delete: if false;
+    }
+    // Preserve the legacy reservation schema; require an approved device.
+    match /reservations/{docId} {
+      allow read, write: if staff();
+    }
+    match /vehicles/{plate} {
+      allow read: if staff();
+      allow create, update: if staff() && validVehicle(request.resource.data, plate);
+      allow delete: if false;
+    }
+    match /vehicleMigrations/{uid}/devices/{deviceId} {
+      allow read: if staff() && ownsDevice(uid);
+      allow create: if staff() && ownsDevice(uid) && validBackup(request.resource.data, deviceId);
+      allow update: if staff() && ownsDevice(uid) && validBackup(request.resource.data, deviceId)
+        && request.resource.data == resource.data;
+      allow delete: if false;
+    }
+    match /reservationHistory/{id} {
+      allow read: if staff();
+      allow create: if staff() && validHistory(request.resource.data, id)
+        && request.resource.data.updatedBy == request.auth.uid;
+      allow update: if staff() && validHistory(request.resource.data, id)
+        && request.resource.data == resource.data;
+      allow delete: if false;
+    }
+    // Unspecified collections and subcollections remain denied.
+  }
+}

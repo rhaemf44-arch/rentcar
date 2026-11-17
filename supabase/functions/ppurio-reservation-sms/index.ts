@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
 import { Buffer } from "node:buffer";
+import { approvedStaffAccount } from "./staff-account-auth.ts";
 
 const origin = "https://rhaemf44-arch.github.io";
 const project = "ky-rent-system";
@@ -46,14 +47,6 @@ async function acceptedCount(reservationId: string) {
     return response.ok ? exactCount(response) : null;
   } catch {return null;}
 }
-async function staffDevice(uid: string) {
-  if (env("PPURIO_STAFF_UIDS").split(",").map(s=>s.trim()).includes(uid)) return true;
-  const query = new URLSearchParams({uid:"eq."+uid,select:"uid",limit:"1"});
-  const result = await database("ppurio_staff_devices?"+query, "GET");
-  if (!result.ok) throw new Error("membership lookup");
-  return (await result.json()).some((row:{uid:string})=>row.uid===uid);
-}
-
 Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return reply(405, "POST 요청이 필요합니다.");
@@ -67,15 +60,10 @@ Deno.serve(async req => {
   try { input=await req.json(); } catch { return reply(400,"요청 내용을 확인하세요."); }
   if(!input || typeof input!=="object")return reply(400,"요청 내용을 확인하세요.");
   try {
+    if(!await approvedStaffAccount(uid,token))return reply(403,"승인된 직원 계정으로 로그인해 주세요.");
     if (input.action==="join-team") {
-      if(typeof input.invite!=="string" || !/^[a-f0-9]{64}$/.test(input.invite))return reply(400,"직원용 링크 전체를 열어주세요.");
-      const hash = Buffer.from(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(input.invite))).toString("hex");
-      const response = await database("rpc/redeem_ppurio_staff_link","POST",{invite_hash:hash,device_uid:uid});
-      if(!response.ok)throw new Error("join");
-      if(await response.json()!==true)return reply(403,"사용 기간이 끝났거나 해제된 직원용 링크입니다. 새 링크를 요청하세요.");
-      return reply(200,"이 브라우저에서 뿌리오 문자를 보낼 수 있습니다.");
+      return reply(200,"승인된 직원 계정으로 뿌리오 문자를 사용할 수 있습니다.");
     }
-    if(!await staffDevice(uid))return reply(403,"직원용 예약관리 링크를 이 브라우저에서 한 번 열어주세요.");
   }catch{return reply(503,"직원 권한을 확인할 수 없습니다. 잠시 후 다시 시도하세요.");}
   if(input.action==="history"){
     const {reservationId,offset=0}=input;
