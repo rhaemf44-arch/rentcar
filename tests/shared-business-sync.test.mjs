@@ -74,6 +74,15 @@ test('two existing computers merge their local-only fleet into the same server w
   assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/device-b').rowsJson).length,1);
   assert.equal(a.states.at(-1).status,'saved');assert.equal(b.states.at(-1).status,'saved');
 });
+test('the same staff account on two browsers keeps separate original-fleet backups',async()=>{
+  const backend=new Backend();
+  const a=client(backend,[vehicle('103호1504')],{backupDeviceId:'browser-0123456789abcdef'});
+  const b=client(backend,[vehicle('103호4722')],{backupDeviceId:'browser-fedcba9876543210'});
+  a.instance.start({uid:'employee'});b.instance.start({uid:'employee'});await settle(a,b);
+  for(const c of [a,b])assert.equal(c.active().length,2);
+  assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/employee/devices/browser-0123456789abcdef').rowsJson)[0].id,'103호1504');
+  assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/employee/devices/browser-fedcba9876543210').rowsJson)[0].id,'103호4722');
+});
 
 test('legacy migration preserves server renames, deletions and unrelated vehicles',async()=>{
   const backend=new Backend();backend.seed('vehicles',[vehicle('103호1504','수정된 차종'),vehicle('103호4722','삭제된 차량',{deletedAt:'2026-11-16'}),vehicle('127호2904')]);

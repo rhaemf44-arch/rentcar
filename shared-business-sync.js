@@ -91,7 +91,9 @@
         if(!this.ready||this.user!==user)return false;
         const chunk=entries.slice(offset,offset+100),collection=this.db.collection(this.options.collection);
         const refs=chunk.map(row=>collection.doc(row.id));
-        const backupRef=this.options.backupCollection&&offset===0?this.db.collection(this.options.backupCollection).doc(user.uid):null;
+        const deviceId=this.options.backupDeviceId||user.uid;
+        const backupPath=this.options.backupCollection+(this.options.backupDeviceId?'/'+user.uid+'/devices':'');
+        const backupRef=this.options.backupCollection&&offset===0?this.db.collection(backupPath).doc(deviceId):null;
         const created=await this.db.runTransaction(async transaction=>{
           const snapshots=await Promise.all(refs.map(ref=>transaction.get(ref)));
           const backup=backupRef?await transaction.get(backupRef):null;
@@ -102,7 +104,7 @@
             const row={...chunk[index],updatedAt:this.now(),updatedBy:user.uid};
             transaction.set(refs[index],this.options.encode?this.options.encode(row):row);created.push(row);
           });
-          if(backupRef&&!backup.exists)transaction.set(backupRef,{version:1,capturedAt:this.now(),deviceId:user.uid,rowsJson:JSON.stringify(this.legacy)});
+          if(backupRef&&!backup.exists)transaction.set(backupRef,{version:1,capturedAt:this.now(),deviceId,rowsJson:JSON.stringify(this.legacy)});
           return created;
         });
         created.forEach(row=>{if(!this.remote.has(row.id))this.remote.set(row.id,row)});

@@ -10,8 +10,9 @@ catalogs without changing reservation documents or the print layout.
 | Collection | Contents | Migration |
 | --- | --- | --- |
 | `vehicles/{plate}` | Name, seats, fuel, group, deletion tombstone | Create only missing documents from each browser's existing fleet. |
-| `vehicleMigrations/{anonymousUid}` | Original local fleet as bounded JSON for recovery | Immutable backup, readable only by the originating device. |
+| `vehicleMigrations/{accountUid}/devices/{browserId}` | Original local fleet as bounded JSON for recovery | Immutable per-browser backup, readable only by its approved staff account. |
 | `reservationHistory/{id}` | Existing Kakao change history and future entries | Create only missing entries. Existing history remains immutable. |
+| `staffAccounts/{uid}` | Administrator-managed enabled flag and staff label | A password account plus enabled=true is required for business access. Clients can read only their own approval. |
 
 ## Deployment dependency
 
@@ -22,31 +23,48 @@ devices in anonymously; this is not an employee allowlist. Other collections
 currently return `PERMISSION_DENIED`. The exact previous rules are backed up in
 `firestore.previous.rules`.
 
-`firestore.rules` is a tested prototype preserving the reservation rule and
-adding fleet sharing, own-device immutable backups, and immutable history.
-History snapshots contain customer contact, location and financial information.
-Publishing this prototype admits every authenticated/anonymous device to the
-shared history. This access change must be reviewed and confirmed before the
-console Publish action. No rule has yet been published by this change.
+The user has selected **employee ID/password login with automatic login**,
+not device approval or anonymous sharing. `firestore.rules` is a tested
+prototype that requires a password-provider Firebase identity and an enabled,
+server-managed `staffAccounts/{uid}` document for reservations, fleet and history.
+Anonymous accounts, unapproved accounts and revoked accounts are denied. Clients
+cannot create, edit or list approval records. Existing reservation document
+schemas remain intact. Schema/size validation and immutable history apply to the
+new catalogs; the legacy reservation schema has not been comprehensively
+rewritten or hardened by this rollout.
 
-Schema/size checks and immutable history restrict writes, but do not establish
-employee identity. Employee-only membership is a separate authorization change;
-do not describe the current anonymous audience as staff-only or securely private.
+## Account setup and coordinated rollout
 
-1. Before publishing, recheck that the console's active rules match the retained
-   backup and confirm the exact project ID. Preserve any intervening changes.
-2. Review and confirm the access scope above immediately before publishing.
-3. Revalidate if the reviewed rules change. The current combined rules passed
-   nine local Firestore emulator tests covering denied unauthenticated requests,
-   invalid creates and updates, identity spoofing, oversized data, cross-device
-   reads, tombstones, own-device backups, immutable history, exact retries,
-   history ordering queries and preservation of the existing reservation rule.
-4. Publish the frontend after the new collections are accessible. Verify that a
-   fresh client can read them, and that an authenticated test transaction follows
-   the intended rules before migrating business data.
-5. Refresh the computer containing `103호1504` first. Each refreshed computer
+1. Email/password is already enabled in Firebase Authentication (verified in the
+   console). Create the four user-requested employee accounts there. Do not put
+   passwords, hashes or a credential roster in this repository or browser local
+   storage. Firebase requires at least six characters; the supplied four-character
+   initial password cannot be registered. Account creation is pending a valid
+   password set directly by the user.
+2. Login IDs are normalized to lowercase. A simple ID such as `employee_qa`
+   maps to `employee_qa@staff.ky-rent-system.invalid` in Firebase Authentication;
+   actual email IDs are accepted unchanged except lowercase/trim normalization.
+   The `.invalid` aliases do not receive mail or password-reset emails. For each
+   created account, use its actual Auth UID to create `staffAccounts/{uid}` with
+   `enabled: true` (boolean) and the requested employee name as `label`. These
+   records are administrator-managed; no public signup grants staff membership.
+3. Before publishing, recheck that the active Firestore rules match the retained
+   backup and preserve any intervening changes. Publish the approved staff-only
+   rules, the matching frontend and the matching `ppurio-reservation-sms` function
+   in a coordinated cutover. Until then the deployed anonymous app remains as-is.
+   The SMS function must include `staff-account-auth.ts`; it verifies the same
+   staff approval using the already verified Firebase token. Old device invites
+   do not grant account access and no SMS is sent during validation.
+4. Verify a real approved account can log in, that automatic login persists a
+   Firebase session when selected, that unchecked login uses session persistence,
+   and that logout and revocation block further reads/writes. The frontend keeps
+   all business UI and caches unopened until a server-confirmed staff approval.
+   Passwords are never written to app local storage; Firebase manages auth tokens.
+   A new page requires online staff approval. Do not claim offline authorization
+   from a cached approval. Rules and frontend are prepared but not yet deployed.
+5. After cutover, log in first on the computer containing `103호1504` first. Each refreshed computer
    uploads its missing local vehicles and original backup, then follows the same
-   live server catalog. Refresh the remaining computers too.
+   live server catalog. Log in on the remaining computers too.
 6. Confirm `103호1504` is on the server and appears in another independent client.
    Compare vehicle counts and values. Do not declare the migration complete from
    frontend tests alone.
@@ -79,8 +97,11 @@ failures, empty SDK caches, immutable history migration, and the aggregate save
 indicator. Browser validation uses a separate in-memory test backend and does
 not write customer data.
 
-The combined application suite passes 49 tests after incorporating the already
-deployed phone-capture/PDF layouts. Run the rule tests with:
+The combined application suite passes 61 tests, including login persistence,
+revocation, separate browser backups under one employee account, and account-based
+SMS authorization. Thirteen local Firestore emulator tests pass, covering
+unapproved/anonymous denial, self-escalation, account revocation, catalog
+validation, own-account backups and immutable history. Run the rule tests with:
 
 ```sh
 npx -y firebase-tools@latest emulators:exec --only firestore --project demo-ky-shared --config firebase/emulator-test.config.json 'node --test firebase/shared-rules.test.mjs'

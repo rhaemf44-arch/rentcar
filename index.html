@@ -1000,7 +1000,20 @@ body.tv-mode{display:block;background:#0b1420}
 @media print{.m-tabbar,.m-sheet{display:none!important}.content{padding-bottom:0!important}}
 </style>
 </head>
-<body>
+<body data-staff-access="blocked">
+<style>
+body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){display:none!important}
+.staff-access-card{width:min(420px,100%);padding:28px;border:1px solid #b9c6d6;border-radius:18px;background:#fff;text-align:center;box-shadow:0 12px 36px #162d4612;color:#172c48}
+.staff-access-card h2{font-size:22px;margin:0 0 12px}.staff-access-card p{font-size:15px;line-height:1.65;color:#42556f}
+.staff-access-card label{display:block;font-size:13px;font-weight:700;text-align:left;margin-top:22px}
+.staff-access-card input{width:100%;min-width:0;margin:8px 0 12px;padding:12px;border:1px solid #91a5bf;border-radius:9px;background:#f3f7fc;font-size:13px;color:#172c48}
+.staff-access-actions{display:flex;gap:8px}.staff-access-actions button{flex:1;min-height:46px;border-radius:9px;font-size:14px;font-weight:700;border:1px solid #91a5bf;background:#edf3fb;color:#172c48;cursor:pointer}
+.staff-access-actions button:last-child{background:#203e62;color:#fff}.staff-access-note{min-height:24px;font-size:13px!important;margin-bottom:0}
+.staff-access-card input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#203e62}.staff-access-card .staff-remember{display:flex;align-items:center;gap:8px;margin:6px 0 18px;font-size:14px;cursor:pointer}
+.staff-login-submit{width:100%;min-height:48px;border:0;border-radius:10px;background:#203e62;color:#fff;font-size:16px;font-weight:700;cursor:pointer}.staff-login-submit:disabled{opacity:.6;cursor:wait}
+.staff-account-check{margin-top:18px;border-top:1px solid #d2dce8;padding-top:12px}.staff-account-check[hidden]{display:none}.staff-account-check input{font-size:11px}.staff-logout{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px;border:1px solid #b9c6d6;border-radius:9px;background:#edf3fb;color:#203e62;cursor:pointer}.staff-logout svg{width:20px;height:20px}
+@media(max-width:820px){.topbar-actions .sync-state{max-width:115px}}
+</style>
 <section id="tv-board" hidden aria-label="배차와 반납 예정 현황판">
   <div class="tv-board-inner">
     <header class="tv-header">
@@ -1033,12 +1046,29 @@ body.tv-mode{display:block;background:#0b1420}
 </section>
 
 
-<!-- ===== 로딩 스플래시 (자동 익명 로그인) ===== -->
-<div id="login-screen" style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;position:fixed;top:0;left:0;z-index:9999;background:var(--page-bg);">
-  <div style="text-align:center;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:var(--gold);color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:14px;">KY</div>
-    <h2 style="font-size:20px;font-weight:700;margin:0;">KY MOBILITY</h2>
-    <p style="color:var(--ivory-dim);font-size:13px;margin-top:6px;">서버 연결 중…</p>
+<!-- ===== 직원 계정 로그인 ===== -->
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100dvh;width:100%;position:fixed;inset:0;z-index:9999;background:#e5edf6;padding:20px;overflow:auto;">
+  <div class="staff-access-card" role="region" aria-label="직원 로그인">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:#203e62;color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:18px;">KY</div>
+    <h2>직원 로그인</h2>
+    <p id="staff-access-message" role="status">등록된 직원 계정으로 로그인해 주세요.</p>
+    <form id="staff-login-form" onsubmit="event.preventDefault();doLogin()">
+      <label for="staff-login-id">아이디</label>
+      <input id="staff-login-id" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="아이디 또는 이메일" required>
+      <label for="staff-login-password">비밀번호</label>
+      <input id="staff-login-password" name="password" type="password" autocomplete="current-password" required>
+      <label class="staff-remember" for="staff-login-remember"><input id="staff-login-remember" type="checkbox" checked>자동 로그인</label>
+      <button id="staff-login-submit" class="staff-login-submit" type="submit">로그인</button>
+    </form>
+    <div id="staff-account-check" class="staff-account-check" hidden>
+      <label for="staff-account-number">직원 계정 번호</label>
+      <input id="staff-account-number" readonly autocomplete="off">
+      <div class="staff-access-actions">
+        <button type="button" onclick="copyStaffAccountNumber()">계정 번호 복사</button>
+        <button type="button" onclick="retryStaffAccess()">승인 다시 확인</button>
+      </div>
+    </div>
+    <p id="staff-access-note" class="staff-access-note">경일렌트카 직원 전용 예약관리 시스템</p>
   </div>
 </div>
 
@@ -1079,7 +1109,7 @@ body.tv-mode{display:block;background:#0b1420}
       <button class="mobile-back" id="mobile-back" type="button" onclick="mobileBack()" aria-label="뒤로가기" hidden><span aria-hidden="true">‹</span><span>뒤로</span></button>
       <h1 id="page-title">예약 입력</h1>
     </div>
-    <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><div class="meta">
+    <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><button type="button" class="staff-logout" onclick="logoutStaff()" aria-label="로그아웃" title="로그아웃"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H4v16h5M13 8l4 4-4 4M8 12h13"/></svg></button><div class="meta">
       <div>내부 예약 관리 시스템</div>
       <div id="clock">—</div>
     </div></div>
@@ -1495,6 +1525,7 @@ body.tv-mode{display:block;background:#0b1420}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="shared-business-sync.js?v=20261117-1"></script>
+<script src="staff-access.js?v=20261117-1"></script>
 <script>
 /* ===== Firebase 설정 ===== */
 const firebaseConfig = {
@@ -1631,10 +1662,11 @@ function loadPlateMap(){
   }catch(e){}
   fleetLastView=JSON.parse(JSON.stringify(PLATE_MAP));
   if(!fleetSync){
+    let backupDeviceId='';try{backupDeviceId=localStorage.getItem('ky_fleet_backup_device_v1')||crypto.randomUUID();localStorage.setItem('ky_fleet_backup_device_v1',backupDeviceId)}catch{}
     const seeds=Object.entries(PLATE_MAP).map(([id,info])=>({id,...info,deletedAt:null}));
     fleetSync=new SharedCatalogSync({db,storage:localStorage,collection:'vehicles',storageKey:'ky_shared_vehicles_v1',seedRows:seeds,validate:validFleetRow,
       emptyServerRows:Object.entries(DEFAULT_PLATE_MAP).filter(([id])=>!PLATE_MAP[id]).map(([id,info])=>({id,...info,deletedAt:new Date().toISOString()})),
-      backupCollection:'vehicleMigrations',keepLegacy:true,onRecords:applySharedFleet,onState:state=>setSharedBusinessState('vehicles',state)});
+      backupCollection:'vehicleMigrations',backupDeviceId,keepLegacy:true,onRecords:applySharedFleet,onState:state=>setSharedBusinessState('vehicles',state)});
   }
   applySharedFleet(fleetSync.snapshot());
 }
@@ -5775,16 +5807,26 @@ function setTVBoardActive(active){
 }
 
 
-/* ===== 자동 익명 로그인 ===== */
-function doLogin(){
-  auth.signInAnonymously().catch(err=>{
-    console.error('익명 로그인 실패:',err);
-    toast('서버 연결 실패 — 오프라인 모드로 사용합니다');
-    document.getElementById('login-screen').style.display='none';
-    loadPlateMap();refreshReservationVehicleOptions();load();setupVehicleNumberAutoFill();setupFormPlatePicker();setupPickupReturnSync();openMobileHome();render();tick();setInterval(tick,30000);
-    startSharedBusinessSync();
-    const auditFrom=document.getElementById('audit-date-from');if(auditFrom&&!auditFrom.value)auditFrom.value=todayStr();
-  });
+/* ===== 직원 아이디·비밀번호 로그인 ===== */
+let staffLoginBusy=false;
+async function doLogin(){
+  if(staffLoginBusy)return;
+  const identifier=document.getElementById('staff-login-id').value;
+  const passwordInput=document.getElementById('staff-login-password');
+  const remember=document.getElementById('staff-login-remember').checked;
+  const button=document.getElementById('staff-login-submit'),message=document.getElementById('staff-access-message');
+  staffLoginBusy=true;button.disabled=true;button.textContent='로그인 중…';message.textContent='로그인 정보를 확인하고 있어요.';
+  try{
+    await signInStaff(auth,identifier,passwordInput.value,remember,firebase.auth.Auth.Persistence);
+    try{localStorage.setItem('ky_staff_remember_v1',remember?'1':'0')}catch{}
+  }catch(error){
+    const code=error.code||error.message;
+    message.textContent=code==='invalid-identifier'?'아이디는 영문·숫자 3~32자 또는 이메일로 입력해 주세요.'
+      :code==='missing-password'?'비밀번호를 입력해 주세요.'
+      :code==='auth/too-many-requests'?'로그인 시도가 많아요. 잠시 후 다시 시도해 주세요.'
+      :code==='auth/network-request-failed'?'인터넷 연결을 확인하고 다시 시도해 주세요.'
+      :'아이디 또는 비밀번호를 확인해 주세요.';
+  }finally{passwordInput.value='';staffLoginBusy=false;button.disabled=false;button.textContent='로그인'}
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
@@ -5820,21 +5862,48 @@ function showSmsDeviceNumber(){
 }
 window.addEventListener('hashchange',showSmsDeviceNumber);
 
-/* ===== Firebase Auth 상태 감시 ===== */
+/* ===== 직원 계정 승인 확인 후에만 공동 자료와 기기 캐시를 엽니다 ===== */
+let staffAppInitialized=false;
+function showStaffAccessBlocked(reason,user){
+  _currentUser=null;_firestoreReady=false;
+  if(_unsubFirestore){_unsubFirestore();_unsubFirestore=null}
+  fleetSync?.stop();historySync?.stop();
+  if(_syncRetryTimer){clearTimeout(_syncRetryTimer);_syncRetryTimer=null}
+  document.body.dataset.staffAccess='blocked';
+  document.getElementById('login-screen').style.display='flex';
+  const account=user&&!user.isAnonymous?user:null;
+  document.getElementById('staff-account-number').value=account?.uid||'';
+  document.getElementById('staff-account-check').hidden=!account;
+  document.getElementById('staff-access-message').textContent=reason==='approval-required'
+    ?'직원 권한 승인이 필요한 계정이에요. 계정 번호를 관리자에게 전달해 주세요.'
+    :reason==='unavailable'?'직원 승인을 확인할 수 없어요. 인터넷 연결을 확인하고 다시 시도해 주세요.'
+    :reason==='checking'?'직원 계정 권한을 확인하고 있어요.'
+    :'등록된 직원 계정으로 로그인해 주세요.';
+}
+const staffAccessGate=new StaffAccessGate({db,onBlocked:showStaffAccessBlocked,onGranted:user=>{
+  _currentUser=user;document.body.dataset.staffAccess='allowed';
+  document.getElementById('login-screen').style.display='none';showSmsDeviceNumber();
+  if(!staffAppInitialized){staffAppInitialized=true;initApp()}
+  else{startFirestoreSync();startSharedBusinessSync()}
+}});
+function retryStaffAccess(){
+  document.getElementById('staff-access-note').textContent='승인 상태를 다시 확인하고 있어요.';
+  staffAccessGate.start(auth.currentUser);
+}
+async function copyStaffAccountNumber(){
+  const input=document.getElementById('staff-account-number');
+  if(!input.value)return;
+  try{await navigator.clipboard.writeText(input.value);document.getElementById('staff-access-note').textContent='계정 번호를 복사했어요. 관리자에게 전달해 주세요.'}
+  catch{input.focus();input.select();document.getElementById('staff-access-note').textContent='선택된 계정 번호를 복사해 주세요.'}
+}
+async function logoutStaff(){
+  try{await auth.signOut();document.getElementById('staff-login-password').value=''}
+  catch{toast('로그아웃하지 못했어요. 연결을 확인하고 다시 시도해 주세요.')}
+}
+try{document.getElementById('staff-login-remember').checked=localStorage.getItem('ky_staff_remember_v1')!=='0'}catch{}
 auth.onAuthStateChanged(user=>{
-  const loginScreen=document.getElementById('login-screen');
-  if(user){
-    _currentUser=user;
-    loginScreen.style.display='none';
-    showSmsDeviceNumber();
-    initApp();
-  }else{
-    _currentUser=null;
-    if(_unsubFirestore){_unsubFirestore();_unsubFirestore=null}
-    fleetSync?.stop();historySync?.stop();
-    _firestoreReady=false;
-    doLogin(); // 자동 익명 로그인 시도
-  }
+  staffAccessGate.start(user);
+  if(user?.isAnonymous)void auth.signOut();
 });
 
 // 개발 회귀 테스트는 tests/의 로컬 VM 환경에서만 수동 실행합니다.
