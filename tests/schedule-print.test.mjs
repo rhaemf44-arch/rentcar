@@ -66,6 +66,19 @@ test('the yellow class covers the complete Solati row and print fitting preserve
   assert.match(output,/document\.fonts\.ready/);
 });
 
+test('the on-screen schedule remains one full-width table with one heading across weekdays and weekends',()=>{
+  const dates=['2026-11-18','2026-11-20','2026-11-21','2026-11-22','2026-11-23'];
+  const output=setup(dates.map((day,i)=>fixture(day,i))).print();
+  const screen=output.match(/<div class="screen-sheet">([\s\S]*?)<div class="print-sheets">/)[1];
+  assert.equal((screen.match(/<h1>/g)||[]).length,1);
+  assert.equal((screen.match(/<table>/g)||[]).length,1);
+  assert.equal((screen.match(/class="vehicle"/g)||[]).length,5);
+  assert.match(screen,/총 5건/);
+  assert.match(output,/\.screen-sheet\{width:100%\}/);
+  assert.match(output,/\.print-sheets\{[^}]*visibility:hidden/);
+  assert.match(output,/@media print\{[\s\S]*\.screen-sheet\{display:none\}/);
+});
+
 if(process.env.PRINT_PREVIEW_PATH){
   const records=[];
   for(const [day,count] of [['2026-11-20',5],['2026-11-21',11],['2026-11-22',6]]){

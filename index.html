@@ -4478,8 +4478,7 @@ function printSchedule(){
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const amount=n=>n==null?'':n.toLocaleString('ko-KR')+'원';
   const pages=schedulePrintPages(rows);
-  const body=pages.map(page=>{
-    const rowHtml=page.rows.map(r=>{
+  const renderRow=r=>{
       if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
       // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
       const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
@@ -4492,19 +4491,22 @@ function printSchedule(){
       <td class="money">${amount(r.총금액)}</td><td class="money">${amount(r.계약금)}</td>
       <td class="money">${r.잔금===0?'0원 (완납)':amount(r.잔금)}</td>
       </tr>`;
-    }).join('');
+  };
+  const tableHead='<colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup><thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>';
+  const body=pages.map(page=>{
+    const rowHtml=page.rows.map(renderRow).join('');
     const range=page.weekend?`${fmtSheetDT(page.weekend+'T00:00',true).replace(' 00:00','')} ~ ${fmtSheetDT(dashboardDayOffset(page.weekend,2)+'T00:00',true).replace(' 00:00','')}`:scheduleRangeText(now);
     return `<section class="print-page${page.weekend?' weekend-page':''}"${page.weekend?' data-weekend="'+page.weekend+'"':''}><div class="page-content">
       <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(range)}${scheduleClock.serverTime===null?' (기기 시각)':''} · ${page.rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
-      <table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup>
-      <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>
-      <tbody>${rowHtml}</tbody></table></div></section>`;
+      <table>${tableHead}<tbody>${rowHtml}</tbody></table></div></section>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
   <style>
     @page{size:A4 landscape;margin:8mm}
     *{box-sizing:border-box}
     body{font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;margin:0;padding:12px;color:#000}
+    .screen-sheet{width:100%}
+    .print-sheets{position:absolute;left:0;top:0;width:281mm;height:0;overflow:hidden;visibility:hidden;pointer-events:none}
     .print-page{width:281mm;margin:0 auto 16px}
     .page-content{width:281mm;display:flow-root}
     .weekend-page{height:194mm;--print-scale:1}
@@ -4528,6 +4530,8 @@ function printSchedule(){
     @media print{
       body{padding:0}
       .noprint{display:none}
+      .screen-sheet{display:none}
+      .print-sheets{position:static;width:281mm;height:auto;overflow:visible;visibility:visible;pointer-events:auto}
       .print-page{margin:0;break-before:page}
       .print-page:first-of-type{break-before:auto}
       .weekend-page{break-inside:avoid-page}
@@ -4537,7 +4541,11 @@ function printSchedule(){
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
   </style></head><body>
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
-  ${body}
+  <div class="screen-sheet">
+    <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(scheduleRangeText(now))}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
+    <table>${tableHead}<tbody>${rows.map(renderRow).join('')}</tbody></table>
+  </div>
+  <div class="print-sheets">${body}</div>
   <script>
     function fitWeekendPages(){
       document.querySelectorAll('.weekend-page').forEach(page=>{
