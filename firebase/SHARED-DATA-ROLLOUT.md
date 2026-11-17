@@ -14,14 +14,25 @@ catalogs without changing reservation documents or the print layout.
 | `reservationHistory/{id}` | Existing Kakao change history and future entries | Create only missing entries. Existing history remains immutable. |
 | `staffAccounts/{uid}` | Administrator-managed enabled flag and staff label | A password account plus enabled=true is required for business access. Clients can read only their own approval. |
 
-## Deployment dependency
+## Deployed state · 2026-11-17
 
-Verified on 2026-11-17: Firebase admin sign-in works for `ky-rent-system`,
-default database, Standard edition, native mode, `asia-northeast3`. The deployed
-rules permit `reservations` for **any authenticated identity**. The app signs
-devices in anonymously; this is not an employee allowlist. Other collections
-currently return `PERMISSION_DENIED`. The exact previous rules are backed up in
-`firestore.previous.rules`.
+The existing `ky-rent-system` default database is Standard edition, native mode,
+`asia-northeast3`. Four employee Auth accounts were created directly by the user,
+and their actual UIDs were approved in `staffAccounts` with `enabled: true` and
+matching staff labels. No credential roster, passwords or hashes are committed.
+
+The staff-only rules were published after confirming the previous active rules
+matched `firestore.previous.rules`. The frontend was merged in PR #42 and its
+live GitHub Pages response contains the staff gate and no anonymous-login call.
+The production login screen and automatic-login checkbox were inspected. The
+customer SMS function `ppurio-reservation-sms` version 12 is ACTIVE with the same
+staff-account authorization and its own Firebase JWT verification.
+
+Live console rule simulations allowed an approved password account and denied an
+unapproved password account and an anonymous identity, including an anonymous
+token with an approved UID. An unauthenticated Firestore REST request returned
+403. These simulations do not replace a real employee's first sign-in, password
+persistence check and local-data migration on the actual office computers.
 
 The user has selected **employee ID/password login with automatic login**,
 not device approval or anonymous sharing. `firestore.rules` is a tested
@@ -35,12 +46,11 @@ rewritten or hardened by this rollout.
 
 ## Account setup and coordinated rollout
 
-1. Email/password is already enabled in Firebase Authentication (verified in the
-   console). Create the four user-requested employee accounts there. Do not put
-   passwords, hashes or a credential roster in this repository or browser local
-   storage. Firebase requires at least six characters; the supplied four-character
-   initial password cannot be registered. Account creation is pending a valid
-   password set directly by the user.
+1. Email/password is enabled in Firebase Authentication. The initial four
+   accounts and their approval records are created and verified. Future accounts
+   must be created in Firebase Auth and approved by an administrator. Passwords
+   are set directly by the user and are not stored in application source or local
+   storage. Firebase requires at least six characters.
 2. Login IDs are normalized to lowercase. A simple ID such as `employee_qa`
    maps to `employee_qa@staff.ky-rent-system.invalid` in Firebase Authentication;
    actual email IDs are accepted unchanged except lowercase/trim normalization.
@@ -48,10 +58,9 @@ rewritten or hardened by this rollout.
    created account, use its actual Auth UID to create `staffAccounts/{uid}` with
    `enabled: true` (boolean) and the requested employee name as `label`. These
    records are administrator-managed; no public signup grants staff membership.
-3. Before publishing, recheck that the active Firestore rules match the retained
-   backup and preserve any intervening changes. Publish the approved staff-only
-   rules, the matching frontend and the matching `ppurio-reservation-sms` function
-   in a coordinated cutover. Until then the deployed anonymous app remains as-is.
+3. The staff-only rules, matching frontend and matching SMS function have been
+   deployed. Before any future rule change, back up the then-active rules and
+   preserve intervening changes.
    The SMS function must include `staff-account-auth.ts`; it verifies the same
    staff approval using the already verified Firebase token. Old device invites
    do not grant account access and no SMS is sent during validation.
@@ -61,8 +70,10 @@ rewritten or hardened by this rollout.
    all business UI and caches unopened until a server-confirmed staff approval.
    Passwords are never written to app local storage; Firebase manages auth tokens.
    A new page requires online staff approval. Do not claim offline authorization
-   from a cached approval. Rules and frontend are prepared but not yet deployed.
-5. After cutover, log in first on the computer containing `103호1504` first. Each refreshed computer
+   from a cached approval. The production employee login page is deployed; real
+   first sign-in and persistence on the office devices are the remaining rollout
+   checks.
+5. Log in first on the computer containing `103호1504`. Each refreshed computer
    uploads its missing local vehicles and original backup, then follows the same
    live server catalog. Log in on the remaining computers too.
 6. Confirm `103호1504` is on the server and appears in another independent client.
