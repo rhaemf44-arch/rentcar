@@ -10,27 +10,37 @@ catalogs without changing reservation documents or the print layout.
 | Collection | Contents | Migration |
 | --- | --- | --- |
 | `vehicles/{plate}` | Name, seats, fuel, group, deletion tombstone | Create only missing documents from each browser's existing fleet. |
-| `vehicleMigrations/{anonymousUid}` | Original local fleet for recovery | Immutable backup captured before the fleet migration is marked complete. |
+| `vehicleMigrations/{anonymousUid}` | Original local fleet as bounded JSON for recovery | Immutable backup, readable only by the originating device. |
 | `reservationHistory/{id}` | Existing Kakao change history and future entries | Create only missing entries. Existing history remains immutable. |
 
 ## Deployment dependency
 
-Verified on 2026-11-17: a normal authenticated client can read `reservations`.
-The same authenticated client receives `PERMISSION_DENIED` for `vehicles`,
-`reservationHistory`, and `settings/fleet`. Backend rule deployment therefore
-requires authenticated access to the owner's Firebase project. Installing the
-ChatGPT Firebase plugin alone does not prove project access.
+Verified on 2026-11-17: Firebase admin sign-in works for `ky-rent-system`,
+default database, Standard edition, native mode, `asia-northeast3`. The deployed
+rules permit `reservations` for **any authenticated identity**. The app signs
+devices in anonymously; this is not an employee allowlist. Other collections
+currently return `PERMISSION_DENIED`. The exact previous rules are backed up in
+`firestore.previous.rules`.
 
-1. Read and retain the currently deployed Firestore rules through the connected
-   Firebase project. Confirm the exact project ID before any write.
-2. Author narrowly scoped collection rules using the schema and operations
-   above, inside the existing documents block. Preserve reservation and other
-   existing matches and reuse the project's actual staff authorization predicate.
-   History contains private reservation data and must stay within that staff
-   audience. No deployable rule replacement is included before that review.
-3. Validate the combined rules, including unauthorized requests, invalid fleet
-   records, cross-device reads, tombstones, immutable history, and exact retries.
-   Publish only the reviewed, validated combined rules.
+`firestore.rules` is a tested prototype preserving the reservation rule and
+adding fleet sharing, own-device immutable backups, and immutable history.
+History snapshots contain customer contact, location and financial information.
+Publishing this prototype admits every authenticated/anonymous device to the
+shared history. This access change must be reviewed and confirmed before the
+console Publish action. No rule has yet been published by this change.
+
+Schema/size checks and immutable history restrict writes, but do not establish
+employee identity. Employee-only membership is a separate authorization change;
+do not describe the current anonymous audience as staff-only or securely private.
+
+1. Before publishing, recheck that the console's active rules match the retained
+   backup and confirm the exact project ID. Preserve any intervening changes.
+2. Review and confirm the access scope above immediately before publishing.
+3. Revalidate if the reviewed rules change. The current combined rules passed
+   nine local Firestore emulator tests covering denied unauthenticated requests,
+   invalid creates and updates, identity spoofing, oversized data, cross-device
+   reads, tombstones, own-device backups, immutable history, exact retries,
+   history ordering queries and preservation of the existing reservation rule.
 4. Publish the frontend after the new collections are accessible. Verify that a
    fresh client can read them, and that an authenticated test transaction follows
    the intended rules before migrating business data.
@@ -68,3 +78,15 @@ offline reloads, field-level merging, overlapping writes, permission and storage
 failures, empty SDK caches, immutable history migration, and the aggregate save
 indicator. Browser validation uses a separate in-memory test backend and does
 not write customer data.
+
+The combined application suite passes 49 tests after incorporating the already
+deployed phone-capture/PDF layouts. Run the rule tests with:
+
+```sh
+npx -y firebase-tools@latest emulators:exec --only firestore --project demo-ky-shared --config firebase/emulator-test.config.json 'node --test firebase/shared-rules.test.mjs'
+```
+
+The script refuses any host except the named local demo emulator. The rules
+bound snapshot JSON as opaque strings; the client parses it without evaluating
+code and discards invalid serialized history. Rules do not validate JSON's
+nested business fields. Original reservation documents are not re-encoded.

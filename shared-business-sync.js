@@ -54,7 +54,7 @@
       const query=this.options.query?this.options.query(collection):collection;
       this.unsubscribe=query.onSnapshot({includeMetadataChanges:true},snapshot=>{
         if(this.user!==user)return;
-        const rows=[];snapshot.forEach(doc=>{const row=this.cleanRow({...doc.data(),id:doc.id});if(row)rows.push(row)});
+        const rows=[];snapshot.forEach(doc=>{let value={...doc.data(),id:doc.id};if(this.options.decode)value=this.options.decode(value);const row=this.cleanRow(value);if(row)rows.push(row)});
         const fromCache=!!snapshot.metadata?.fromCache;
         // An empty/incomplete SDK cache must not erase this device's durable cache.
         if(!fromCache||!this.remote.size)this.remote=new Map(rows.map(row=>[row.id,row]));
@@ -100,9 +100,9 @@
           snapshots.forEach((snapshot,index)=>{
             if(snapshot.exists)return; // Never overwrite another device, including tombstones.
             const row={...chunk[index],updatedAt:this.now(),updatedBy:user.uid};
-            transaction.set(refs[index],row);created.push(row);
+            transaction.set(refs[index],this.options.encode?this.options.encode(row):row);created.push(row);
           });
-          if(backupRef&&!backup.exists)transaction.set(backupRef,{version:1,capturedAt:this.now(),deviceId:user.uid,rows:this.legacy});
+          if(backupRef&&!backup.exists)transaction.set(backupRef,{version:1,capturedAt:this.now(),deviceId:user.uid,rowsJson:JSON.stringify(this.legacy)});
           return created;
         });
         created.forEach(row=>{if(!this.remote.has(row.id))this.remote.set(row.id,row)});
@@ -127,7 +127,7 @@
         while(this.ready&&this.user===user&&Object.keys(this.pending).length){
           const op=copy(Object.values(this.pending)[0]);
           op.patch.updatedBy=user.uid;
-          await this.db.collection(this.options.collection).doc(op.id).set(op.patch,{merge:true});
+          await this.db.collection(this.options.collection).doc(op.id).set(this.options.encode?this.options.encode(op.patch):op.patch,{merge:true});
           this.remote.set(op.id,{...(this.remote.get(op.id)||op.record),...op.patch,id:op.id});
           if(this.pending[op.id]?.token===op.token)delete this.pending[op.id];
           this.persist();this.publish();

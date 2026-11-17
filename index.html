@@ -1252,6 +1252,7 @@ body.tv-mode{display:block;background:#0b1420}
         <div class="card-h"><h2>일정표</h2>
           <div style="display:flex;gap:8px">
             <button class="btn btn-ghost btn-sm" id="schedule-print" onclick="printSchedule()">🖨 인쇄 · PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="printSchedule('capture')">휴대폰 캡처 · PDF</button>
             <button class="btn btn-ghost btn-sm" id="schedule-excel" onclick="exportScheduleExcel()">엑셀 양식</button>
           </div>
         </div>
@@ -1693,11 +1694,20 @@ function updateCombinedSyncState(){
   const el=document.getElementById('sync-state');if(el){el.textContent=_syncState.message;el.dataset.state=_syncState.status;el.title=states.map(state=>state.message).join('\n');el.setAttribute('role','status')}
   if(typeof window!=='undefined'&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('reservation-sync-state',{detail:{..._syncState}}));
 }
+function historyToFirestore(row){
+  const encoded={};for(const key of ['id','reservationId','timestamp','action','updatedAt','updatedBy','_mutationId'])if(row[key]!==undefined)encoded[key]=row[key];
+  for(const key of ['changedFields','before','after','sourceMessages'])encoded[key+'Json']=JSON.stringify(row[key]??(key==='before'||key==='after'?null:[]));
+  return encoded;
+}
+function historyFromFirestore(row){
+  if(!Object.hasOwn(row,'beforeJson'))return row;
+  try{const decoded={...row};for(const key of ['changedFields','before','after','sourceMessages']){decoded[key]=JSON.parse(row[key+'Json']);delete decoded[key+'Json']}return decoded}catch{return null}
+}
 function initSharedHistory(){
   if(historySync)return;
   let legacy=[];try{legacy=JSON.parse(localStorage.getItem(KAKAO_HISTORY_STORE)||'[]')}catch{}
   historySync=new SharedCatalogSync({db,storage:localStorage,collection:'reservationHistory',storageKey:'ky_shared_history_v1',seedRows:legacy,
-    validate:row=>typeof row.reservationId==='string'&&typeof row.timestamp==='string',query:collection=>collection.orderBy('timestamp','desc').limit(500),
+    validate:row=>typeof row.reservationId==='string'&&typeof row.timestamp==='string',encode:historyToFirestore,decode:historyFromFirestore,query:collection=>collection.orderBy('timestamp','desc').limit(500),
     onRecords:()=>{if(historySync?.migrated)try{localStorage.removeItem(KAKAO_HISTORY_STORE)}catch{}},onState:state=>setSharedBusinessState('history',state)});
 }
 function startSharedBusinessSync(){
@@ -4608,10 +4618,12 @@ function exportScheduleExcel(){
   XLSX.writeFile(wb,`경일렌트카_예약현황표_${koreanNow(new Date(now)).slice(0,10)}.xlsx`);
   toast('예약현황표 엑셀이 저장되었습니다');
 }
-function printSchedule(){
+function printSchedule(mode='a4'){
   const now=scheduleNow(),rows=buildSheetRows(now);
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const amount=n=>n==null?'':n.toLocaleString('ko-KR')+'원';
+  const captureScript=new URL('schedule-capture.js?v=20261117-1',location.href).href;
+  const captureConfig=JSON.stringify({mode,range:scheduleRangeText(now),rows:rows.filter(Boolean).map(row=>({...row,쏠라티:/[쏠솔]라티|solati/i.test(row.차량)||PLATE_MAP[row.차량번호]?.base==='쏠라티'}))}).replace(/</g,'\\u003c');
   const groups=schedulePrintGroups(rows);
   const renderRow=r=>{
       if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
@@ -4634,7 +4646,7 @@ function printSchedule(){
     return `<tbody class="print-group${unit.weekend?' weekend-group':''}" data-first-day="${records[0].배차일}" data-last-day="${records[records.length-1].배차일}"${unit.weekend?' data-weekend="'+unit.weekend+'"':''}>${unit.rows.map(renderRow).join('')}</tbody>`;
   }).join('');
   const heading=`<div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(scheduleRangeText(now))}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>`;
-  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>경일렌트카 일정표</title>
   <style>
     @page{size:A4 landscape;margin:8mm}
     *{box-sizing:border-box}
@@ -4728,8 +4740,10 @@ function printSchedule(){
       mount.replaceChildren();measure.style.display='';
     }
     window.addEventListener('beforeprint',paginateSchedule);
-    document.fonts.ready.then(()=>{paginateSchedule();setTimeout(()=>window.print(),400)});
+    document.fonts.ready.then(()=>{paginateSchedule();${mode==='capture'?'':'setTimeout(()=>window.print(),400)'}});
   <\/script>
+  <script type="application/json" id="schedule-capture-config">${captureConfig}<\/script>
+  <script src="${esc(captureScript)}"><\/script>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){toast('팝업이 차단되었습니다. 팝업을 허용해주세요');return}

@@ -70,8 +70,8 @@ test('two existing computers merge their local-only fleet into the same server w
   const expected=['103호1504','103호4722','127호2904'];
   assert.deepEqual(a.active().map(row=>row.id).sort(),expected);
   assert.deepEqual(b.active().map(row=>row.id).sort(),expected);
-  assert.equal(backend.rows.get('vehicleMigrations/device-a').rows.length,2);
-  assert.equal(backend.rows.get('vehicleMigrations/device-b').rows.length,1);
+  assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/device-a').rowsJson).length,2);
+  assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/device-b').rowsJson).length,1);
   assert.equal(a.states.at(-1).status,'saved');assert.equal(b.states.at(-1).status,'saved');
 });
 
@@ -81,7 +81,7 @@ test('legacy migration preserves server renames, deletions and unrelated vehicle
   assert.equal(backend.rows.get('vehicles/103호1504').n,'수정된 차종');
   assert.equal(backend.rows.get('vehicles/103호4722').deletedAt,'2026-11-16');
   assert.equal(old.active().length,2);
-  assert.equal(backend.rows.get('vehicleMigrations/old-device').rows[0].n,'이전 차종');
+  assert.equal(JSON.parse(backend.rows.get('vehicleMigrations/old-device').rowsJson)[0].n,'이전 차종');
 });
 
 test('a deletion propagates and an old computer cannot resurrect the removed vehicle',async()=>{
@@ -179,4 +179,13 @@ test('append-only reservation change histories migrate and share without modifyi
   assert.deepEqual(backend.rows.get('reservations/existing'),{id:'existing',name:'원본 예약'});
   assert.equal(a.instance.legacy.length,0);
   assert.equal(backend.writes.filter(write=>write.path==='reservationHistory/history-1').length,1);
+});
+
+test('bounded history JSON fields round-trip original snapshots and reject invalid serialized data',()=>{
+  const source=readFileSync(new URL('../index.html',import.meta.url),'utf8'),start=source.indexOf('function historyToFirestore('),end=source.indexOf('function initSharedHistory(',start);
+  const ctx=vm.createContext({});vm.runInContext(source.slice(start,end),ctx);
+  const entry={id:'history-test',reservationId:'reservation-test',timestamp:'2026-11-17T06:00:00Z',action:'UPDATE',before:{memo:'줄1\n줄2',paid:0,total:null},after:{memo:'수정',paid:100000,total:300000},changedFields:['memo','paid'],sourceMessages:['원문 <보존>'],updatedBy:'device',updatedAt:'2026-11-17T06:00:00Z'};
+  const encoded=ctx.historyToFirestore(entry);assert.equal(typeof encoded.beforeJson,'string');assert.equal(encoded.before,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.historyFromFirestore(encoded))),entry);
+  assert.equal(ctx.historyFromFirestore({...encoded,afterJson:'broken'}),null);
 });

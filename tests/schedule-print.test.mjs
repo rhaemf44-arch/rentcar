@@ -22,7 +22,7 @@ const fixture=(day,index,extra={})=>({
 function setup(records){
   let printed='';
   const ctx=vm.createContext({
-    Date,Intl,PLATE_MAP:{},scheduleNow:()=>Date.parse('2026-11-17T10:30:00+09:00'),
+    Date,Intl,URL,location:{href:'http://127.0.0.1:4173/'},PLATE_MAP:{},scheduleNow:()=>Date.parse('2026-11-17T10:30:00+09:00'),
     scheduleClock:{serverTime:1},scheduleRows:()=>records,scheduleDateKey:value=>value,
     dashboardDayOffset:dayOffset,reservationVehicleId:r=>r.vehicleId,
     reservationVehicleName:r=>r.car,reservationCustomerName:r=>r.name,
@@ -34,7 +34,7 @@ function setup(records){
     toast:()=>{},window:{open:()=>({document:{write:value=>printed=value,close:()=>{}}})},
   });
   vm.runInContext(code,ctx);
-  return {ctx,print:()=>{ctx.printSchedule();return printed;}};
+  return {ctx,print:(mode)=>{ctx.printSchedule(mode);return printed;}};
 }
 
 test('Friday through Sunday stay together, with other days and later weekends kept in order',()=>{
@@ -120,6 +120,15 @@ test('the on-screen schedule remains one full-width table with one heading acros
   assert.match(output,/@media print\{[\s\S]*\.screen-sheet\{display:none\}/);
 });
 
+test('phone capture opens with all source records and safe JSON, without automatic A4 printing',()=>{
+  const output=setup([fixture('2026-11-20',0,{car:'차량 </script><img src=x>'}),fixture('2026-11-21',1,{total:null,paid:0,balance:null})]).print('capture');
+  const json=output.match(/<script type="application\/json" id="schedule-capture-config">([\s\S]*?)<\/script>/)[1];
+  const config=JSON.parse(json);assert.equal(config.mode,'capture');assert.equal(config.rows.length,2);
+  assert.equal(config.rows[0].차량,'차량 </script><img src=x>');assert.equal(config.rows[1].총금액,null);assert.equal(config.rows[1].계약금,0);
+  assert.doesNotMatch(json,/<\/script>|<img/);assert.match(output,/http:\/\/127\.0\.0\.1:4173\/schedule-capture\.js\?v=/);
+  assert.doesNotMatch(output,/setTimeout\(\(\)=>window\.print\(\),400\)/);
+});
+
 if(process.env.PRINT_PREVIEW_PATH){
   const records=[];
   const scenario=process.env.PRINT_PREVIEW_SCENARIO;
@@ -130,5 +139,5 @@ if(process.env.PRINT_PREVIEW_PATH){
   for(const [day,count] of counts){
     for(let index=0;index<count;index++)records.push(fixture(day,index,{driverService:index===10?'driver':'self'}));
   }
-  writeFileSync(process.env.PRINT_PREVIEW_PATH,setup(records).print());
+  writeFileSync(process.env.PRINT_PREVIEW_PATH,setup(records).print(process.env.PRINT_PREVIEW_MODE));
 }

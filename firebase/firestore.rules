@@ -1,0 +1,87 @@
+rules_version = '2';
+// Shared business data for the existing ky-rent-system application.
+// Access assumption: the deployed app signs devices in anonymously. This keeps
+// the existing reservation audience; it does NOT establish employee identity.
+// Review this prototype before expanding the app's audience.
+//
+// reservations/{id}: existing reservation schema and permissions, unchanged.
+// vehicles/{plate}: id, n (1..200), seat/fuel/base (0..60), deletedAt
+//   (null or ISO string), updatedAt (ISO), updatedBy (request UID), optional
+//   _mutationId (1..100). Shared editable catalog; deletion is a tombstone.
+// vehicleMigrations/{uid}: version=1, capturedAt ISO, deviceId=uid,
+//   rowsJson (0..300000). Immutable, readable only by the originating device.
+// reservationHistory/{id}: immutable snapshot, id (1..200), reservationId
+//   (1..500), timestamp/updatedAt ISO, action (1..60), updatedBy UID;
+//   bounded JSON strings: changedFieldsJson <=4000, beforeJson/afterJson
+//   <=200000 each, sourceMessagesJson <=40000; optional _mutationId <=100.
+//   JSON is opaque to rules. The client decodes it and validates the record.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function ownsDevice(uid) { return signedIn() && request.auth.uid == uid; }
+    function bounded(value, minimum, maximum) {
+      return value is string && value.size() >= minimum && value.size() <= maximum;
+    }
+    function iso(value) {
+      return bounded(value, 20, 40)
+        && value.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.*Z');
+    }
+    function validMutation(data) {
+      return !('_mutationId' in data) || bounded(data._mutationId, 1, 100);
+    }
+    function validVehicle(data, plate) {
+      return data.keys().hasAll(['id', 'n', 'seat', 'fuel', 'base', 'deletedAt', 'updatedAt', 'updatedBy'])
+        && data.keys().hasOnly(['id', 'n', 'seat', 'fuel', 'base', 'deletedAt', 'updatedAt', 'updatedBy', '_mutationId'])
+        && bounded(data.id, 4, 9) && data.id == plate
+        && plate.matches('([0-9]{4}|[0-9]{2,3}[가-힣][0-9]{4})')
+        && bounded(data.n, 1, 200) && bounded(data.seat, 0, 60)
+        && bounded(data.fuel, 0, 60) && bounded(data.base, 0, 60)
+        && (data.deletedAt == null || iso(data.deletedAt))
+        && iso(data.updatedAt) && bounded(data.updatedBy, 1, 128)
+        && data.updatedBy == request.auth.uid && validMutation(data);
+    }
+    function validBackup(data, uid) {
+      return data.keys().hasAll(['version', 'capturedAt', 'deviceId', 'rowsJson'])
+        && data.keys().hasOnly(['version', 'capturedAt', 'deviceId', 'rowsJson'])
+        && data.version == 1 && iso(data.capturedAt)
+        && bounded(data.deviceId, 1, 128) && data.deviceId == uid
+        && bounded(data.rowsJson, 0, 300000);
+    }
+    function validHistory(data, id) {
+      return data.keys().hasAll(['id', 'reservationId', 'timestamp', 'action', 'changedFieldsJson', 'beforeJson', 'afterJson', 'sourceMessagesJson', 'updatedAt', 'updatedBy'])
+        && data.keys().hasOnly(['id', 'reservationId', 'timestamp', 'action', 'changedFieldsJson', 'beforeJson', 'afterJson', 'sourceMessagesJson', 'updatedAt', 'updatedBy', '_mutationId'])
+        && bounded(data.id, 1, 200) && data.id == id
+        && bounded(data.reservationId, 1, 500) && iso(data.timestamp)
+        && bounded(data.action, 1, 60) && iso(data.updatedAt)
+        && bounded(data.updatedBy, 1, 128)
+        && bounded(data.changedFieldsJson, 0, 4000)
+        && bounded(data.beforeJson, 0, 200000) && bounded(data.afterJson, 0, 200000)
+        && bounded(data.sourceMessagesJson, 0, 40000) && validMutation(data);
+    }
+    // Preserve existing reservation behavior exactly.
+    match /reservations/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /vehicles/{plate} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validVehicle(request.resource.data, plate);
+      allow delete: if false;
+    }
+    match /vehicleMigrations/{uid} {
+      allow read: if ownsDevice(uid);
+      allow create: if ownsDevice(uid) && validBackup(request.resource.data, uid);
+      allow update: if ownsDevice(uid) && validBackup(request.resource.data, uid)
+        && request.resource.data == resource.data;
+      allow delete: if false;
+    }
+    match /reservationHistory/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && validHistory(request.resource.data, id)
+        && request.resource.data.updatedBy == request.auth.uid;
+      allow update: if signedIn() && validHistory(request.resource.data, id)
+        && request.resource.data == resource.data;
+      allow delete: if false;
+    }
+    // Unspecified collections and subcollections remain denied.
+  }
+}
