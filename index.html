@@ -4433,6 +4433,7 @@ function buildSheetRows(now=scheduleNow()){
     const plate=reservationVehicleId(r);
     const carName=reservationVehicleName(r);
     out.push({
+      배차일:day,
       대여예정일시:fmtSheetDT(r.start,first),
       반납예정일시:fmtSheetDT(r.end,false),
       차량:carName, 차량번호:plate,
@@ -4447,6 +4448,19 @@ function buildSheetRows(now=scheduleNow()){
     lastDay=day;
   });
   return out;
+}
+function schedulePrintPages(rows){
+  const pages=[];
+  for(const row of rows){
+    if(!row)continue;
+    const day=row.배차일,weekday=new Date(day+'T00:00:00Z').getUTCDay();
+    const weekend=[5,6,0].includes(weekday)?dashboardDayOffset(day,weekday===0?-2:5-weekday):'';
+    let page=pages[pages.length-1];
+    if(!page||page.weekend!==weekend){page={weekend,rows:[],lastDay:''};pages.push(page)}
+    if(page.lastDay&&page.lastDay!==day)page.rows.push(null,null);
+    page.rows.push(row);page.lastDay=day;
+  }
+  return pages;
 }
 function exportScheduleExcel(){
   const now=scheduleNow(),rows=buildSheetRows(now);
@@ -4463,51 +4477,86 @@ function printSchedule(){
   const now=scheduleNow(),rows=buildSheetRows(now);
   if(!rows.length){toast('내보낼 예약이 없습니다');return}
   const amount=n=>n==null?'':n.toLocaleString('ko-KR')+'원';
-  const body=rows.map(r=>{
-    if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
-    // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
-    const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
-    const isSolati=/[쏠솔]라티|solati/i.test(r.차량)||PLATE_MAP[r.차량번호]?.base==='쏠라티';
-    return `<tr class="${isDayStart?'dstart':''}">
+  const pages=schedulePrintPages(rows);
+  const body=pages.map(page=>{
+    const rowHtml=page.rows.map(r=>{
+      if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
+      // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
+      const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
+      const isSolati=/[쏠솔]라티|solati/i.test(r.차량)||PLATE_MAP[r.차량번호]?.base==='쏠라티';
+      return `<tr class="${[isDayStart?'dstart':'',isSolati?'solati':''].filter(Boolean).join(' ')}">
       <td>${esc(r.대여예정일시)}</td><td>${esc(r.반납예정일시)}</td>
-      <td class="vehicle${isSolati?' solati':''}">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
+      <td class="vehicle">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
       <td>${esc(r.임차인명)}</td><td>${esc(r.임차인연락처)}</td>
       <td class="place">${r.인쇄장소Html}</td>
       <td class="money">${amount(r.총금액)}</td><td class="money">${amount(r.계약금)}</td>
       <td class="money">${r.잔금===0?'0원 (완납)':amount(r.잔금)}</td>
-    </tr>`;
+      </tr>`;
+    }).join('');
+    const range=page.weekend?`${fmtSheetDT(page.weekend+'T00:00',true).replace(' 00:00','')} ~ ${fmtSheetDT(dashboardDayOffset(page.weekend,2)+'T00:00',true).replace(' 00:00','')}`:scheduleRangeText(now);
+    return `<section class="print-page${page.weekend?' weekend-page':''}"${page.weekend?' data-weekend="'+page.weekend+'"':''}><div class="page-content">
+      <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(range)}${scheduleClock.serverTime===null?' (기기 시각)':''} · ${page.rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
+      <table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup>
+      <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>
+      <tbody>${rowHtml}</tbody></table></div></section>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>경일렌트카 일정표</title>
   <style>
     @page{size:A4 landscape;margin:8mm}
     *{box-sizing:border-box}
     body{font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;margin:0;padding:12px;color:#000}
+    .print-page{width:281mm;margin:0 auto 16px}
+    .page-content{width:281mm;display:flow-root}
+    .weekend-page{height:194mm;--print-scale:1}
     .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
     .head h1{font-size:17px;margin:0;letter-spacing:3px;font-weight:800}
     .head .sub{font-size:11px;color:#444}
     table{border-collapse:collapse;width:100%;font-size:11.5px;table-layout:fixed}
     th,td{border:1px solid #000;padding:4px;text-align:center;height:26px;overflow-wrap:anywhere;line-height:1.35}
     th{background:#e8e8e8;font-weight:700;height:28px}
-    td.solati{background-color:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr.solati>td{background-color:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td.place{text-align:left;white-space:pre-line}
     .driver-mark{white-space:nowrap}
     td.money{text-align:right;font-variant-numeric:tabular-nums}
     tr{break-inside:avoid}
     tr.blank td{height:24px;border-color:#000}
     tr.dstart td{border-top:1.5px solid #000}
+    .weekend-page table{font-size:calc(11.5px * var(--print-scale))}
+    .weekend-page th,.weekend-page td{padding:calc(3px * var(--print-scale));height:calc(24px * var(--print-scale));line-height:1.25}
+    .weekend-page tr.blank td{height:calc(6px * var(--print-scale));padding:0}
     col.c1{width:9.5%}col.c2{width:8.5%}col.c3{width:13%}col.c4{width:7%}col.c5{width:6%}col.c6{width:10%}col.c7{width:22%}col.amount{width:8%}
-    @media print{.noprint{display:none}}
+    @media print{
+      body{padding:0}
+      .noprint{display:none}
+      .print-page{margin:0;break-before:page}
+      .print-page:first-of-type{break-before:auto}
+      .weekend-page{break-inside:avoid-page}
+      thead{display:table-header-group}
+    }
     .noprint{margin-bottom:10px}
     .noprint button{padding:8px 18px;font-size:14px;border:none;border-radius:6px;background:#B8892B;color:#fff;cursor:pointer;font-weight:600}
   </style></head><body>
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
-  <div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${scheduleRangeText(now)}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>
-  <table>
-    <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup>
-    <thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>
-    <tbody>${body}</tbody>
-  </table>
-  <script>setTimeout(()=>window.print(),400)<\/script>
+  ${body}
+  <script>
+    function fitWeekendPages(){
+      document.querySelectorAll('.weekend-page').forEach(page=>{
+        const content=page.querySelector('.page-content');
+        const fits=()=>content.getBoundingClientRect().height<=page.clientHeight-8;
+        page.style.setProperty('--print-scale','1');
+        if(fits())return;
+        let minimum=0.1,maximum=1;
+        for(let attempt=0;attempt<10;attempt++){
+          const scale=(minimum+maximum)/2;
+          page.style.setProperty('--print-scale',String(scale));
+          if(fits())minimum=scale;else maximum=scale;
+        }
+        page.style.setProperty('--print-scale',String(minimum));
+      });
+    }
+    window.addEventListener('beforeprint',fitWeekendPages);
+    document.fonts.ready.then(()=>{fitWeekendPages();setTimeout(()=>window.print(),400)});
+  <\/script>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){toast('팝업이 차단되었습니다. 팝업을 허용해주세요');return}
