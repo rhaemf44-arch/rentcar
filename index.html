@@ -736,7 +736,8 @@ body.tv-mode{display:block;background:#0b1420}
 /* ===== 모바일 앱 (≤820px) =====
    하단 탭 5개(오늘·예약·＋·스케줄·더보기), 오늘 업무, 예약 행 목록, 상세 시트, 더보기.
    글자 12/13/15/20/24px, 간격 4px 단위, 화면 여백 16px, 누르는 영역 최소 44px. */
-.m-tabbar,.m-sheet,.m-only{display:none}
+.m-tabbar,.m-sheet,.m-only,.mobile-back{display:none}
+.topbar-title{display:flex;align-items:center;gap:14px;min-width:0}
 @media(max-width:820px){
   :root{--m-ink:#1b2030;--m-muted:#5f6675;--m-faint:#8a909c;--m-line:#e6e7eb;--m-bg:#f3f3f5;--m-gold-ink:#8a6414;--m-gold-soft:#f6eedc;--m-blue:#1d4c94;--m-blue-soft:#e6eefa;--m-green:#1f6b49;--m-green-soft:#e3f2ea;--m-red:#a32116;--m-red-soft:#fdecea;--m-ease:cubic-bezier(.23,1,.32,1);--m-drawer:cubic-bezier(.32,.72,0,1);--m-tab-h:64px}
   html,body{height:auto;min-height:100vh;min-height:100dvh}
@@ -745,6 +746,14 @@ body.tv-mode{display:block;background:#0b1420}
   .sidebar,.backdrop,.menu-btn{display:none!important}
   .topbar{padding:calc(12px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));min-height:56px;border-bottom:1px solid var(--m-line)}
   .topbar h1{font-size:20px!important;font-weight:700;letter-spacing:-.01em;color:var(--m-ink)}
+  .topbar-title{gap:8px;flex:1}
+  .topbar-title h1{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar-actions{flex-shrink:0}
+  .mobile-back{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:64px;min-height:44px;padding:0 8px;flex:none;border:1px solid #b4c3d5;border-radius:8px;background:#e6edf5;color:#203b5d;font:inherit;font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .mobile-back[hidden]{display:none}
+  .mobile-back:active{background:#d6e2f1}
+  .mobile-back>span[aria-hidden]{font-size:24px;line-height:1}
+  .m-sheet-head>h2{flex:1}
   .sync-state{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#eef0f3;font-size:12px!important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sync-state:before{content:"";width:6px;height:6px;border-radius:50%;background:#c9a24a;flex:none}
   .sync-state[data-state="saved"]{background:var(--m-green-soft)}
@@ -1065,8 +1074,9 @@ body.tv-mode{display:block;background:#0b1420}
 <!-- ===== Main ===== -->
 <div class="main">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:14px">
+    <div class="topbar-title">
       <button class="menu-btn" onclick="openNav()">☰</button>
+      <button class="mobile-back" id="mobile-back" type="button" onclick="mobileBack()" aria-label="뒤로가기" hidden><span aria-hidden="true">‹</span><span>뒤로</span></button>
       <h1 id="page-title">예약 입력</h1>
     </div>
     <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><div class="meta">
@@ -2710,9 +2720,39 @@ function friendlyAIError(e){
   return 'Supabase AI 함수 호출에 실패해 기존 파서 결과를 사용했습니다.';
 }
 let reservationFormVersion=0;
+const RESERVATION_INPUT_IDS=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone','f-start-date','f-start-hour','f-start-minute','f-end-date','f-end-hour','f-end-minute'];
 function reservationInputSnapshot(){
-  const ids=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone','f-start-date','f-start-hour','f-start-minute','f-end-date','f-end-hour','f-end-minute'];
-  return JSON.stringify([editId,...ids.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'']);
+  return JSON.stringify([editId,...RESERVATION_INPUT_IDS.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'']);
+}
+function captureReservationDraft(){
+  const fields=RESERVATION_INPUT_IDS.map(id=>{
+    const el=document.getElementById(id);
+    return{id,value:el.value,disabled:el.disabled,readOnly:el.readOnly,options:el.tagName==='SELECT'?el.innerHTML:null};
+  });
+  const car=document.getElementById('f-car');
+  const labels=['balance-help','f-start-hint','f-end-hint'].map(id=>{const el=document.getElementById(id);return{id,text:el.textContent,hidden:el.hidden}});
+  return storageCopy({fields,editId,original:_editingOriginal,baseline:_editFormBaseline,position:editReturnPosition,cleanInputs:cleanReservationInputs,
+    fullPlate:car.dataset.fullPlate||'',carTitle:car.title,raw:document.getElementById('raw').value,
+    tab:document.getElementById('reservation-form-tabpanel').hidden?'paste':'manual',
+    previousPickupValue,returnLocationManuallyEdited,
+    labels,saveText:document.getElementById('save-btn').textContent,hint:document.getElementById('edit-hint').textContent});
+}
+function restoreReservationDraft(draft){
+  for(const field of draft.fields){
+    const el=document.getElementById(field.id);
+    if(field.options!==null)el.innerHTML=field.options;
+    el.value=field.value;el.disabled=field.disabled;
+    if('readOnly' in field)el.readOnly=field.readOnly;
+  }
+  editId=draft.editId;_editingOriginal=storageCopy(draft.original);_editFormBaseline=storageCopy(draft.baseline);
+  editReturnPosition=storageCopy(draft.position);cleanReservationInputs=draft.cleanInputs;
+  const car=document.getElementById('f-car');
+  if(draft.fullPlate)car.dataset.fullPlate=draft.fullPlate;else delete car.dataset.fullPlate;
+  car.title=draft.carTitle;document.getElementById('raw').value=draft.raw;
+  previousPickupValue=draft.previousPickupValue;returnLocationManuallyEdited=draft.returnLocationManuallyEdited;
+  for(const label of draft.labels){const el=document.getElementById(label.id);el.textContent=label.text;el.hidden=label.hidden}
+  document.getElementById('save-btn').textContent=draft.saveText;document.getElementById('edit-hint').textContent=draft.hint;
+  setReservationInputTab(draft.tab);refreshDriverPhoneField();reservationFormVersion++;
 }
 async function smartParse(){
   const raw=rawEl().value.trim();if(!raw){toast('예약 문자를 붙여넣어 주세요');return}
@@ -4593,14 +4633,41 @@ function exportExcel(){
 
 /* ===== 네비게이션 ===== */
 const TITLES={today:'오늘 업무',more:'더보기',dashboard:'예약 입력',reservations:'예약 관리',schedule:'일정표',gantt:'주말 가용성','schedule-board':'차량 스케줄',past:'지난 예약',audit:'예약 누락 검수',vehicles:'차량 관리',trash:'휴지통'};
+const mobileNavigation=[];
+function updateMobileBackButton(){
+  const button=document.getElementById('mobile-back');if(!button)return;
+  const current=document.querySelector('.view.on')?.id;
+  button.hidden=!isMobileApp()||(!mobileNavigation.length&&current==='view-today');
+}
+function mobileBack(){
+  if(!isMobileApp())return;
+  const sheet=document.getElementById('m-sheet');
+  if(sheet&&!sheet.hidden){
+    if(mSheetEditing){finishMobileSheetEdit(true);renderMobileSheet();return}
+    closeMobileSheet();return;
+  }
+  const previous=mobileNavigation.pop();
+  if(previous?.draft)restoreReservationDraft(previous.draft);
+  const current=document.querySelector('.view.on')?.id;
+  if(!previous&&current==='view-today')return;
+  go2(previous?.view||'today',true);
+  requestAnimationFrame(()=>window.scrollTo({top:previous?.scrollY||0,behavior:'instant'}));
+}
 function go(el){
   go2(el.dataset.v);
   if(el.dataset.v==='dashboard'&&!editId)setReservationInputTab('paste');
   closeNav();
 }
-function go2(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-'+v).classList.add('on');
+function go2(v,goingBack=false){
+  const target=document.getElementById('view-'+v);if(!target)return;
+  const current=document.querySelector('.view.on')?.id?.slice(5);
+  if(isMobileApp()&&!goingBack&&current&&current!==v){
+    mobileNavigation.push({view:current,scrollY:window.scrollY,draft:current==='dashboard'?captureReservationDraft():null});
+    if(mobileNavigation.length>50)mobileNavigation.shift();
+  }
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));target.classList.add('on');
   document.getElementById('page-title').textContent=TITLES[v]||v;
-  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));updateMobileTabs(v);render()}
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));updateMobileTabs(v);updateMobileBackButton();render()}
 function openNav(){document.getElementById('sidebar').classList.add('open');document.getElementById('backdrop').classList.add('on')}
 function closeNav(){document.getElementById('sidebar').classList.remove('open');document.getElementById('backdrop').classList.remove('on')}
 
@@ -4641,6 +4708,8 @@ const M_ICON={
 };
 let mTodayLane='pickup',mSheetId=null,mSheetReturnFocus=null,mSheetCloseTimer=null;
 let mSheetEditing=false;
+let mSheetFormReturn=null;
+const mobileSheetDrafts=new Map();
 let mTodayDate='';
 
 function updateMobileTabs(v){
@@ -4648,7 +4717,7 @@ function updateMobileTabs(v){
   document.querySelectorAll('.m-tab').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
 }
 function mobileGo(tab){
-  if(tab==='add'){clearForm();openReservationPanel();updateMobileTabs('dashboard');window.scrollTo({top:0});return}
+  if(tab==='add'){openReservationPanel(document.getElementById('reservation-form-tabpanel').hidden?'paste':'manual');updateMobileTabs('dashboard');window.scrollTo({top:0});return}
   go2(tab);window.scrollTo({top:0});
 }
 function mDayLabel(day){
@@ -4775,7 +4844,7 @@ function openMobileSheet(id){
 }
 function closeMobileSheet(){
   const sheet=document.getElementById('m-sheet');if(!sheet||sheet.hidden)return;
-  if(mSheetEditing)finishMobileSheetEdit();
+  if(mSheetEditing)finishMobileSheetEdit(true);
   mSheetId=null;sheet.classList.add('closing');sheet.classList.remove('open');document.body.classList.remove('m-sheet-open');
   document.getElementById('m-sheet-panel').style.transform='';
   clearTimeout(mSheetCloseTimer);mSheetCloseTimer=setTimeout(()=>{sheet.hidden=true;sheet.classList.remove('closing')},220);
@@ -4788,9 +4857,11 @@ function startMobileSheetEdit(){
   if(!record||mSheetEditing)return;
   const body=document.getElementById('m-sheet-body');
   const grid=document.querySelector('#reservation-form-tabpanel .reservation-form-grid');
+  mSheetFormReturn=captureReservationDraft();
   fillReservationEdit(record,null);
+  const draft=mobileSheetDrafts.get(record.id);if(draft)restoreReservationDraft(draft);
   mSheetEditing=true;
-  body.innerHTML='<header class="m-sheet-head"><h2 id="m-sheet-title" tabindex="-1">예약 수정</h2></header>';
+  body.innerHTML='<header class="m-sheet-head"><button type="button" class="mobile-back" onclick="mobileBack()" aria-label="뒤로가기"><span aria-hidden="true">‹</span><span>뒤로</span></button><h2 id="m-sheet-title" tabindex="-1">예약 수정</h2></header>';
   body.append(grid);
   const foot=document.getElementById('m-sheet-foot');
   foot.innerHTML='<button type="button" class="m-sheet-cancel" onclick="cancelMobileSheetEdit()">취소</button>';
@@ -4800,7 +4871,8 @@ function startMobileSheetEdit(){
   body.scrollTop=0;
   document.getElementById('m-sheet-title').focus({preventScroll:true});
 }
-function finishMobileSheetEdit(){
+function finishMobileSheetEdit(keepDraft=false){
+  if(keepDraft)mobileSheetDrafts.set(mSheetId,captureReservationDraft());else mobileSheetDrafts.delete(mSheetId);
   const grid=document.querySelector('#m-sheet-body .reservation-form-grid');
   const saveButton=document.getElementById('save-btn');
   closePlatePicker();
@@ -4808,7 +4880,8 @@ function finishMobileSheetEdit(){
   grid.querySelector('.reservation-actions').prepend(saveButton);
   document.querySelector('#reservation-form-tabpanel .card-b').append(grid);
   mSheetEditing=false;
-  clearForm();
+  if(mSheetFormReturn)restoreReservationDraft(mSheetFormReturn);else clearForm();
+  mSheetFormReturn=null;
 }
 function cancelMobileSheetEdit(){
   finishMobileSheetEdit();
@@ -4861,7 +4934,7 @@ function renderMobileSheet(){
   const copy=(field,label,value)=>String(value||'').trim()?`<button type="button" class="m-copy${field==='phone'?'':' m-address-copy'}" data-copy="${field}" onclick="copyMobileReservationField('${field}')" aria-label="${label} 복사">${M_ICON.copy}${label} 복사</button>`:'';
   const act=(label,icon,attrs)=>`<${attrs.href?'a':'button'} class="m-act" ${attrs.id?`id="${attrs.id}"`:''} ${attrs.href?`href="${esc(attrs.href)}"${attrs.blank?' target="_blank" rel="noopener noreferrer"':''}`:`onclick="${attrs.onclick}"`}${attrs.disabled?' aria-disabled="true" tabindex="-1"':''}>${icon}${label}</${attrs.href?'a':'button'}>`;
   document.getElementById('m-sheet-body').innerHTML=`
-    <header class="m-sheet-head"><div>
+    <header class="m-sheet-head"><button type="button" class="mobile-back" onclick="mobileBack()" aria-label="뒤로가기"><span aria-hidden="true">‹</span><span>뒤로</span></button><div>
       <div class="m-task-tags">${driverBadge(r)}<span class="m-st ${r.status==='active'?'m-st-active':r.status==='done'?'m-st-done':r.status==='cancelled'?'m-st-cancel':'m-st-wait'}">${esc(isAutoReturned(r)?'자동 반납 완료':({active:'운행중',done:'완료',cancelled:'취소'})[r.status]||'대기')}</span>${reasons.slice(0,2).map(a=>`<span class="m-st m-st-warn">${esc(a)}</span>`).join('')}</div>
       <h2 id="m-sheet-title">${esc(v.name||'차량 미정')}</h2>
       <button type="button" class="m-plate-btn${v.plate?'':' empty'}" id="m-sheet-plate" onclick="openPlatePicker(this,${uiArg(r.id)})" aria-haspopup="listbox">${v.plate?`<b>${esc(v.plate)}</b><span>번호 변경</span>`:'<b>＋ 차량번호 배정</b>'}</button>
@@ -4925,12 +4998,14 @@ function openMobileHome(){
   if(!isMobileApp()||tvMode)return;
   const days=document.getElementById('sb-days');if(days)days.value='7';
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('view-today').classList.add('on');
-  document.getElementById('page-title').textContent=TITLES.today;updateMobileTabs('today');
+  document.getElementById('page-title').textContent=TITLES.today;updateMobileTabs('today');updateMobileBackButton();
 }
 window.matchMedia('(max-width:820px)').addEventListener('change',()=>{
+  if(!isMobileApp())mobileNavigation.length=0;
   const cur=document.querySelector('.view.on')?.id;
   if(!isMobileApp()){closeMobileSheet();if(cur==='view-today'||cur==='view-more')go2('dashboard');else render()}
   else render();
+  updateMobileBackButton();
 });
 
 /* ===== 파서 자체 테스트 (A·B·C형 8컬럼 검증) ===== */
