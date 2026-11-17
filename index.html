@@ -1362,6 +1362,7 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
           <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePast()">완료·취소 예약만 삭제</button>
         </div>
         <div class="card-b">
+          <p class="hint" style="margin:0 0 12px">오늘 이전 배차 예약과 반납 예정시간이 지난 예약을 확인합니다.</p>
           <div class="toolbar"><input type="search" id="past-search" placeholder="이름·차량·번호·연락처·배차 검색" oninput="renderPast()"></div>
           <div class="res-list" id="past-list" style="max-height:none"></div>
         </div>
@@ -3687,10 +3688,20 @@ function pastReservation(r,today,now=scheduleNow()){
   const end=reservationTime(r.end);
   return Number.isFinite(end)&&end<=now;
 }
+function reservationPickupBeforeToday(r,today=todayStr()){
+  const day=scheduleDateKey(r.start).slice(0,10);
+  return !!day&&day<today;
+}
+function reservationManagementRecord(r,today=todayStr()){
+  return !r.deletedAt&&!reservationPickupBeforeToday(r,today);
+}
+function pastReservationForDisplay(r,today=todayStr(),now=scheduleNow()){
+  return !r.deletedAt&&(reservationPickupBeforeToday(r,today)||pastReservation(r,today,now));
+}
 function renderPast(){
   const el=document.getElementById('past-list');if(!el)return;
   const today=todayStr(),now=scheduleNow(),q=(document.getElementById('past-search')?.value||'').toLowerCase();
-  const past=data.filter(r=>pastReservation(r,today,now));
+  const past=data.filter(r=>pastReservationForDisplay(r,today,now));
   const rows=past.filter(r=>!q||(reservationCustomerName(r)+' '+r.car+' '+r.phone+' '+(r.pickup||'')+' '+(r.ret||'')).toLowerCase().includes(q))
     .sort((a,b)=>String(b.start||'').localeCompare(String(a.start||'')));
   document.getElementById('nav-past').textContent=past.length;
@@ -3985,6 +3996,7 @@ function reservationListRows(){
   const q=(document.getElementById('search').value||'').trim().toLowerCase(),range=dashboardRange(),today=todayStr();
   let rows=data.filter(r=>{
     if(r.deletedAt)return false;
+    if(dashboardMetric==='all'&&!reservationManagementRecord(r,today))return false;
     if(!dashboardMetricMatch(r))return false;
     if(dashboardMetric==='all'&&dashboardPeriod==='upcoming'&&!dashboardUpcomingRecord(r,today))return false;
     if(dashboardMetric==='all'&&range&&(r.status==='cancelled'||!reservationListEvent(r,range)))return false;
@@ -3996,7 +4008,7 @@ function reservationListRows(){
 }
 function renderReservationList(){
   const rows=reservationListRows(),range=dashboardRange(),q=(document.getElementById('search').value||'').trim();
-  const periodLabels={upcoming:'예정 예약 · 운행중',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
+  const periodLabels={upcoming:'오늘 이후 배차 예약',today:'오늘',tomorrow:'내일',week:'이번 주',all:'전체'},metricLabels={pickup:'오늘 배차',return:'오늘 반납',active:'운행중',unpaid:'미수금',unassigned:'차량 미배정',attention:'확인 필요'};
   document.getElementById('dashboard-list-title').textContent=metricLabels[dashboardMetric]||(dashboardPeriod==='upcoming'?periodLabels.upcoming:periodLabels[dashboardPeriod]+' 업무');
   document.getElementById('dashboard-result-summary').innerHTML=`<b>${rows.length.toLocaleString()}건</b> · ${esc(metricLabels[dashboardMetric]||periodLabels[dashboardPeriod])}${range?' · '+range[0]+(range[0]!==range[1]?' ~ '+range[1]:''):''}${range&&dashboardMetric==='all'?' · 배차·반납일 기준':''}${dashboardPeriod==='upcoming'&&dashboardMetric==='all'?' · 고객·차량·배차·반납 일정':''}`;
   document.getElementById('dashboard-filter-reset').hidden=dashboardPeriod==='upcoming'&&dashboardMetric==='all'&&!q;
@@ -4010,8 +4022,8 @@ function updateDashboardStats(){
   document.getElementById('s-unpaid').innerHTML=unpaid.reduce((sum,r)=>sum+reservationBalance(r),0).toLocaleString('ko-KR')+'<small>원</small>';
   document.getElementById('s-unpaid-count').textContent=unpaid.length+'건 미수'+(unknown?' · '+unknown+'건 금액 미확인':'');
   document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.metric===dashboardMetric)));
-  document.getElementById('nav-res').textContent=data.filter(r=>dashboardUpcomingRecord(r,t)).length;
-  document.getElementById('nav-past').textContent=data.filter(r=>pastReservation(r,t)).length;
+  document.getElementById('nav-res').textContent=data.filter(r=>reservationManagementRecord(r,t)&&dashboardUpcomingRecord(r,t)).length;
+  document.getElementById('nav-past').textContent=data.filter(r=>pastReservationForDisplay(r,t)).length;
   document.getElementById('nav-vehicles').textContent=Object.keys(PLATE_MAP).length;
   const deleted=typeof getDeletedReservations==='function'?getDeletedReservations():[];document.getElementById('nav-trash').textContent=deleted.length;
 }
