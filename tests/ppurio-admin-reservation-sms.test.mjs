@@ -59,6 +59,14 @@ test('one attested website reservation submits one batch to exactly three admini
   assert.equal((await a.post()).status,200);assert.equal(a.calls.filter(x=>x[0]==='/v1/message').length,1);
   assert.equal((await a.post({...data,text:data.text+'!'})).status,502);assert.equal(a.calls.filter(x=>x[0]==='/v1/message').length,1);
 });
+test('the admin sender override changes only the outbound from number',async()=>{
+  const a=setup({settings:{PPURIO_ADMIN_RESERVATION_FROM:'010-0000-9999'}}), b=setup();
+  assert.equal((await a.post()).status,200);assert.equal((await b.post()).status,200);
+  const messages=({calls})=>calls.filter(x=>x[0]==='/v1/message').map(x=>x[2]);
+  const [baseline]=messages(b);
+  assert.deepEqual(messages(a),[{...baseline,from:'01000009999'}]);
+  assert.deepEqual(baseline.targets,data.recipients.map(to=>({to})));assert.equal(baseline.targetCount,3);
+});
 test('two simultaneous deliveries never submit a second batch',async()=>{
   const a=setup();await Promise.all([a.post(),a.post()]);assert.equal(a.calls.filter(x=>x[0]==='/v1/message').length,1);
   assert.equal((await a.post()).status,200);
@@ -94,7 +102,7 @@ test('provider authentication failure before submission can retry, capped at thr
   assert.equal(a.calls.filter(x=>x[0]==='/v1/message').length,0);
 });
 test('readiness health reveals only configuration status and cannot send or authenticate to the provider',async()=>{
-  for(const [settings,code] of [[{},200],[{PPURIO_API_KEY:''},503]]){
+  for(const [settings,code] of [[{},200],[{PPURIO_API_KEY:''},503],[{PPURIO_ADMIN_RESERVATION_FROM:'invalid'},503]]){
     const a=setup({settings});const res=await a.handler(new Request(base+'/health'));assert.equal(res.status,code);
     assert.deepEqual(Object.keys(await res.json()).sort(),['ok','revision','service']);assert.equal(a.calls.length,0);
     assert.equal((await a.handler(new Request(base+'/other',{method:'POST'}))).status,405);assert.equal(a.calls.length,0);

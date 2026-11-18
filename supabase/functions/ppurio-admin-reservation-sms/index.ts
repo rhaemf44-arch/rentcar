@@ -51,7 +51,9 @@ type Runtime = {getEnv:typeof envGetter, fetcher:typeof fetch, createClient:type
 export function makeHandler({getEnv=envGetter,fetcher=fetch,createClient=proxyClient,now=Date.now}:Partial<Runtime>={}) {
   const dt = () => new Date(now()).toISOString();
   const config=() => {
-    const account=getEnv("PPURIO_ACCOUNT"), key=getEnv("PPURIO_API_KEY"), rawFrom=getEnv("PPURIO_FROM"),
+    // Set the override only after Ppurio approves the number for this account.
+    const account=getEnv("PPURIO_ACCOUNT"), key=getEnv("PPURIO_API_KEY"),
+      rawFrom=getEnv("PPURIO_ADMIN_RESERVATION_FROM") || getEnv("PPURIO_FROM"),
       proxy=getEnv("FIXIE_URL"), base=getEnv("SUPABASE_URL"), dbKey=getEnv("SUPABASE_SERVICE_ROLE_KEY");
     const from=rawFrom.replace(/[\s()-]/g,"").replace(/^\+820?/,"0");
     if (!account || !key || !/^\d{8,12}$/.test(from) || !proxy || !base || !dbKey) return null;
@@ -59,7 +61,7 @@ export function makeHandler({getEnv=envGetter,fetcher=fetch,createClient=proxyCl
   };
   return async function handle(req: Request):Promise<Response> {
     const path=new URL(req.url).pathname, conf=config();
-    if(req.method==="GET" && path.endsWith("/health")) return reply(conf?200:503,{ok:!!conf,service:"ppurio-admin-reservation-sms",revision:"2026-11-09-v1"});
+    if(req.method==="GET" && path.endsWith("/health")) return reply(conf?200:503,{ok:!!conf,service:"ppurio-admin-reservation-sms",revision:"2026-11-09-sender-v2"});
     if(!path.endsWith("/ppurio-admin-reservation-sms") || req.method!=="POST")return reply(405,{error:"method_not_allowed"});
     if(!conf)return reply(503,{error:"configuration_unavailable"});
     const signature=req.headers.get("x-ky-signature") || "", timestamp=req.headers.get("x-ky-timestamp") || "";
