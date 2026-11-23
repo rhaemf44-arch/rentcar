@@ -3,6 +3,7 @@
   'use strict';
   function staffLoginEmail(identifier){
     const value=String(identifier||'').trim().toLowerCase();
+    if(!value)throw new Error('missing-identifier');
     if(value.includes('@')){
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))throw new Error('invalid-identifier');
       return value;

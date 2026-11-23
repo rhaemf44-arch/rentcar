@@ -1011,6 +1011,9 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
 .staff-access-actions button:last-child{background:#203e62;color:#fff}.staff-access-note{min-height:24px;font-size:13px!important;margin-bottom:0}
 .staff-access-card input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#203e62}.staff-access-card .staff-remember{display:flex;align-items:center;gap:8px;margin:6px 0 18px;font-size:14px;cursor:pointer}
 .staff-login-submit{width:100%;min-height:48px;border:0;border-radius:10px;background:#203e62;color:#fff;font-size:16px;font-weight:700;cursor:pointer}.staff-login-submit:disabled{opacity:.6;cursor:wait}
+.staff-password-field{position:relative}.staff-password-field input{padding-right:76px}.staff-password-toggle{position:absolute;right:8px;top:12px;min-width:60px;min-height:38px;border:0;border-radius:6px;background:#e1eaf5;color:#203e62;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.staff-access-card input[aria-invalid="true"]{border:2px solid #b42318}.staff-login-help{font-size:12px!important;text-align:left;margin:0 0 16px}
+@media(max-width:820px){.staff-access-card input:not([type="checkbox"]){font-size:16px}}
 .staff-account-check{margin-top:18px;border-top:1px solid #d2dce8;padding-top:12px}.staff-account-check[hidden]{display:none}.staff-account-check input{font-size:11px}.staff-logout{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px;border:1px solid #b9c6d6;border-radius:9px;background:#edf3fb;color:#203e62;cursor:pointer}.staff-logout svg{width:20px;height:20px}
 @media(max-width:820px){.topbar-actions .sync-state{max-width:115px}}
 </style>
@@ -1052,12 +1055,13 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
     <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:#203e62;color:#fff;border-radius:12px;font-weight:800;font-size:22px;margin-bottom:18px;">KY</div>
     <h2>직원 로그인</h2>
     <p id="staff-access-message" role="status">등록된 직원 계정으로 로그인해 주세요.</p>
-    <form id="staff-login-form" onsubmit="event.preventDefault();doLogin()">
+    <form id="staff-login-form" onsubmit="event.preventDefault();doLogin()" novalidate>
       <label for="staff-login-id">아이디</label>
-      <input id="staff-login-id" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="아이디 또는 이메일" required>
+      <input id="staff-login-id" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="직원 아이디 입력" aria-describedby="staff-access-message" required>
       <label for="staff-login-password">비밀번호</label>
-      <input id="staff-login-password" name="password" type="password" autocomplete="current-password" required>
+      <div class="staff-password-field"><input id="staff-login-password" name="password" type="password" autocomplete="current-password" aria-describedby="staff-access-message" required><button id="staff-password-toggle" class="staff-password-toggle" type="button" aria-label="비밀번호 보기" aria-pressed="false" onclick="toggleStaffPassword()">보기</button></div>
       <label class="staff-remember" for="staff-login-remember"><input id="staff-login-remember" type="checkbox" checked>자동 로그인</label>
+      <p class="staff-login-help">처음에는 아이디와 비밀번호를 입력해 주세요. 자동 로그인은 이 브라우저에서 유지돼요.</p>
       <button id="staff-login-submit" class="staff-login-submit" type="submit">로그인</button>
     </form>
     <div id="staff-account-check" class="staff-account-check" hidden>
@@ -1526,7 +1530,7 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="shared-business-sync.js?v=20261117-1"></script>
-<script src="staff-access.js?v=20261117-1"></script>
+<script src="staff-access.js?v=20261123-1"></script>
 <script>
 /* ===== Firebase 설정 ===== */
 const firebaseConfig = {
@@ -5821,24 +5825,53 @@ function setTVBoardActive(active){
 
 /* ===== 직원 아이디·비밀번호 로그인 ===== */
 let staffLoginBusy=false;
+function toggleStaffPassword(){
+  const input=document.getElementById('staff-login-password'),button=document.getElementById('staff-password-toggle');
+  const visible=input.type==='password';input.type=visible?'text':'password';
+  button.textContent=visible?'숨기기':'보기';button.setAttribute('aria-label',visible?'비밀번호 숨기기':'비밀번호 보기');button.setAttribute('aria-pressed',String(visible));
+}
+function restoreStaffLoginPreferences(){
+  try{
+    const remember=localStorage.getItem('ky_staff_remember_v1')!=='0';
+    document.getElementById('staff-login-remember').checked=remember;
+    const identifier=remember?localStorage.getItem('ky_staff_login_id_v1'):'';
+    if(identifier){staffLoginEmail(identifier);document.getElementById('staff-login-id').value=identifier}
+  }catch{}
+}
+function forgetStaffLoginId(){
+  if(document.getElementById('staff-login-remember').checked)return;
+  try{localStorage.setItem('ky_staff_remember_v1','0');localStorage.removeItem('ky_staff_login_id_v1')}catch{}
+}
 async function doLogin(){
   if(staffLoginBusy)return;
-  const identifier=document.getElementById('staff-login-id').value;
+  const identifierInput=document.getElementById('staff-login-id');
+  const identifier=identifierInput.value.trim().toLowerCase();
   const passwordInput=document.getElementById('staff-login-password');
   const remember=document.getElementById('staff-login-remember').checked;
   const button=document.getElementById('staff-login-submit'),message=document.getElementById('staff-access-message');
+  identifierInput.removeAttribute('aria-invalid');passwordInput.removeAttribute('aria-invalid');
+  let invalidInput=null,validationMessage='';
+  try{staffLoginEmail(identifier)}catch(error){invalidInput=identifierInput;validationMessage=error.message==='missing-identifier'?'아이디를 입력해 주세요.':'아이디는 영문·숫자 3~32자 또는 이메일로 입력해 주세요.'}
+  if(!invalidInput&&!passwordInput.value){invalidInput=passwordInput;validationMessage='비밀번호를 입력해 주세요.'}
+  if(invalidInput){message.textContent=validationMessage;invalidInput.setAttribute('aria-invalid','true');invalidInput.focus();return}
   staffLoginBusy=true;button.disabled=true;button.textContent='로그인 중…';message.textContent='로그인 정보를 확인하고 있어요.';
   try{
     await signInStaff(auth,identifier,passwordInput.value,remember,firebase.auth.Auth.Persistence);
-    try{localStorage.setItem('ky_staff_remember_v1',remember?'1':'0')}catch{}
+    identifierInput.value=identifier;passwordInput.value='';
+    if(passwordInput.type==='text')toggleStaffPassword();
+    try{
+      localStorage.setItem('ky_staff_remember_v1',remember?'1':'0');
+      if(remember)localStorage.setItem('ky_staff_login_id_v1',identifier);else localStorage.removeItem('ky_staff_login_id_v1');
+    }catch{}
   }catch(error){
     const code=error.code||error.message;
-    message.textContent=code==='invalid-identifier'?'아이디는 영문·숫자 3~32자 또는 이메일로 입력해 주세요.'
-      :code==='missing-password'?'비밀번호를 입력해 주세요.'
-      :code==='auth/too-many-requests'?'로그인 시도가 많아요. 잠시 후 다시 시도해 주세요.'
+    message.textContent=code==='auth/too-many-requests'?'로그인 시도가 많아요. 잠시 후 다시 시도해 주세요.'
       :code==='auth/network-request-failed'?'인터넷 연결을 확인하고 다시 시도해 주세요.'
+      :code==='auth/web-storage-unsupported'?'브라우저의 사이트 저장 기능이 차단돼 있어요. 일반 브라우저에서 사이트 저장을 허용한 후 다시 시도해 주세요.'
+      :code==='auth/user-disabled'?'사용이 중지된 계정이에요. 관리자에게 확인해 주세요.'
+      :code==='auth/operation-not-allowed'||code==='auth/invalid-api-key'||code==='auth/app-not-authorized'?'로그인 서버 설정을 확인해야 해요. 관리자에게 이 화면을 알려 주세요.'
       :'아이디 또는 비밀번호를 확인해 주세요.';
-  }finally{passwordInput.value='';staffLoginBusy=false;button.disabled=false;button.textContent='로그인'}
+  }finally{staffLoginBusy=false;button.disabled=false;button.textContent='로그인'}
 }
 
 /* ===== 앱 초기화 (로그인 후 실행) ===== */
@@ -5912,7 +5945,8 @@ async function logoutStaff(){
   try{await auth.signOut();document.getElementById('staff-login-password').value=''}
   catch{toast('로그아웃하지 못했어요. 연결을 확인하고 다시 시도해 주세요.')}
 }
-try{document.getElementById('staff-login-remember').checked=localStorage.getItem('ky_staff_remember_v1')!=='0'}catch{}
+restoreStaffLoginPreferences();
+document.getElementById('staff-login-remember').addEventListener('change',forgetStaffLoginId);
 auth.onAuthStateChanged(user=>{
   staffAccessGate.start(user);
   if(user?.isAnonymous)void auth.signOut();
