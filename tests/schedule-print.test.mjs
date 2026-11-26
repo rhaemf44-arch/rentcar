@@ -27,6 +27,7 @@ function setup(records){
     dashboardDayOffset:dayOffset,reservationVehicleId:r=>r.vehicleId,
     reservationVehicleName:r=>r.car,reservationCustomerName:r=>r.name,
     reservationBalance:r=>r.balance,moneyNumber:value=>value??null,
+    reservationBookingOwner:r=>records.find(record=>record.id===r.bookingId),recordPaymentBalance:r=>r.balance,
     normalizedLocationPair:(pickup,ret)=>({pickup,ret}),isDriverReservation:r=>r.driverService==='driver',
     koreanNow:date=>new Date(date.getTime()+9*3600000).toISOString().slice(0,16),
     scheduleRangeText:()=> '배차일시 기준 · 2026-11-17 10:30부터',
@@ -118,6 +119,40 @@ test('the on-screen schedule remains one full-width table with one heading acros
   assert.match(output,/\.screen-sheet\{width:100%\}/);
   assert.match(output,/\.print-sheets,\.print-measure\{[^}]*visibility:hidden/);
   assert.match(output,/@media print\{[\s\S]*\.screen-sheet\{display:none\}/);
+});
+
+test('a booking shares matching cells and one combined payment while differing return times stay separate',()=>{
+  const day='2026-11-23',common={bookingId:'group-a',name:'묶음 예약',phone:'010-0000-0123'};
+  const output=setup([
+    fixture(day,0,{...common,id:'group-a',car:'검수 차량 1'}),
+    fixture(day,2,{car:'별도 예약 차량'}),
+    fixture(day,1,{...common,car:'검수 차량 2',end:'2026-11-24T21:00'}),
+  ]).print();
+  const screen=output.match(/<div class="screen-sheet">([\s\S]*?)<template id="print-source">/)[1];
+  assert.match(screen,/rowspan="2">11\.23 08:00\(월\)/);
+  assert.match(screen,/rowspan="2">묶음 예약/);
+  assert.match(screen,/rowspan="2">010\.0000\.0123/);
+  assert.match(screen,/rowspan="2">300,000원/);
+  assert.match(screen,/<td>11\.24 20:00<\/td>/);
+  assert.match(screen,/<td>11\.24 21:00<\/td>/);
+  assert.match(screen,/검수 차량 1[\s\S]*검수 차량 2[\s\S]*별도 예약 차량/);
+  const units=Array.from(output.matchAll(/<tbody class="print-group"[^>]*>([\s\S]*?)<\/tbody>/g));
+  assert.equal(units.length,2);
+  assert.match(units[0][1],/검수 차량 1[\s\S]*검수 차량 2/);
+});
+
+test('legacy rows share matching renter information without collapsing separately recorded prices',()=>{
+  const day='2026-11-23',common={name:'기존 예약',phone:'010-0000-0456'};
+  const output=setup([
+    fixture(day,0,{...common,car:'기존 차량 1',total:350000}),
+    fixture(day,1,{...common,car:'기존 차량 2',total:360000}),
+    fixture(day,2,{...common,car:'다른 연락처 차량',phone:'010-0000-0789'}),
+  ]).print();
+  const screen=output.match(/<div class="screen-sheet">([\s\S]*?)<template id="print-source">/)[1];
+  assert.equal((screen.match(/rowspan="2">기존 예약/g)||[]).length,1);
+  assert.match(screen,/기존 차량 1[\s\S]*<td class="money">350,000원<\/td>/);
+  assert.match(screen,/기존 차량 2[\s\S]*<td class="money">360,000원<\/td>/);
+  assert.match(screen,/<td>010\.0000\.0789<\/td>/);
 });
 
 test('phone capture opens with all source records and safe JSON, without automatic A4 printing',()=>{
