@@ -4721,7 +4721,7 @@ function printSchedule(mode='a4'){
     col.c1{width:9.5%}col.c2{width:8.5%}col.c3{width:13%}col.c4{width:7%}col.c5{width:6%}col.c6{width:10%}col.c7{width:22%}col.amount{width:8%}
     @media print{
       body{padding:0}
-      .noprint{display:none}
+      body>.noprint{display:none}
       .screen-sheet{display:none}
       .print-sheets{position:static;width:281mm;height:auto;overflow:visible;visibility:visible;pointer-events:auto}
       .print-measure{display:none}
@@ -4738,12 +4738,14 @@ function printSchedule(mode='a4'){
     <table>${tableHead}<tbody>${rows.map(renderRow).join('')}</tbody></table>
   </div>
   <template id="print-source"><section class="print-page">${heading}<table>${tableHead}${body}</table></section></template>
+  <template id="print-blank-row">${renderRow(null)}</template>
   <div class="print-sheets"></div>
   <div class="print-measure"><div class="page-height"></div><div class="measure-content"></div></div>
   <script>
     ${packSchedulePrintUnits.toString()}
     function paginateSchedule(){
       const source=document.getElementById('print-source').content;
+      const blankRow=document.getElementById('print-blank-row').content.firstElementChild;
       const measure=document.querySelector('.print-measure');
       // beforeprint must use the same physical-width measurements as initial load.
       measure.style.display='block';
@@ -4759,11 +4761,7 @@ function printSchedule(mode='a4'){
         for(const unit of items){
           const group=unit.cloneNode(true);
           if(previousDay&&previousDay!==unit.dataset.firstDay){
-            for(let index=0;index<2;index++){
-              const spacer=document.createElement('tr');spacer.className='blank';
-              for(let column=0;column<10;column++)spacer.append(document.createElement('td'));
-              group.insertBefore(spacer,group.firstChild);
-            }
+            group.prepend(blankRow.cloneNode(true),blankRow.cloneNode(true));
           }
           table.append(group);previousDay=unit.dataset.lastDay;
         }
@@ -4783,7 +4781,25 @@ function printSchedule(mode='a4'){
         unit.style.setProperty('--print-scale',String(minimum));
       };
       const pages=packSchedulePrintUnits(units,fits,fitOversize);
-      document.querySelector('.print-sheets').replaceChildren(...pages.map(makePage));
+      const sheets=pages.map(items=>{
+        const page=makePage(items);
+        mount.replaceChildren(page);
+        const filler=document.createElement('tbody');
+        filler.className='print-fill';
+        filler.setAttribute('aria-hidden','true');
+        const firstRow=blankRow.cloneNode(true);
+        filler.append(firstRow);
+        page.querySelector('table').append(filler);
+        const remainingHeight=maximumHeight-page.getBoundingClientRect().height;
+        if(remainingHeight<0){
+          filler.remove();
+        }else{
+          const extraRows=Math.floor(remainingHeight/firstRow.getBoundingClientRect().height);
+          for(let index=0;index<extraRows;index++)filler.append(blankRow.cloneNode(true));
+        }
+        return page;
+      });
+      document.querySelector('.print-sheets').replaceChildren(...sheets);
       mount.replaceChildren();measure.style.display='';
     }
     window.addEventListener('beforeprint',paginateSchedule);
