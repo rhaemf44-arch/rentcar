@@ -4792,6 +4792,7 @@ function buildSheetRows(now=scheduleNow()){
     const payment=payments.get(r.id);
     out.push({
       배차일:day,
+      bookingId:r.bookingId||'',startKey:scheduleDateKey(r.start),endKey:scheduleDateKey(r.end),
       대여예정일시:fmtSheetDT(r.start,first),
       반납예정일시:fmtSheetDT(r.end,false),
       차량:carName, 차량번호:plate,
@@ -4807,6 +4808,21 @@ function buildSheetRows(now=scheduleNow()){
   });
   return out;
 }
+function schedulePrintBookings(rows){
+  const bookings=[],byKey=new Map();
+  for(const row of rows){
+    if(!row){byKey.clear();bookings.push([null]);continue}
+    const customer=row.임차인명.replace(/\s+/g,''),phone=row.임차인연락처.replace(/[.()\s-]/g,'');
+    // Legacy rows need the same renter, contact, schedule and location to display as a booking.
+    const key=row.bookingId?JSON.stringify([row.배차일,row.bookingId]):
+      customer&&/^\d{9,12}$/.test(phone)&&row.startKey.length===16&&row.endKey.length===16
+        ?JSON.stringify([customer,phone,row.startKey,row.endKey,row.인쇄장소Html]):'';
+    const existing=byKey.get(key);
+    if(existing){existing.push(row);continue}
+    const booking=[row];bookings.push(booking);if(key)byKey.set(key,booking);
+  }
+  return bookings;
+}
 function schedulePrintGroups(rows){
   const groups=[];
   for(const row of rows){
@@ -4820,7 +4836,7 @@ function schedulePrintGroups(rows){
   }
   return groups;
 }
-// A weekend is one unit; weekday reservations fill the remaining space row by row.
+// A weekend is one unit; weekday reservations fill the remaining space by booking.
 // fits measures the heading and table at the actual A4 print width.
 function packSchedulePrintUnits(units,fits,fitOversize){
   const pages=[];let page=[];
@@ -4853,26 +4869,57 @@ function printSchedule(mode='a4'){
     return /[쏠솔]라티|solati/i.test(row.차량)||PLATE_MAP[row.차량번호]?.base==='쏠라티'?'solati':'';
   };
   const captureScript=new URL('schedule-capture.js?v=20261126-1',location.href).href;
-  const captureConfig=JSON.stringify({mode,range:scheduleRangeText(now),rows:rows.filter(Boolean).map(row=>({...row,highlight:rowHighlight(row)}))}).replace(/</g,'\\u003c');
-  const groups=schedulePrintGroups(rows);
-  const renderRow=r=>{
-      if(!r)return '<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
-      // 요일이 붙은 대여일시 = 날짜 그룹 첫 행
-      const isDayStart=/\([월화수목금토일]\)/.test(r.대여예정일시);
-      return `<tr class="${[isDayStart?'dstart':'',rowHighlight(r)].filter(Boolean).join(' ')}">
-      <td>${esc(r.대여예정일시)}</td><td>${esc(r.반납예정일시)}</td>
-      <td class="vehicle">${esc(r.차량)}</td><td>${esc(r.차량번호)}</td>
-      <td>${esc(r.임차인명)}</td><td>${esc(r.임차인연락처)}</td>
-      <td class="place">${r.인쇄장소Html}</td>
-      <td class="money">${amount(r.총금액)}</td><td class="money">${amount(r.계약금)}</td>
-      <td class="money">${r.잔금===0?'0원 (완납)':amount(r.잔금)}</td>
-      </tr>`;
+  const captureRows=rows.filter(Boolean).map(({bookingId,startKey,endKey,...row})=>({...row,highlight:rowHighlight(row)}));
+  const captureConfig=JSON.stringify({mode,range:scheduleRangeText(now),rows:captureRows}).replace(/</g,'\\u003c');
+  const blankRow='<tr class="blank">'+'<td></td>'.repeat(10)+'</tr>';
+  const columnClasses=['','','vehicle','','','','place','money','money','money'];
+  const sharedColumns=new Map([
+    [0,r=>r.startKey],[1,r=>r.endKey],[4,r=>r.임차인명.replace(/\s+/g,'')],
+    [5,r=>r.임차인연락처.replace(/[.()\s-]/g,'')],[6,r=>r.인쇄장소Html],
+  ]);
+  const renderBooking=booking=>{
+    if(!booking[0])return blankRow;
+    const cells=booking.map(r=>[
+      esc(r.대여예정일시),esc(r.반납예정일시),esc(r.차량),esc(r.차량번호),esc(r.임차인명),esc(r.임차인연락처),
+      r.인쇄장소Html,amount(r.총금액),amount(r.계약금),r.잔금===0?'0원 (완납)':amount(r.잔금),
+    ]);
+    const spans=cells.map(row=>row.map(()=>1));
+    const highlights=booking.map(rowHighlight);
+    for(const [column,key] of sharedColumns){
+      let first=0;
+      for(let index=1;index<booking.length;index++){
+        if(key(booking[index])!==key(booking[first])){first=index;continue}
+        spans[first][column]++;spans[index][column]=0;
+      }
+    }
+    const charged=cells.filter(row=>row.slice(7).some(Boolean));
+    if(booking.length>1&&charged.length<=1){
+      for(let column=7;column<10;column++){
+        cells[0][column]=charged[0]?.[column]||'';
+        spans[0][column]=booking.length;
+        for(let index=1;index<booking.length;index++)spans[index][column]=0;
+      }
+    }
+    return booking.map((row,index)=>{
+      const dayStart=/\([월화수목금토일]\)$/.test(row.대여예정일시);
+      const classes=[dayStart?'dstart':'',highlights[index]].filter(Boolean).join(' ');
+      const content=cells[index].map((value,column)=>{
+        const span=spans[index][column];if(!span)return '';
+        const mixed=span>1&&highlights.slice(index,index+span).some(color=>color!==highlights[index]);
+        const css=[columnClasses[column],mixed?'mixed-highlight':''].filter(Boolean).join(' ');
+        return `<td${css?' class="'+css+'"':''}${span>1?' rowspan="'+span+'"':''}>${value}</td>`;
+      }).join('');
+      return `<tr class="${classes}">${content}</tr>`;
+    }).join('');
   };
   const tableHead='<colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="amount" span="3"></colgroup><thead><tr><th>대여예정일시</th><th>반납예정일시</th><th>차량</th><th>차량번호</th><th>임차인명</th><th>임차인연락처</th><th>배차·회차 장소</th><th>총금액</th><th>계약금</th><th>잔금</th></tr></thead>';
-  const units=groups.flatMap(group=>group.weekend?[group]:group.rows.filter(Boolean).map(row=>({weekend:'',rows:[row]})));
+  const units=schedulePrintGroups(rows).flatMap(group=>{
+    const bookings=schedulePrintBookings(group.rows);
+    return group.weekend?[{weekend:group.weekend,bookings}]:bookings.filter(booking=>booking[0]).map(booking=>({weekend:'',bookings:[booking]}));
+  });
   const body=units.map(unit=>{
-    const records=unit.rows.filter(Boolean);
-    return `<tbody class="print-group${unit.weekend?' weekend-group':''}" data-first-day="${records[0].배차일}" data-last-day="${records[records.length-1].배차일}"${unit.weekend?' data-weekend="'+unit.weekend+'"':''}>${unit.rows.map(renderRow).join('')}</tbody>`;
+    const first=unit.bookings[0][0],last=unit.bookings.at(-1).at(-1);
+    return `<tbody class="print-group${unit.weekend?' weekend-group':''}" data-first-day="${first.배차일}" data-last-day="${last.배차일}"${unit.weekend?' data-weekend="'+unit.weekend+'"':''}>${unit.bookings.map(renderBooking).join('')}</tbody>`;
   }).join('');
   const heading=`<div class="head"><h1>경일렌트카 일정표</h1><div class="sub">출력일 ${koreanNow(new Date(now)).slice(0,10)} · ${esc(scheduleRangeText(now))}${scheduleClock.serverTime===null?' (기기 시각)':''} · 총 ${rows.filter(Boolean).length}건 · 010-4164-2820</div></div>`;
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>경일렌트카 일정표</title>
@@ -4893,6 +4940,7 @@ function printSchedule(mode='a4'){
     tr.solati>td{background-color:#ffeb3b}
     tr.jeju-sports>td{background-color:#bae6fd}
     tr.solati>td,tr.jeju-sports>td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr>td.mixed-highlight{background-color:transparent}
     td.place{text-align:left;white-space:pre-line}
     .driver-mark{white-space:nowrap}
     td.money{text-align:right;font-variant-numeric:tabular-nums}
@@ -4909,7 +4957,7 @@ function printSchedule(mode='a4'){
       .print-sheets{position:static;width:281mm;height:auto;overflow:visible;visibility:visible;pointer-events:auto}
       .print-measure{display:none}
       .print-page+.print-page{break-before:page}
-      .weekend-group{break-inside:avoid-page}
+      .print-group{break-inside:avoid-page}
       thead{display:table-header-group}
     }
     .noprint{margin-bottom:10px}
@@ -4918,10 +4966,10 @@ function printSchedule(mode='a4'){
   <div class="noprint"><button onclick="window.print()">🖨 인쇄 / PDF 저장</button></div>
   <div class="screen-sheet">
     ${heading}
-    <table>${tableHead}<tbody>${rows.map(renderRow).join('')}</tbody></table>
+    <table>${tableHead}<tbody>${schedulePrintBookings(rows).map(renderBooking).join('')}</tbody></table>
   </div>
   <template id="print-source"><section class="print-page">${heading}<table>${tableHead}${body}</table></section></template>
-  <template id="print-blank-row">${renderRow(null)}</template>
+  <template id="print-blank-row">${blankRow}</template>
   <div class="print-sheets"></div>
   <div class="print-measure"><div class="page-height"></div><div class="measure-content"></div></div>
   <script>
