@@ -1220,9 +1220,9 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
                 <div class="field"><label for="f-payment">결제수단</label><select id="f-payment"><option value="">미정</option><option>계좌이체</option><option>카드</option><option>현금</option><option>현장결제</option><option>문화누리카드</option><option>기타</option></select></div>
               </div>
               <div class="reservation-row-meta">
-                <div class="field"><label for="f-total">총금액 (원)</label><input id="f-total" inputmode="decimal" placeholder="예: 300,000" oninput="updateFinanceBalance()"></div>
-                <div class="field"><label for="f-paid">입금액 (원)</label><input id="f-paid" inputmode="decimal" placeholder="미입금은 0" oninput="updateFinanceBalance()"></div>
-                <div class="field"><label for="f-balance">잔금 (원)</label><input id="f-balance" inputmode="decimal" placeholder="미확인은 공란"></div>
+                <div class="field"><label for="f-total">총금액 (원)</label><input id="f-total" inputmode="decimal" placeholder="예: 300,000" oninput="formatFinanceInput(event)" onblur="formatFinanceInput(event)"></div>
+                <div class="field"><label for="f-paid">입금액 (원)</label><input id="f-paid" inputmode="decimal" placeholder="미입금은 0" oninput="formatFinanceInput(event)" onblur="formatFinanceInput(event)"></div>
+                <div class="field"><label for="f-balance">잔금 (원)</label><input id="f-balance" inputmode="decimal" placeholder="미확인은 공란" oninput="formatFinanceInput(event)" onblur="formatFinanceInput(event)"></div>
               </div>
               <p class="hint" id="balance-help">총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.</p>
               <div class="field reservation-row-memo"><label for="f-memo">메모</label><textarea id="f-memo" rows="2" placeholder="추가 요청·운영 메모"></textarea></div>
@@ -3564,9 +3564,33 @@ function captureEditReturnPosition(){
   return {view:'reservations',pageY:window.scrollY,listY:list.scrollTop,listX:list.scrollLeft,
     tableY:table?.scrollTop||0,tableX:table?.scrollLeft||0};
 }
+function financeAmountText(amount){
+  return amount?.toLocaleString('ko-KR')??'';
+}
+function formatFinanceInput(event){
+  const input=event.target;
+  if(event.type==='blur'){
+    const amount=moneyNumber(input.value);
+    if(Number.isSafeInteger(amount))input.value=financeAmountText(amount);
+  }else if(!event.isComposing){
+    const digits=input.value.replace(/,/g,'');
+    if(/^\d+$/.test(digits)){
+      const formatted=digits.replace(/\B(?=(?:\d{3})+$)/g,',');
+      if(formatted!==input.value){
+        const digitsBeforeCaret=input.value.slice(0,input.selectionStart).replace(/,/g,'').length;
+        const digitPositions=Array.from(formatted.matchAll(/\d/g),match=>match.index);
+        let caret=digitPositions[digitsBeforeCaret]??formatted.length;
+        if(event.inputType==='deleteContentBackward'&&formatted[caret-1]===',')caret--;
+        input.value=formatted;
+        input.setSelectionRange(caret,caret);
+      }
+    }
+  }
+  if(input.id!=='f-balance')updateFinanceBalance();
+}
 function populateFinanceForm(r){
   const total=moneyNumber(r.total),paid=moneyNumber(r.paid??r.deposit);
-  set('f-total',total??'');set('f-paid',paid??'');set('f-balance',reservationBalance(r)??'');
+  set('f-total',financeAmountText(total));set('f-paid',financeAmountText(paid));set('f-balance',financeAmountText(reservationBalance(r)));
   const method=r.paymentMethod||r.payment_method||'';set('f-payment',method==='이체'?'계좌이체':method==='후불'?'현장결제':method);
   set('f-ins-price',r.insuranceFee||(r.ins==='자포'||r.insurance==='자포'?'included':r.ins==='자별'||r.insurance==='자별'?'excluded':''));
   updateFinanceBalance();
@@ -3575,7 +3599,7 @@ function updateFinanceBalance(){
   const total=moneyNumber(val('f-total')),paid=moneyNumber(val('f-paid')),el=document.getElementById('f-balance');
   const calculated=total!==null&&paid!==null;
   el.readOnly=calculated;
-  if(calculated)el.value=Math.max(0,total-paid);
+  if(calculated)el.value=financeAmountText(Math.max(0,total-paid));
   document.getElementById('balance-help').textContent=calculated?'총금액 − 입금액으로 자동 계산':'총금액·입금액이 미정이면 잔금만 입력할 수 있습니다.';
 }
 function reservationFormRecord(){
