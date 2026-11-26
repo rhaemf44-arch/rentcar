@@ -21,12 +21,13 @@
     if(page.length)pages.push(page);return pages;
   }
   function renderCaptureRow(row,index){
-    const solati=row.쏠라티===true||/[쏠솔]라티|solati/i.test(row.차량||'');
+    const solati=row.highlight==='solati'||row.쏠라티===true||/[쏠솔]라티|solati/i.test(row.차량||'');
+    const highlight=row.highlight==='jeju-sports'?' jeju-sports':solati?' solati':'';
     const pickup=String(row.배차||''),returned=String(row.회차||pickup);
     const driver=String(row.인쇄장소Html||'').includes('driver-mark')?'[운행기사] ':'';
     const same=pickup.replace(/\s+/g,' ').trim()===returned.replace(/\s+/g,' ').trim();
     const locations=same?`<div><span>배차·회차</span> ${escape(driver+pickup)}</div>`:`<div><span>배차</span> ${escape(driver+pickup)}</div><div><span>회차</span> ${escape(returned)}</div>`;
-    return `<article class="capture-row${solati?' solati':''}" data-row="${index}" style="--row-scale:${row.captureScale||1}">
+    return `<article class="capture-row${highlight}" data-row="${index}" style="--row-scale:${row.captureScale||1}">
       <div class="capture-vehicle"><strong>${escape(row.차량)}</strong><b>${escape(row.차량번호)}</b></div>
       ${row.임차인명||row.임차인연락처?`<div class="capture-customer">${escape(row.임차인명)}${row.임차인명&&row.임차인연락처?' · ':''}${escape(row.임차인연락처)}</div>`:''}
       <div class="capture-times"><div><span>대여</span> ${escape(row.대여예정일시)}</div><div><span>반납</span> ${escape(row.반납예정일시)}</div></div>
@@ -56,7 +57,7 @@
       .capture-content{flex:1;min-height:0}.capture-day{font-size:13px;font-weight:800;background:#e5edf6;padding:5px 8px;margin:8px 0 6px;color:#172d48}.capture-content>.capture-day:first-child{margin-top:0}
       .capture-page.wide .capture-content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;align-items:start;gap:6px}.capture-page.wide .capture-day{grid-column:1/-1;margin:0}.capture-page.wide .capture-row{margin-bottom:0}
       .capture-row{font-size:calc(12px * var(--row-scale));line-height:1.35;border:1px solid #b2c1d1;border-radius:5px;padding:calc(8px * var(--row-scale));margin:0 0 6px;overflow-wrap:anywhere;break-inside:avoid-page;page-break-inside:avoid}
-      .capture-row.solati{background:#ffeb3b;-webkit-print-color-adjust:exact;print-color-adjust:exact}.capture-vehicle{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:calc(14px * var(--row-scale));line-height:1.3}.capture-vehicle strong{flex:1;min-width:150px}.capture-vehicle b{color:#715000}.capture-customer{margin-top:3px;color:#334b68}
+      .capture-row.solati{background:#ffeb3b}.capture-row.jeju-sports{background:#bae6fd}.capture-row.solati,.capture-row.jeju-sports{-webkit-print-color-adjust:exact;print-color-adjust:exact}.capture-vehicle{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:calc(14px * var(--row-scale));line-height:1.3}.capture-vehicle strong{flex:1;min-width:150px}.capture-vehicle b{color:#715000}.capture-customer{margin-top:3px;color:#334b68}
       .capture-times{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px;font-size:calc(11px * var(--row-scale))}.capture-times span,.capture-locations span{font-weight:700}.capture-locations{margin-top:4px;white-space:pre-line;font-size:calc(11.5px * var(--row-scale))}
       .capture-money{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border-top:1px solid #9cacbc88;padding-top:5px;margin-top:5px;font-variant-numeric:tabular-nums}.capture-money span{display:block;font-size:calc(10px * var(--row-scale));color:#44576c}.capture-money b{display:block;min-height:1.35em}.capture-money>div:last-child{color:#b42318}
       .capture-footer{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #b2c1d1;padding-top:6px;margin-top:6px;font-size:10px}.capture-mode.capture-focus{padding:0}.capture-focus>.noprint{display:none}
