@@ -739,6 +739,8 @@ body.tv-mode{display:block;background:#0b1420}
    하단 탭 5개(오늘·예약·＋·스케줄·더보기), 오늘 업무, 예약 행 목록, 상세 시트, 더보기.
    글자 12/13/15/20/24px, 간격 4px 단위, 화면 여백 16px, 누르는 영역 최소 44px. */
 .m-tabbar,.m-sheet,.m-only,.mobile-back{display:none}
+.desktop-edit-back[hidden]{display:none}
+@media(max-width:820px){.desktop-edit-back{display:none}}
 .topbar-title{display:flex;align-items:center;gap:14px;min-width:0}
 @media(max-width:820px){
   :root{--m-ink:#1b2030;--m-muted:#5f6675;--m-faint:#8a909c;--m-line:#e6e7eb;--m-bg:#f3f3f5;--m-gold-ink:#8a6414;--m-gold-soft:#f6eedc;--m-blue:#1d4c94;--m-blue-soft:#e6eefa;--m-green:#1f6b49;--m-green-soft:#e3f2ea;--m-red:#a32116;--m-red-soft:#fdecea;--m-ease:cubic-bezier(.23,1,.32,1);--m-drawer:cubic-bezier(.32,.72,0,1);--m-tab-h:64px}
@@ -1113,6 +1115,7 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
     <div class="topbar-title">
       <button class="menu-btn" onclick="openNav()">☰</button>
       <button class="mobile-back" id="mobile-back" type="button" onclick="mobileBack()" aria-label="뒤로가기" hidden><span aria-hidden="true">‹</span><span>뒤로</span></button>
+      <button class="btn btn-ghost btn-sm desktop-edit-back" id="desktop-edit-back" type="button" onclick="backFromDesktopEdit()" aria-label="뒤로가기" hidden><span aria-hidden="true">‹</span> 뒤로</button>
       <h1 id="page-title">예약 입력</h1>
     </div>
     <div class="topbar-actions"><div class="sync-state" id="sync-state" role="status" aria-live="polite">저장 상태 확인 중</div><button type="button" class="staff-logout" onclick="logoutStaff()" aria-label="로그아웃" title="로그아웃"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H4v16h5M13 8l4 4-4 4M8 12h13"/></svg></button><div class="meta">
@@ -1222,6 +1225,7 @@ body[data-staff-access="blocked"]>:not(#login-screen):not(script):not(style){dis
                 <div class="field"><label for="f-pickup">배차 위치</label><input id="f-pickup" placeholder="사무실"></div>
                 <div class="field"><label>회차 위치 <span style="font-weight:400;color:var(--ivory-dim);font-size:11px">(비우면 배차와 동일)</span></label><input id="f-return" placeholder="배차와 동일"></div>
               </div>
+              <p class="hint" id="booking-location-help" hidden>배차·회차 위치는 묶음에 있는 모든 차량에 적용됩니다.</p>
               <div class="reservation-row-location">
                 <div class="field"><label for="f-ins-price">보험료 포함 여부</label><select id="f-ins-price"><option value="">미정</option><option value="included">포함 (자포)</option><option value="excluded">별도 (자별)</option></select></div>
                 <div class="field"><label for="f-payment">결제수단</label><select id="f-payment"><option value="">미정</option><option>계좌이체</option><option>카드</option><option>현금</option><option>현장결제</option><option>문화누리카드</option><option>기타</option></select></div>
@@ -2753,6 +2757,10 @@ function normalizeReservationLocationRecord(record){
   if(loc.movedNote)r.memo=appendMemoOnce(r.memo,loc.movedNote);
   return r;
 }
+function reservationLocationFields(record){
+  const {pickup,ret}=normalizedLocationPair(record.pickup,record.ret??record.returnLocation);
+  return {pickup,ret};
+}
 function setupPickupReturnSync(){
   const pickup=document.getElementById('f-pickup'),ret=document.getElementById('f-return');
   if(!pickup||!ret||pickup.dataset.locationSync==='1')return;
@@ -2886,8 +2894,10 @@ let bookingVehicleBaseline=[];
 const RESERVATION_INPUT_IDS=['f-name','f-phone','f-car','f-start','f-end','f-days','f-ins','f-status','f-pickup','f-return','f-memo','f-balance','f-total','f-paid','f-payment','f-ins-price','f-driver-service','f-driver-phone','f-start-date','f-start-hour','f-start-minute','f-end-date','f-end-hour','f-end-minute'];
 function bookingVehicleInputs(){return Array.from(document.querySelectorAll('#booking-extra-vehicles input'))}
 function bookingVehicleValues(){return bookingVehicleInputs().map(input=>({id:input.dataset.reservationId||'',value:input.value}))}
-function updateBookingPaymentHint(){
-  document.getElementById('booking-payment-help').hidden=bookingVehicleInputs().length===0;
+function updateBookingFormHints(){
+  const single=bookingVehicleInputs().length===0;
+  document.getElementById('booking-payment-help').hidden=single;
+  document.getElementById('booking-location-help').hidden=single;
 }
 function addBookingVehicle({id='',value=''}={},focus=true){
   const original=bookingVehicleBaseline.find(peer=>peer.id===id);
@@ -2905,13 +2915,13 @@ function addBookingVehicle({id='',value=''}={},focus=true){
   if(original&&original.id===original.bookingId){
     remove.disabled=true;remove.title='합계가 저장된 차량입니다. 차량명이나 번호는 수정할 수 있습니다.';
   }
-  remove.addEventListener('click',()=>{row.remove();updateBookingPaymentHint();document.getElementById('booking-add-vehicle').focus()});
+  remove.addEventListener('click',()=>{row.remove();updateBookingFormHints();document.getElementById('booking-add-vehicle').focus()});
   row.append(input,remove);document.getElementById('booking-extra-vehicles').append(row);
-  updateBookingPaymentHint();if(focus)input.focus();
+  updateBookingFormHints();if(focus)input.focus();
 }
 function setBookingVehicleFields(values=[]){
   document.getElementById('booking-extra-vehicles').textContent='';
-  values.forEach(value=>addBookingVehicle(value,false));updateBookingPaymentHint();
+  values.forEach(value=>addBookingVehicle(value,false));updateBookingFormHints();
 }
 function reservationInputSnapshot(){
   return JSON.stringify([editId,...RESERVATION_INPUT_IDS.map(id=>document.getElementById(id).value),document.getElementById('f-car').dataset.fullPlate||'',bookingVehicleValues()]);
@@ -3299,11 +3309,27 @@ function applyKakaoRow(i){
   if(e.action==='CANCEL'){setField('status','cancelled')}
   if(['UPDATE','VEHICLE_ASSIGNMENT'].includes(e.action)&&(e.changedFields.includes('car')||e.changedFields.includes('plate')||e.action==='VEHICLE_ASSIGNMENT'))setField('car',kakaoCarField(e,target.car));
   if(e.action==='UPDATE'){if(e.driverService)setField('driverService',e.driverService);if(e.driverPhone&&isDriverReservation(target))setField('driverPhone',e.driverPhone);if(e.driverService==='self'&&target.driverPhone){target.driverPhone='';changed.push('driverPhone')}if(e.changedFields.includes('start'))setField('start',e.start);if(e.changedFields.includes('end'))setField('end',e.end);if(e.changedFields.includes('insurance')&&['자포','자별'].includes(e.insurance))setField('insuranceFee',e.insurance==='자포'?'included':'excluded')}
-  if(['UPDATE','LOCATION_UPDATE'].includes(e.action)){if(e.pickup)setField('pickup',e.pickup);if(e.returnLocation)setField('ret',e.returnLocation)}
+  const locationChange=['UPDATE','LOCATION_UPDATE'].includes(e.action)&&(e.pickup||e.returnLocation);
+  if(locationChange){
+    if(target.bookingId){
+      const previous=reservationLocationFields(target),pickup=e.pickup||previous.pickup;
+      const ret=e.returnLocation||(previous.pickup===previous.ret?pickup:previous.ret);
+      const locations=normalizedLocationPair(pickup,ret);
+      setField('pickup',locations.pickup);setField('ret',locations.ret);
+      if(locations.movedNote)setField('memo',appendMemoOnce(target.memo,locations.movedNote));
+    }else{
+      if(e.pickup)setField('pickup',e.pickup);
+      if(e.returnLocation)setField('ret',e.returnLocation);
+    }
+  }
   if(e.action==='PAYMENT_UPDATE'){if(e.total!=null)setField('total',e.total);if(e.deposit!=null){setField('deposit',e.deposit);setField('paid',e.deposit)}if(e.balance!=null){setField('balance',e.balance);if(moneyNumber(target.total)!==null)setField('paid',Math.max(0,moneyNumber(target.total)-e.balance));else setField('paid',null)}if(e.paymentStatus)setField('paymentStatus',e.paymentStatus);if(e.paymentMethod)setField('paymentMethod',e.paymentMethod)}
   const extra=[e.memo,...(e.operationNotes||[]),buildFinancialMemo({total:e.total,deposit:e.deposit,balance:e.balance,payment_method:e.paymentMethod}),e.paymentStatus?`결제상태 ${e.paymentStatus}`:''].filter(Boolean).join(' · ');if(extra&&!String(target.memo||'').includes(extra))setField('memo',[target.memo,extra].filter(Boolean).join(' · '));
   if(changed.includes('car')){const vehicleId=reservationVehicleId({car:target.car});if(target.vehicleId!==vehicleId){target.vehicleId=vehicleId;changed.push('vehicleId')}}
   const invalid=validateReservation(target);if(invalid){data[data.findIndex(x=>x.id===target.id)]=before;toast(invalid);return}if(!confirmReservationWarnings(target)){data[data.findIndex(x=>x.id===target.id)]=before;return}
+  if(locationChange&&target.bookingId){
+    const locations=reservationLocationFields(target);
+    for(const member of reservationBookingMembers(target))Object.assign(member,locations);
+  }
   saveKakaoHistory(target.id,e.action,changed,before,JSON.parse(JSON.stringify(target)),row.cluster.messages.map(m=>m.text.slice(0,120)));save();render();row.ignored=true;renderKakaoAnalysis();toast('예약에 반영하고 변경 이력을 저장했습니다');
 }
 function directEditKakaoRow(i){const row=kakaoAnalysisState[i],e=row?.event;if(!e)return;if(e.action==='CREATE'||e.action==='NEEDS_REVIEW'){fillKakaoEventForm(e);return}const target=chooseKakaoMatch(e);if(!target){toast('수정할 기존 예약을 선택하세요');return}editRes(target.id);if(e.driverService)set('f-driver-service',e.driverService);if(e.driverPhone)set('f-driver-phone',e.driverPhone);if(e.start)set('f-start',e.start);if(e.end)set('f-end',e.end);if(e.car||e.plate)set('f-car',kakaoCarField(e,target.car));if(e.pickup||e.returnLocation)applyLocationPairToForm(e.pickup||val('f-pickup'),e.returnLocation||'');document.getElementById('edit-hint').textContent='카톡 변경 내용 직접 확인 중';}
@@ -3648,13 +3674,41 @@ let _editingOriginal=null,_editFormBaseline=null;
 let editReturnPosition=null;
 let cleanReservationInputs=reservationInputSnapshot();
 function captureEditReturnPosition(){
-  const current=document.querySelector('.view.on')?.id;
-  if(current==='view-gantt')return {view:'gantt',pageY:window.scrollY,tableX:document.getElementById('gantt').scrollLeft};
-  if(current==='view-schedule')return {view:'schedule',pageY:window.scrollY};
-  if(current!=='view-reservations')return null;
+  const view=document.querySelector('.view.on')?.id?.slice(5);
+  if(!view||view==='dashboard')return null;
+  const position={view,pageY:window.scrollY};
+  if(view==='gantt'||view==='schedule-board'){
+    const scroller=document.getElementById(view);
+    return {...position,tableX:scroller.scrollLeft,tableY:scroller.scrollTop};
+  }
+  if(view!=='reservations')return position;
   const list=document.getElementById('list'),table=document.querySelector('#reservation-astryx-root .astryx-table-scroll-wrapper')||list.querySelector('.res-table-wrap');
-  return {view:'reservations',pageY:window.scrollY,listY:list.scrollTop,listX:list.scrollLeft,
+  return {...position,listY:list.scrollTop,listX:list.scrollLeft,
     tableY:table?.scrollTop||0,tableX:table?.scrollLeft||0};
+}
+function restoreEditReturnPosition(position){
+  go2(position.view);
+  requestAnimationFrame(()=>{
+    if(document.querySelector('.view.on')?.id!=='view-'+position.view)return;
+    if(position.view==='gantt'||position.view==='schedule-board'){
+      document.getElementById(position.view).scrollTo(position.tableX,position.tableY);
+    }
+    if(position.view==='reservations'){
+      const list=document.getElementById('list');
+      list.scrollTo(position.listX??0,position.listY??0);
+      (document.querySelector('#reservation-astryx-root .astryx-table-scroll-wrapper')||list.querySelector('.res-table-wrap'))?.scrollTo(position.tableX??0,position.tableY??0);
+    }
+    window.scrollTo({top:position.pageY,left:0,behavior:'instant'});
+  });
+}
+function updateDesktopEditBackButton(){
+  document.getElementById('desktop-edit-back').hidden=!editId||document.querySelector('.view.on')?.id!=='view-dashboard';
+}
+function backFromDesktopEdit(){
+  if(!editId||isMobileApp())return;
+  if(reservationInputSnapshot()!==cleanReservationInputs&&!confirm('저장하지 않은 수정 사항이 있습니다. 이전 화면으로 돌아갈까요?'))return;
+  const position=editReturnPosition||{view:'reservations',pageY:0};
+  clearForm();closeReservationPanel();restoreEditReturnPosition(position);
 }
 function financeAmountText(amount){
   return amount?.toLocaleString('ko-KR')??'';
@@ -3734,14 +3788,15 @@ function bookingVehicleChanges(record,current,form,vehicles){
   const bookingId=record.bookingId||(vehicles.length?record.id:'');
   const changes=new Map([[record.id,record]]),removed=new Set(),checkVehicles=new Set([record.id]);
   if(!bookingId)return {changes,removed,checkVehicles};
+  const locations=reservationLocationFields(record);
   const peers=current?reservationBookingMembers(current).filter(member=>member.id!==record.id):[];
   const savedVehicles=new Map(vehicles.filter(vehicle=>vehicle.id).map(vehicle=>[vehicle.id,vehicle.fields]));
-  const newRows=vehicles.filter(vehicle=>!vehicle.id).map(vehicle=>({...form,...vehicle.fields,id:uid(),bookingId}));
+  const newRows=vehicles.filter(vehicle=>!vehicle.id).map(vehicle=>({...form,...vehicle.fields,...locations,id:uid(),bookingId}));
   if(vehicles.some(vehicle=>vehicle.id&&vehicle.fields&&!peers.some(peer=>peer.id===vehicle.id))){
     toast('수정한 차량이 다른 화면에서 삭제되었습니다. 묶음 예약을 다시 열어 주세요.');return null;
   }
   if(1+peers.length+newRows.length>500){toast('한 예약에 등록할 수 있는 차량 수를 초과했습니다.');return null}
-  record.bookingId=bookingId;
+  Object.assign(record,locations,{bookingId});
   for(const peer of peers){
     const original=bookingVehicleBaseline.find(row=>row.id===peer.id);
     if(original&&!savedVehicles.has(peer.id)){
@@ -3751,6 +3806,10 @@ function bookingVehicleChanges(record,current,form,vehicles){
       }
       removed.add(peer.id);continue;
     }
+    const previousLocations=reservationLocationFields(peer);
+    if(original&&!storageEqual(previousLocations,reservationLocationFields(original))&&!storageEqual(previousLocations,locations)){
+      toast('묶음 예약의 장소가 다른 화면에서 변경되었습니다. 예약을 다시 열어 주세요.');return null;
+    }
     const fields=savedVehicles.get(peer.id);
     let next={...peer};
     if(fields){
@@ -3758,7 +3817,7 @@ function bookingVehicleChanges(record,current,form,vehicles){
       if(merged.error){toast(merged.error);return null}
       next=merged.record;checkVehicles.add(next.id);
     }
-    next.name=record.name??'';next.phone=record.phone??'';
+    Object.assign(next,locations,{name:record.name??'',phone:record.phone??''});
     if(peer.id===bookingId){for(const field of BOOKING_PAYMENT_FIELDS){if(record[field]!==undefined)next[field]=record[field]}}
     changes.set(next.id,next);
   }
@@ -3829,16 +3888,7 @@ function saveRes(){
     return;
   }
   clearForm();closeReservationPanel();
-  if(position){
-    go2(position.view);
-    if(position.view==='gantt')document.getElementById('gantt').scrollLeft=position.tableX;
-    if(position.view==='reservations'){
-      const list=document.getElementById('list');
-      list.scrollTo(position.listX,position.listY);
-      (document.querySelector('#reservation-astryx-root .astryx-table-scroll-wrapper')||list.querySelector('.res-table-wrap'))?.scrollTo(position.tableX,position.tableY);
-    }
-    window.scrollTo(0,position.pageY);
-  }else render();
+  if(position)restoreEditReturnPosition(position);else render();
   toast('예약을 기기에 저장했습니다. 상단에서 서버 저장 상태를 확인하세요.');
 }
 function clearForm(){
@@ -3855,6 +3905,7 @@ function clearForm(){
   document.getElementById('reservation-panel-title').textContent='예약 입력';
   const status=document.getElementById('ai-parse-status');status.textContent='';status.classList.remove('on');updateFinanceBalance();
   cleanReservationInputs=reservationInputSnapshot();
+  updateDesktopEditBackButton();
 }
 function fillReservationEdit(original,position){
   const editing=reservationBookingFormView(original),r=normalizeReservationLocationRecord(editing);clearForm();
@@ -3868,6 +3919,7 @@ function fillReservationEdit(original,position){
   editId=original.id;_editingOriginal=storageCopy(editing);_editFormBaseline=reservationFormRecord();
   document.getElementById('save-btn').textContent='수정 저장';document.getElementById('edit-hint').textContent='예약 수정';
   cleanReservationInputs=reservationInputSnapshot();
+  updateDesktopEditBackButton();
 }
 function editRes(id,position=captureEditReturnPosition()){
   const original=data.find(x=>x.id===id);if(!original)return;
@@ -4239,6 +4291,7 @@ function updateDashboardStats(){
 }
 function render(){
   if(tvMode){renderTVBoard();return}
+  updateDesktopEditBackButton();
   updateDashboardStats();
   const current=document.querySelector('.view.on')?.id||'view-dashboard';
   if(current==='view-dashboard')renderDashboard();
